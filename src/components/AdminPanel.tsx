@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Upload, Save, BarChart3, TrendingUp, Eye, MousePointer } from 'lucide-react';
 import { Tile } from '../types';
@@ -5,7 +7,7 @@ import { useAppStore } from '../stores/appStore';
 import { BulkUpload } from './BulkUpload';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { QRCodeManager } from './QRCodeManager';
-import { uploadTile, updateTile, deleteTile } from '../lib/supabase';
+import { uploadTile, updateTile, deleteTile } from '../lib/firebaseutils';
 
 export const AdminPanel: React.FC = () => {
   const { currentShowroom } = useAppStore();

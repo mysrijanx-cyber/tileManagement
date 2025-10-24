@@ -1,7 +1,7 @@
 import React from 'react';
 import { Palette, Home, Square, CheckCircle, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
-import { trackTileApplication } from '../lib/supabase';
+import { trackTileApplication } from '../lib/firebaseutils';
 
 export const TileApplication: React.FC = () => {
   const { selectedTile, selectedRoom, appliedTiles, applyTileToSurface, currentShowroom } = useAppStore();

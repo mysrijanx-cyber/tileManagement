@@ -1,32 +1,30 @@
+
+
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Tile } from '../types';
 
-// Generate QR code for a tile
 export const generateTileQRCode = async (tile: Tile): Promise<string> => {
   try {
-    // Create a deep link URL that will work for both web and mobile
-    const baseUrl = window.location.origin;
     const qrData = {
-      type: 'tile',
+      type: 'tile_viewer',
       tileId: tile.id,
+      name: tile.name,
+      category: tile.category,
+      size: tile.size,
+      price: tile.price,
+      stock: tile.stock,
+      sellerId: tile.sellerId,
       showroomId: tile.showroomId,
-      webUrl: `${baseUrl}?tile=${tile.id}&showroom=${tile.showroomId}`,
-      // Mobile app will use the tileId and showroomId to fetch tile data
-      mobileData: {
-        tileId: tile.id,
-        showroomId: tile.showroomId,
-        tileName: tile.name,
-        category: tile.category,
-        size: tile.size,
-        price: tile.price
-      }
+      tileCode: tile.tileCode,
+      url: `${window.location.origin}/tile/${tile.id}`,
+      roomSelectUrl: `${window.location.origin}/room-select/${tile.id}`,
+      timestamp: new Date().toISOString()
     };
 
-    // Generate QR code as base64 data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
-      width: 300,
+    const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(qrData), {
+      width: 400,
       margin: 2,
       color: {
         dark: '#000000',
@@ -35,117 +33,239 @@ export const generateTileQRCode = async (tile: Tile): Promise<string> => {
       errorCorrectionLevel: 'M'
     });
 
-    return qrCodeDataUrl;
+    return qrCodeDataURL;
   } catch (error) {
     console.error('Error generating QR code:', error);
     throw new Error('Failed to generate QR code');
   }
 };
 
-// Generate QR codes for multiple tiles
-export const generateBulkQRCodes = async (tiles: Tile[]): Promise<{ [tileId: string]: string }> => {
+export const generateBulkQRCodes = async (
+  tiles: Tile[], 
+  onProgress?: (progress: number) => void
+): Promise<{ [tileId: string]: string }> => {
   const qrCodes: { [tileId: string]: string } = {};
+  const total = tiles.length;
   
-  for (const tile of tiles) {
+  for (let i = 0; i < tiles.length; i++) {
+    const tile = tiles[i];
     try {
       qrCodes[tile.id] = await generateTileQRCode(tile);
+      
+      // Progress callback
+      if (onProgress) {
+        onProgress(((i + 1) / total) * 100);
+      }
+      
+      // Add small delay to prevent overwhelming
+      await new Promise(resolve => setTimeout(resolve, 50));
     } catch (error) {
-      console.error(`Error generating QR code for tile ${tile.id}:`, error);
+      console.error(`Failed to generate QR code for tile ${tile.id}:`, error);
     }
   }
   
   return qrCodes;
 };
 
-// Download QR codes as a ZIP file
-export const downloadQRCodesAsZip = async (tiles: Tile[], businessName: string = 'TileShowroom') => {
-  try {
-    const zip = new JSZip();
-    const qrFolder = zip.folder('QR_Codes');
+export const downloadQRCodesAsZip = async (
+  tiles: Tile[], 
+  businessName: string,
+  onProgress?: (progress: number) => void
+): Promise<void> => {
+  const zip = new JSZip();
+  const qrFolder = zip.folder('qr_codes');
+  
+  // Create enhanced CSV content
+  const csvHeader = 'Tile Name,Tile Code,Size,Category,Price (₹),Stock,In Stock,QR Code File,Image URL,Texture URL,Created Date\n';
+  let csvContent = csvHeader;
+  
+  const total = tiles.length;
+  
+  for (let i = 0; i < tiles.length; i++) {
+    const tile = tiles[i];
     
-    // Generate a CSV file with tile information
-    const csvContent = [
-      'Tile ID,Tile Name,Category,Size,Price,QR Code File',
-      ...tiles.map(tile => 
-        `"${tile.id}","${tile.name}","${tile.category}","${tile.size}","${tile.price}","${tile.id}_qr.png"`
-      )
-    ].join('\n');
-    
-    zip.file('tile_qr_codes_list.csv', csvContent);
-    
-    // Add instructions file
-    const instructions = `
-QR Code Instructions for ${businessName}
-
-This package contains QR codes for all your tiles. Each QR code contains:
-- Tile ID and basic information
-- Direct link to web visualization
-- Mobile app compatibility data
-
-How to use:
-1. Print each QR code (recommended size: 2x2 inches minimum)
-2. Attach the QR code to the corresponding tile in your showroom
-3. Customers can scan with any QR code reader or your mobile app
-4. The QR code will show the tile in 3D visualization
-
-Files included:
-- tile_qr_codes_list.csv: Complete list of tiles and their QR code files
-- QR_Codes folder: Individual QR code images for each tile
-
-For support, contact your platform administrator.
-Generated on: ${new Date().toLocaleDateString()}
-    `.trim();
-    
-    zip.file('README.txt', instructions);
-    
-    // Generate QR codes for each tile
-    for (const tile of tiles) {
+    if (tile.qrCode) {
       try {
-        const qrCodeDataUrl = await generateTileQRCode(tile);
-        // Convert data URL to blob
-        const base64Data = qrCodeDataUrl.split(',')[1];
-        qrFolder?.file(`${tile.id}_qr.png`, base64Data, { base64: true });
+        // Convert base64 to blob
+        const qrCodeBlob = await fetch(tile.qrCode).then(res => res.blob());
+        const fileName = `${(tile.tileCode || tile.name).replace(/[^a-zA-Z0-9]/g, '_')}_QR.png`;
+        
+        qrFolder?.file(fileName, qrCodeBlob);
+        
+        // Add to CSV with all details
+        csvContent += `"${tile.name}","${tile.tileCode || 'N/A'}","${tile.size}","${tile.category}","${tile.price}","${tile.stock}","${tile.inStock ? 'Yes' : 'No'}","${fileName}","${tile.imageUrl}","${tile.textureUrl || 'N/A'}","${tile.createdAt}"\n`;
+        
+        // Progress callback
+        if (onProgress) {
+          onProgress(((i + 1) / total) * 50); // 50% for processing
+        }
       } catch (error) {
-        console.error(`Error adding QR code for tile ${tile.id}:`, error);
+        console.error(`Error processing QR code for ${tile.name}:`, error);
       }
     }
-    
-    // Generate and download the ZIP file
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    const fileName = `${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_QR_Codes_${new Date().toISOString().split('T')[0]}.zip`;
-    saveAs(zipBlob, fileName);
-    
-    return true;
-  } catch (error) {
-    console.error('Error creating QR codes ZIP:', error);
-    throw new Error('Failed to create QR codes package');
   }
+  
+  // Add CSV to zip
+  zip.file('tile_inventory.csv', csvContent);
+  
+  // Add comprehensive instructions
+  const instructions = `
+QR Code Package for ${businessName}
+=====================================
+
+📦 PACKAGE CONTENTS:
+├── qr_codes/           → Individual QR code images
+├── tile_inventory.csv  → Complete tile database
+└── SETUP_GUIDE.txt     → This instruction file
+
+🚀 QUICK SETUP GUIDE:
+
+1. PRINT QR CODES:
+   - Minimum size: 2x2 inches (5x5 cm)
+   - Use high-quality printer (300 DPI or higher)
+   - Print on durable sticker paper
+   - Test print one QR code first
+
+2. PLACEMENT:
+   - Attach QR codes to physical tiles
+   - Place in easily scannable locations
+   - Avoid curved surfaces or corners
+   - Ensure good lighting at placement area
+
+3. CUSTOMER INSTRUCTIONS:
+   - Inform customers about QR feature
+   - Provide simple scanning instructions
+   - Place "Scan QR Code" signage if needed
+
+📱 HOW IT WORKS:
+
+Customer Journey:
+1. Customer sees tile in your showroom
+2. Scans QR code with mobile camera
+3. Tile information page opens instantly
+4. Selects room type (Living/Bathroom/Kitchen/etc.)
+5. Views tile in 3D room visualization
+6. Can rotate, zoom, and interact with 3D view
+7. Save favorites or share with family
+8. Contact you directly for purchase
+
+🔧 TECHNICAL FEATURES:
+
+- Each QR code contains unique tile data
+- Works with any QR scanner app
+- No app installation required
+- Fast loading 3D visualization
+- Mobile-optimized interface
+- Offline basic information access
+
+📊 ANALYTICS AVAILABLE:
+
+Track customer engagement:
+- QR scan counts per tile
+- Popular room selections
+- Time spent in 3D view
+- Customer interaction patterns
+- Peak engagement hours
+
+🆘 SUPPORT:
+
+If you need assistance:
+- Contact technical support
+- Check online documentation
+- Community forums available
+
+💡 MARKETING TIPS:
+
+- Promote QR feature to customers
+- Use in social media marketing
+- Include in business cards
+- Mention in advertisements
+- Train staff about the feature
+
+Business: ${businessName}
+Generated: ${new Date().toLocaleString()}
+Total Tiles: ${tiles.length}
+QR Codes: ${tiles.filter(t => t.qrCode).length}
+
+© ${new Date().getFullYear()} Tile Visualization System
+  `;
+  
+  zip.file('SETUP_GUIDE.txt', instructions);
+  
+  // Add quick reference card
+  const quickRef = `
+📱 QUICK REFERENCE CARD
+======================
+
+QR CODE SIZES:
+• Minimum: 2x2 inches (5x5 cm)
+• Recommended: 3x3 inches (7.5x7.5 cm)
+• Maximum: 4x4 inches (10x10 cm)
+
+PLACEMENT BEST PRACTICES:
+✅ DO:
+- Use corners or edges of tiles
+- Ensure flat surface placement
+- Keep QR codes clean and visible
+- Test scan before customer display
+
+❌ DON'T:
+- Place on curved surfaces
+- Cover with glass or plastic
+- Use in dark areas
+- Make them too small
+
+CUSTOMER SCANNING TIPS:
+1. Hold phone 6-8 inches from QR code
+2. Ensure good lighting
+3. Keep camera steady
+4. Most phones auto-detect QR codes
+5. If not, use camera app or QR scanner
+
+TROUBLESHOOTING:
+• Blurry QR codes → Reprint larger size
+• Won't scan → Check lighting/distance
+• Slow loading → Check internet connection
+• Wrong tile shown → Verify QR placement
+
+Generated: ${new Date().toLocaleDateString()}
+  `;
+  
+  zip.file('QUICK_REFERENCE.txt', quickRef);
+  
+  // Generate and download zip
+  if (onProgress) onProgress(75);
+  
+  const content = await zip.generateAsync({ 
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+  
+  if (onProgress) onProgress(100);
+  
+  const fileName = `${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_QR_Package_${new Date().toISOString().split('T')[0]}.zip`;
+  saveAs(content, fileName);
 };
 
-// Parse QR code data (for mobile app or web app)
-export const parseQRCodeData = (qrData: string) => {
+export const validateQRCode = async (qrData: string): Promise<boolean> => {
   try {
-    const data = JSON.parse(qrData);
-    if (data.type === 'tile' && data.tileId && data.showroomId) {
-      return data;
-    }
-    throw new Error('Invalid QR code format');
-  } catch (error) {
-    console.error('Error parsing QR code data:', error);
-    return null;
+    const parsed = JSON.parse(qrData);
+    return parsed.type === 'tile_viewer' && parsed.tileId && parsed.url;
+  } catch {
+    return false;
   }
 };
 
-// Handle QR code scan (for web app)
-export const handleQRCodeScan = (qrData: string) => {
-  const parsedData = parseQRCodeData(qrData);
-  if (parsedData) {
-    // Redirect to tile view with the scanned tile
-    const url = new URL(window.location.href);
-    url.searchParams.set('tile', parsedData.tileId);
-    url.searchParams.set('showroom', parsedData.showroomId);
-    window.location.href = url.toString();
-    return true;
-  }
-  return false;
+export const getQRCodeAnalytics = (tiles: Tile[]) => {
+  const total = tiles.length;
+  const withQR = tiles.filter(t => t.qrCode).length;
+  const withoutQR = total - withQR;
+  
+  return {
+    total,
+    withQR,
+    withoutQR,
+    percentage: total > 0 ? Math.round((withQR / total) * 100) : 0
+  };
 };

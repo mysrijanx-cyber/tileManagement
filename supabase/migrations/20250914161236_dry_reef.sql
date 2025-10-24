@@ -11,6 +11,8 @@
 */
 
 -- Add QR code columns to tiles table
+-- upadted
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -31,13 +33,13 @@ BEGIN
   END IF;
 END $$;
 
--- Create indexes for QR code columns
 CREATE INDEX IF NOT EXISTS idx_tiles_qr_code ON tiles(qr_code) WHERE qr_code IS NOT NULL;
+
 CREATE INDEX IF NOT EXISTS idx_tiles_qr_code_url ON tiles(qr_code_url) WHERE qr_code_url IS NOT NULL;
 
--- Update RLS policies to include QR code access
--- QR codes should be publicly accessible for mobile app scanning
-CREATE POLICY IF NOT EXISTS "QR codes are publicly accessible"
+DROP POLICY IF EXISTS "QR codes are publicly accessible" ON tiles;
+
+CREATE POLICY "QR codes are publicly accessible"
   ON tiles
   FOR SELECT
   TO public

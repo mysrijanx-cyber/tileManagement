@@ -1,4 +1,6 @@
-# Logs
+# ============================================
+# LOGS & DEBUGGING
+# ============================================
 logs
 *.log
 npm-debug.log*
@@ -6,20 +8,296 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
 
-node_modules
-dist
-dist-ssr
+# ============================================
+# DEPENDENCIES
+# ============================================
+node_modules/
+jspm_packages/
+/.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# ============================================
+# BUILD OUTPUTS
+# ============================================
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.output/
+.vite/
 *.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ============================================
+# ENVIRONMENT VARIABLES (CRITICAL!)
+# ============================================
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.backup
+.envrc
+*.env
+
+# ============================================
+# FIREBASE (IMPORTANT!)
+# ============================================
+.firebase/
+.firebaserc.local
+firebase-export-*/
+firebaseLocalData/
+
+# Firebase Credentials (NEVER COMMIT!)
+**/serviceAccountKey.json
+**/firebase-adminsdk-*.json
+**/*-firebase-adminsdk-*.json
+.firebaserc
+
+# Firebase Functions
+functions/node_modules/
+functions/dist/
+functions/lib/
+functions/.env
+functions/.env.*
+
+# ============================================
+# SUPABASE
+# ============================================
+**/supabase/.branches
+**/supabase/.temp
+**/supabase/.env
+
+# ============================================
+# TESTING & COVERAGE
+# ============================================
+/coverage
+.nyc_output/
+*.lcov
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# ============================================
+# DATABASES (LOCAL)
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ============================================
+# CACHE & TEMPORARY FILES
+# ============================================
+.cache/
+.temp/
+.tmp/
+*.tmp
+.eslintcache
+.stylelintcache
+.turbo/
+*.tsbuildinfo
+*.tsbuildinfo.*
+vite.config.*.timestamp-*
+
+# ============================================
+# OPERATING SYSTEMS
+# ============================================
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# EDITORS & IDEs
+# ============================================
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+*.code-workspace
+
+# JetBrains (WebStorm, IntelliJ, etc)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Other
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.env
+
+# ============================================
+# MOBILE APP (React Native/Expo)
+# ============================================
+mobile-app/node_modules/
+mobile-app/.expo/
+mobile-app/dist/
+mobile-app/npm-debug.*
+mobile-app/web-build/
+
+# iOS
+mobile-app/ios/Pods/
+mobile-app/ios/build/
+*.ipa
+*.mobileprovision
+*.p12
+*.p8
+*.dSYM.zip
+*.dSYM
+
+# Android
+mobile-app/android/app/build/
+mobile-app/android/.gradle/
+*.apk
+*.aab
+*.jks
+*.keystore
+local.properties
+
+# Expo
+*.orig.*
+.expo-shared/
+
+# ============================================
+# SENSITIVE & CREDENTIALS (CRITICAL!)
+# ============================================
+# API Keys & Secrets
+secrets/
+credentials/
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+*.ppk
+
+# ============================================
+# DEPLOYMENT & HOSTING
+# ============================================
+.vercel
+.netlify
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test
+
+# ============================================
+# FRAMEWORKS SPECIFIC
+# ============================================
+# Next.js
+.next/
+next-env.d.ts
+
+# Nuxt.js
+.nuxt/
+.nitro/
+.output/
+
+# Gatsby
+.cache/
+public/
+
+# SvelteKit
+.svelte-kit/
+
+# Astro
+.astro/
+
+# ============================================
+# PACKAGE MANAGERS
+# ============================================
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# PNPM
+.pnpm-debug.log*
+.pnpm-store/
+
+# ============================================
+# MISCELLANEOUS
+# ============================================
+.bolt
+*.tgz
+.npm
+.node_repl_history
+.lock-wscript
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+.vscode-test
+.yarn-integrity
+typings/
+.grunt
+
+# Sentry
+.sentryclirc
+
+# Storybook
+storybook-static/
+
+# TypeDoc
+docs/
+
+# Backup files
+*.bak
+*.backup
+*.old

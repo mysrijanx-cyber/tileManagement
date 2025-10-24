@@ -2,7 +2,7 @@ import React from 'react';
 import { Heart } from 'lucide-react';
 import { Tile } from '../types';
 import { useAppStore } from '../stores/appStore';
-import { trackTileView } from '../lib/supabase';
+import { trackTileView } from '../lib/firebaseutils';
 
 interface TileCardProps {
   tile: Tile;

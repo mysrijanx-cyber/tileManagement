@@ -1,7 +1,9 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Eye, MousePointer, Calendar, Filter } from 'lucide-react';
 import { useAppStore } from '../stores/appStore';
-import { getTileAnalytics, getMostViewedTiles, getMostTriedTiles } from '../lib/supabase';
+import { getTileAnalytics, getMostViewedTiles, getMostTriedTiles } from '../lib/firebaseutils';
 
 interface AnalyticsData {
   tile_id: string;

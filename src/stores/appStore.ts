@@ -1,3 +1,5 @@
+
+
 import { create } from 'zustand';
 import { Tile, Room, Showroom, TileApplication, UserProfile } from '../types';
 
@@ -27,6 +29,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedTile: null,
   selectedRoom: null,
   appliedTiles: {},
+  // ✅ FIXED: Real authentication only (no hardcoded users)
   currentUser: null,
   isAuthenticated: false,
   favorites: [],

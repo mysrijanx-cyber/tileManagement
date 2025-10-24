@@ -1,3 +1,6 @@
+
+
+// src/utils/domainUtils.ts
 // Domain configuration and utilities
 export interface DomainConfig {
   domain: string;
@@ -66,6 +69,12 @@ export const getCurrentDomainConfig = (): DomainConfig => {
 // Check if user can access current domain
 export const canAccessDomain = (userRole: string | null, domainConfig: DomainConfig): boolean => {
   console.log('🔍 Checking domain access:', { userRole, domainType: domainConfig.userType, domain: domainConfig.domain });
+  
+  // **DEVELOPMENT BYPASS** - Allow all access in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Development mode - allowing all access');
+    return true;
+  }
   
   // Allow access to main customer site for everyone (including unauthenticated)
   if (domainConfig.userType === 'customer') {
