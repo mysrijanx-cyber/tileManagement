@@ -1,4 +1,4 @@
-# 🔗 Connect Supabase to Your Published Site
+<!-- # 🔗 Connect Supabase to Your Published Site
 
 ## 🚨 **Current Issue**
 Your site is published at https://3d-tile-showroom-vis-4j8b.bolt.host but Supabase is not connected because:
@@ -75,4 +75,4 @@ If you encounter issues:
 3. Ensure no typos in environment variables
 4. Test connection in Supabase dashboard first
 
-Once you complete these steps, your published site will be fully functional with database connectivity!
+Once you complete these steps, your published site will be fully functional with database connectivity! -->

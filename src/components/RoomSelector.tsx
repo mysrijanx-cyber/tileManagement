@@ -1,12 +1,11 @@
 import React from 'react';
-// import { Room } from '../types';
-// import { useAppStore } from '../stores/appStore';
+
 
 interface RoomSelectorProps {
   // rooms: Room[];
 }
 
-export const RoomSelector: React.FC<RoomSelectorProps> = ({ rooms }) => {
+export const RoomSelector: React.FC<RoomSelectorProps> = () => {
   // const { selectedRoom, setSelectedRoom } = useAppStore();
 
   return (

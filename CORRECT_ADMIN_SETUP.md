@@ -1,4 +1,4 @@
-# 🔑 Correct Admin Setup - Fix UUID Error
+<!-- # 🔑 Correct Admin Setup - Fix UUID Error
 
 ## 🚨 **The Error Explained**
 The error `invalid input syntax for type uuid: "admin"` means you used the word "admin" instead of the actual UUID from the user you created.
@@ -76,4 +76,4 @@ END $$;
 **URL**: https://3d-tile-showroom-vis-4j8b.bolt.host/admin
 **Credentials**: `admin@tileshowroom.com` / `Admin123!@#`
 
-The key is using the **actual UUID** from the created user, not the word "admin"!
+The key is using the **actual UUID** from the created user, not the word "admin"! -->

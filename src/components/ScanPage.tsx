@@ -1,4 +1,5 @@
  
+
 // import React, { useState, useEffect } from 'react';
 // import { useNavigate } from 'react-router-dom';
 // import { 
@@ -31,7 +32,6 @@
 //   const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
 //   const [scannedTileData, setScannedTileData] = useState<any>(null);
 
-//   // ✅ Worker status hook
 //   useWorkerStatus();
 
 //   useEffect(() => {
@@ -70,311 +70,14 @@
 //     }
 //   };
 
-//   // const handleScanSuccess = async (data: any) => {
-//   //   try {
-//   //     setLoading(true);
-//   //     setError(null);
-//   //     setShowScanner(false);
-
-//   //     console.log('🔍 QR Scan successful:', data);
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 1: Extract Tile ID
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     let tileId: string;
-      
-//   //     if (data.tileId) {
-//   //       tileId = data.tileId;
-//   //     } else if (data.type === 'manual_entry' && data.tileCode) {
-//   //       setError('Manual tile code lookup not implemented yet. Please scan QR code.');
-//   //       return;
-//   //     } else {
-//   //       setError('Invalid QR code format. Please scan a valid tile QR code.');
-//   //       return;
-//   //     }
-
-//   //     console.log('✅ Tile ID extracted:', tileId);
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 2: Fetch Tile Data from Database
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     console.log('📦 Fetching tile data...');
-//   //     const tileData = await getTileById(tileId);
-      
-//   //     if (!tileData) {
-//   //       console.error('❌ Tile not found');
-//   //       setError('Tile not found. Please check the QR code and try again.');
-//   //       return;
-//   //     }
-
-//   //     console.log('✅ Tile found:', tileData.name);
-
-//   //     const sellerId = tileData.sellerId || tileData.seller_id;
-//   //     const showroomId = tileData.showroomId || tileData.showroom_id;
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 3: Track Scan in qr_scans Collection (MAIN TRACKING)
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     console.log('📊 Tracking scan...');
-      
-//   //     try {
-//   //       // ✅ FIXED: Removed || null (causes TypeScript error)
-//   //       // Just use currentUser?.user_id (returns string | undefined)
-//   //       await trackTileScanEnhanced(
-//   //         tileId,
-//   //         sellerId,
-//   //         currentUser?.user_id  // ← This is correct! No || null needed
-//   //       );
-        
-//   //       console.log('✅ Scan tracked in qr_scans collection');
-        
-//   //       // Broadcast event for real-time UI update
-//   //       window.dispatchEvent(new CustomEvent('tile-scanned', { 
-//   //         detail: { 
-//   //           tileId, 
-//   //           sellerId,
-//   //           tileName: tileData.name,
-//   //           timestamp: new Date().toISOString()
-//   //         } 
-//   //       }));
-        
-//   //       console.log('📡 Event sent to analytics dashboard');
-        
-//   //     } catch (trackError: any) {
-//   //       console.error('⚠️ Tracking failed:', trackError);
-//   //       // Don't block user - continue
-//   //     }
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 4: Legacy Analytics Tracking (30s cooldown)
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     const sessionKey = `scan_legacy_${tileId}`;
-//   //     const lastTracked = sessionStorage.getItem(sessionKey);
-      
-//   //     if (!lastTracked || (Date.now() - parseInt(lastTracked)) > 30000) {
-//   //       try {
-//   //         await trackQRScan(tileId, {
-//   //           sellerId: sellerId,
-//   //           showroomId: showroomId,
-//   //           scannedBy: currentUser?.user_id ?? 'anonymous',  // ✅ Use ?? for default value
-//   //           userRole: currentUser?.role ?? 'visitor',
-//   //           scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-//   //         });
-          
-//   //         sessionStorage.setItem(sessionKey, Date.now().toString());
-//   //         console.log('✅ Legacy tracking done');
-          
-//   //       } catch (legacyError) {
-//   //         console.warn('⚠️ Legacy tracking failed:', legacyError);
-//   //       }
-//   //     }
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 5: Track Worker Activity (if user is worker)
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     if (currentUser?.role === 'worker' && currentUser?.user_id) {
-//   //       try {
-//   //         await trackWorkerActivity(
-//   //           currentUser.user_id,
-//   //           'scan',
-//   //           { 
-//   //             tileId: tileId,
-//   //             tileName: tileData.name,
-//   //             sellerId: sellerId
-//   //           }
-//   //         );
-//   //         console.log('✅ Worker activity tracked');
-//   //       } catch (workerError) {
-//   //         console.warn('⚠️ Worker tracking failed:', workerError);
-//   //       }
-//   //     }
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 6: Save to Recent Scans (localStorage)
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     saveRecentScan({
-//   //       id: tileId,
-//   //       tileName: tileData.name,
-//   //       tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
-//   //       scannedAt: new Date().toISOString(),
-//   //       tileId: tileId
-//   //     });
-
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // STEP 7: Show Success and Navigate
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     setSuccess(`✅ Scanned: ${tileData.name}`);
-
-//   //     setTimeout(() => {
-//   //       navigate(`/tile/${tileId}`);
-//   //     }, 1000);
-
-//   //   } catch (err: any) {
-//   //     console.error('❌ Error:', err);
-//   //     setError('Failed to process scan. Please try again.');
-//   //   } finally {
-//   //     setLoading(false);
-//   //   }
-//   // };
-
-//   // const handleScanSuccess = async (data: any) => {
-//   //   try {
-//   //     setLoading(true);
-//   //     setError(null);
-//   //     // ✅ DON'T CLOSE SCANNER YET - let user choose
-//   //     // setShowScanner(false);  // ← REMOVED THIS!
-  
-//   //     console.log('🔍 QR Scan successful:', data);
-  
-//   //     // Extract tile ID
-//   //     let tileId: string;
-      
-//   //     if (data.tileId) {
-//   //       tileId = data.tileId;
-//   //     } else if (data.type === 'manual_entry' && data.tileCode) {
-//   //       setError('Manual tile code lookup not implemented yet.');
-//   //       setLoading(false);
-//   //       return;
-//   //     } else {
-//   //       setError('Invalid QR code format.');
-//   //       setLoading(false);
-//   //       return;
-//   //     }
-  
-//   //     console.log('✅ Tile ID:', tileId);
-  
-//   //     // Fetch tile
-//   //     console.log('📦 Fetching tile...');
-//   //     const tileData = await getTileById(tileId);
-      
-//   //     if (!tileData) {
-//   //       console.error('❌ Tile not found');
-//   //       setError('Tile not found. Try another QR code.');
-//   //       setLoading(false);
-//   //       return;
-//   //     }
-  
-//   //     console.log('✅ Tile found:', tileData.name);
-  
-//   //     const sellerId = tileData.sellerId || tileData.seller_id;
-//   //     const showroomId = tileData.showroomId || tileData.showroom_id;
-  
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // ✅ TRACK SCAN - NO COOLDOWN!
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     console.log('📊 Tracking scan...');
-      
-//   //     try {
-//   //       await trackTileScanEnhanced(
-//   //         tileId,
-//   //         sellerId,
-//   //         currentUser?.user_id
-//   //       );
-        
-//   //       console.log('✅ Scan tracked!');
-        
-//   //       // Send event for real-time update
-//   //       window.dispatchEvent(new CustomEvent('tile-scanned', { 
-//   //         detail: { 
-//   //           tileId, 
-//   //           sellerId,
-//   //           tileName: tileData.name,
-//   //           timestamp: new Date().toISOString()
-//   //         } 
-//   //       }));
-        
-//   //       console.log('📡 Event sent!');
-        
-//   //     } catch (trackError: any) {
-//   //       console.error('⚠️ Tracking failed:', trackError);
-//   //     }
-  
-//   //     // Legacy tracking (with 30s cooldown to prevent spam)
-//   //     const sessionKey = `scan_legacy_${tileId}`;
-//   //     const lastTracked = sessionStorage.getItem(sessionKey);
-      
-//   //     if (!lastTracked || (Date.now() - parseInt(lastTracked)) > 30000) {
-//   //       try {
-//   //         await trackQRScan(tileId, {
-//   //           sellerId: sellerId,
-//   //           showroomId: showroomId,
-//   //           scannedBy: currentUser?.user_id ?? 'anonymous',
-//   //           userRole: currentUser?.role ?? 'visitor',
-//   //           scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-//   //         });
-          
-//   //         sessionStorage.setItem(sessionKey, Date.now().toString());
-//   //       } catch (e) {
-//   //         console.warn('Legacy tracking failed');
-//   //       }
-//   //     }
-  
-//   //     // Worker activity
-//   //     if (currentUser?.role === 'worker' && currentUser?.user_id) {
-//   //       try {
-//   //         await trackWorkerActivity(
-//   //           currentUser.user_id,
-//   //           'scan',
-//   //           { tileId, tileName: tileData.name, sellerId }
-//   //         );
-//   //       } catch (e) {
-//   //         console.warn('Worker tracking failed');
-//   //       }
-//   //     }
-  
-//   //     // Save to recent
-//   //     saveRecentScan({
-//   //       id: tileId,
-//   //       tileName: tileData.name,
-//   //       tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
-//   //       scannedAt: new Date().toISOString(),
-//   //       tileId: tileId
-//   //     });
-  
-//   //     // ═══════════════════════════════════════════════════════════
-//   //     // ✅ SHOW SUCCESS WITH OPTIONS (Don't auto-navigate!)
-//   //     // ═══════════════════════════════════════════════════════════
-      
-//   //     setSuccess(`✅ ${tileData.name} scanned successfully!`);
-      
-//   //     // ✅ CLOSE SCANNER and show options
-//   //     setShowScanner(false);
-      
-//   //     // ✅ Show scan result card with options
-//   //     setScannedTileData({
-//   //       id: tileId,
-//   //       name: tileData.name,
-//   //       image: tileData.imageUrl || tileData.image_url,
-//   //       code: tileData.tileCode || tileData.tile_code,
-//   //       size: tileData.size,
-//   //       price: tileData.price,
-//   //       stock: tileData.stock,
-//   //       inStock: tileData.inStock
-//   //     });
-  
-//   //   } catch (err: any) {
-//   //     console.error('❌ Error:', err);
-//   //     setError('Failed to process scan.');
-//   //     setLoading(false);
-//   //   } finally {
-//   //     setLoading(false);
-//   //   }
-//   // };
 //   const handleScanSuccess = async (data: any) => {
+//     console.log('🎯 ===== SCAN HANDLER CALLED =====');
+//     console.log('📥 Data:', data);
+    
 //     try {
 //       setLoading(true);
 //       setError(null);
-  
-//       console.log('🔍 QR Scan successful:', data);
-  
+
 //       // Extract tile ID
 //       let tileId: string;
       
@@ -389,67 +92,54 @@
 //         setLoading(false);
 //         return;
 //       }
-  
+
 //       console.log('✅ Tile ID:', tileId);
-  
+
 //       // Fetch tile data
-//       console.log('📦 Fetching tile data...');
+//       console.log('📦 Fetching tile...');
 //       const tileData = await getTileById(tileId);
       
 //       if (!tileData) {
 //         console.error('❌ Tile not found');
-//         setError('Tile not found. Try another QR code.');
+//         setError('Tile not found.');
 //         setLoading(false);
 //         return;
 //       }
-  
-//       console.log('✅ Tile found:', tileData.name);
-  
+
+//       console.log('✅ Tile:', tileData.name);
+
 //       const sellerId = tileData.sellerId || tileData.seller_id;
 //       const showroomId = tileData.showroomId || tileData.showroom_id;
-  
+
+//       console.log('👤 Seller:', sellerId);
+
 //       // ═══════════════════════════════════════════════════════════
-//       // ✅ STEP 1: MAIN TRACKING - NO COOLDOWN!
+//       // MAIN TRACKING - NO COOLDOWN
 //       // ═══════════════════════════════════════════════════════════
       
-//       console.log('📊 Tracking scan in qr_scans collection...');
+//       console.log('📊 Tracking in qr_scans...');
       
 //       try {
-//         await trackTileScanEnhanced(
-//           tileId,
-//           sellerId,
-//           currentUser?.user_id
-//         );
+//         await trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id);
+//         console.log('✅ TRACKED IN QR_SCANS!');
         
-//         console.log('✅ Scan tracked in qr_scans collection!');
-        
-//         // Broadcast event for real-time UI update
-//         window.dispatchEvent(new CustomEvent('tile-scanned', { 
+//         // Broadcast event
+//         const event = new CustomEvent('tile-scanned', { 
 //           detail: { 
 //             tileId, 
 //             sellerId,
 //             tileName: tileData.name,
 //             timestamp: new Date().toISOString()
 //           } 
-//         }));
-        
-//         console.log('📡 Event broadcasted to Analytics!');
+//         });
+//         window.dispatchEvent(event);
+//         console.log('✅ EVENT BROADCASTED!');
         
 //       } catch (trackError: any) {
-//         console.error('⚠️ Main tracking failed:', trackError);
-//         // Continue - don't block user
+//         console.error('❌ Main tracking failed:', trackError);
 //       }
-  
-//       // ═══════════════════════════════════════════════════════════
-//       // ✅ STEP 2: LEGACY ANALYTICS - REMOVED COOLDOWN!
-//       // ═══════════════════════════════════════════════════════════
-      
-//       // ✅ REMOVED: No more session cooldown check!
-//       // Old code was:
-//       // const sessionKey = `scan_legacy_${tileId}`;
-//       // if (!lastTracked || (Date.now() - parseInt(lastTracked)) > 30000) { ... }
-      
-//       // ✅ NEW: Track EVERY scan in analytics collection too
+
+//       // Legacy tracking - NO COOLDOWN
 //       try {
 //         await trackQRScan(tileId, {
 //           sellerId: sellerId,
@@ -458,35 +148,22 @@
 //           userRole: currentUser?.role ?? 'visitor',
 //           scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
 //         });
-        
-//         console.log('✅ Legacy analytics tracked!');
-        
-//       } catch (legacyError) {
-//         console.warn('⚠️ Legacy tracking failed:', legacyError);
-//         // Non-critical
+//         console.log('✅ Legacy tracked!');
+//       } catch (e) {
+//         console.warn('⚠️ Legacy tracking failed');
 //       }
-  
-//       // ═══════════════════════════════════════════════════════════
-//       // ✅ STEP 3: WORKER ACTIVITY
-//       // ═══════════════════════════════════════════════════════════
-      
+
+//       // Worker activity
 //       if (currentUser?.role === 'worker' && currentUser?.user_id) {
 //         try {
-//           await trackWorkerActivity(
-//             currentUser.user_id,
-//             'scan',
-//             { tileId, tileName: tileData.name, sellerId }
-//           );
+//           await trackWorkerActivity(currentUser.user_id, 'scan', { tileId, tileName: tileData.name, sellerId });
 //           console.log('✅ Worker activity tracked!');
 //         } catch (e) {
 //           console.warn('⚠️ Worker tracking failed');
 //         }
 //       }
-  
-//       // ═══════════════════════════════════════════════════════════
-//       // ✅ STEP 4: SAVE TO RECENT SCANS
-//       // ═══════════════════════════════════════════════════════════
-      
+
+//       // Save to recent scans
 //       saveRecentScan({
 //         id: tileId,
 //         tileName: tileData.name,
@@ -494,13 +171,10 @@
 //         scannedAt: new Date().toISOString(),
 //         tileId: tileId
 //       });
-  
+
 //       console.log('✅ Saved to recent scans');
-  
-//       // ═══════════════════════════════════════════════════════════
-//       // ✅ STEP 5: SHOW RESULT
-//       // ═══════════════════════════════════════════════════════════
-      
+
+//       // Show result
 //       setSuccess(`✅ ${tileData.name} scanned!`);
 //       setShowScanner(false);
       
@@ -514,42 +188,34 @@
 //         stock: tileData.stock,
 //         inStock: tileData.inStock
 //       });
-  
+
+//       console.log('🎯 ===== SCAN COMPLETED =====');
+
 //     } catch (err: any) {
-//       console.error('❌ Error:', err);
+//       console.error('❌ Scan error:', err);
 //       setError('Failed to process scan.');
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
-  
-  
+
 //   const handleLogout = async () => {
 //     if (window.confirm('Are you sure you want to logout?')) {
 //       try {
-//         // Track logout if worker
 //         if (currentUser?.role === 'worker' && currentUser?.user_id) {
 //           try {
-//             await trackWorkerActivity(
-//               currentUser.user_id,
-//               'logout',
-//               { manual: true }
-//             );
+//             await trackWorkerActivity(currentUser.user_id, 'logout', { manual: true });
 //           } catch (e) {
 //             console.warn('Could not track logout');
 //           }
 //         }
         
 //         await logout();
-        
-//         // Clear data
 //         localStorage.removeItem('worker_recent_scans');
 //         sessionStorage.clear();
-        
 //         navigate('/');
 //       } catch (err) {
 //         console.error('Logout error:', err);
-//         // Force logout
 //         localStorage.clear();
 //         sessionStorage.clear();
 //         window.location.href = '/';
@@ -614,7 +280,7 @@
 //             </div>
 //             <h2 className="text-2xl font-bold text-white mb-2">Scan Tile QR Code</h2>
 //             <p className="text-blue-200">
-//               Point your camera at the QR code on the tile to view in 3D
+//               Point your camera at the QR code on the tile
 //             </p>
 //           </div>
 
@@ -646,93 +312,93 @@
 //               <div className="text-white">Point at QR code</div>
 //             </div>
 //             <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-//               <div className="text-blue-400 mb-2">🏠 Step 3</div>
-//               <div className="text-white">View in 3D room</div>
+//               <div className="text-blue-400 mb-2">✅ Step 3</div>
+//               <div className="text-white">Auto-tracked!</div>
 //             </div>
 //           </div>
 //         </div>
-// {/* ═══════════════════════════════════════════════════════════
-//     SCAN RESULT CARD - Shows after successful scan
-//     ═══════════════════════════════════════════════════════════ */}
-// {scannedTileData && (
-//   <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
-//     <div className="flex items-center gap-3 mb-4">
-//       <CheckCircle className="w-6 h-6 text-green-400" />
-//       <h3 className="text-xl font-bold text-white">Scan Successful!</h3>
-//     </div>
 
-//     <div className="bg-white/5 rounded-xl p-4 mb-4">
-//       <div className="flex items-start gap-4">
-//         <img
-//           src={scannedTileData.image || '/placeholder-tile.png'}
-//           alt={scannedTileData.name}
-//           className="w-24 h-24 object-cover rounded-lg border-2 border-white/20"
-//           onError={(e) => {
-//             (e.target as HTMLImageElement).src = '/placeholder-tile.png';
-//           }}
-//         />
-//         <div className="flex-1">
-//           <h4 className="text-xl font-bold text-white mb-2">
-//             {scannedTileData.name}
-//           </h4>
-//           <div className="grid grid-cols-2 gap-2 text-sm">
-//             <div>
-//               <span className="text-gray-400">Code:</span>
-//               <span className="ml-2 text-white font-medium">{scannedTileData.code}</span>
+//         {/* Scan Result Card */}
+//         {scannedTileData && (
+//           <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
+//             <div className="flex items-center gap-3 mb-4">
+//               <CheckCircle className="w-6 h-6 text-green-400" />
+//               <h3 className="text-xl font-bold text-white">Scan Successful!</h3>
 //             </div>
-//             <div>
-//               <span className="text-gray-400">Size:</span>
-//               <span className="ml-2 text-white font-medium">{scannedTileData.size}</span>
+
+//             <div className="bg-white/5 rounded-xl p-4 mb-4">
+//               <div className="flex items-start gap-4">
+//                 <img
+//                   src={scannedTileData.image || '/placeholder-tile.png'}
+//                   alt={scannedTileData.name}
+//                   className="w-24 h-24 object-cover rounded-lg border-2 border-white/20"
+//                   onError={(e) => {
+//                     (e.target as HTMLImageElement).src = '/placeholder-tile.png';
+//                   }}
+//                 />
+//                 <div className="flex-1">
+//                   <h4 className="text-xl font-bold text-white mb-2">
+//                     {scannedTileData.name}
+//                   </h4>
+//                   <div className="grid grid-cols-2 gap-2 text-sm">
+//                     <div>
+//                       <span className="text-gray-400">Code:</span>
+//                       <span className="ml-2 text-white font-medium">{scannedTileData.code}</span>
+//                     </div>
+//                     <div>
+//                       <span className="text-gray-400">Size:</span>
+//                       <span className="ml-2 text-white font-medium">{scannedTileData.size}</span>
+//                     </div>
+//                     <div>
+//                       <span className="text-gray-400">Price:</span>
+//                       <span className="ml-2 text-white font-medium">₹{scannedTileData.price}</span>
+//                     </div>
+//                     <div>
+//                       <span className="text-gray-400">Stock:</span>
+//                       <span className={`ml-2 font-medium ${
+//                         scannedTileData.inStock ? 'text-green-400' : 'text-red-400'
+//                       }`}>
+//                         {scannedTileData.inStock ? `${scannedTileData.stock} units` : 'Out of Stock'}
+//                       </span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
 //             </div>
-//             <div>
-//               <span className="text-gray-400">Price:</span>
-//               <span className="ml-2 text-white font-medium">₹{scannedTileData.price}</span>
+
+//             {/* Action Buttons */}
+//             <div className="grid grid-cols-2 gap-3">
+//               <button
+//                 onClick={() => {
+//                   console.log('🔄 Scan Another clicked');
+//                   setScannedTileData(null);
+//                   setShowScanner(true);
+//                   console.log('✅ Scanner reopened');
+//                 }}
+//                 className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
+//               >
+//                 <QrCode className="w-5 h-5" />
+//                 Scan Another
+//               </button>
+              
+//               <button
+//                 onClick={() => navigate(`/tile/${scannedTileData.id}`)}
+//                 className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all"
+//               >
+//                 <Camera className="w-5 h-5" />
+//                 View in 3D
+//               </button>
 //             </div>
-//             <div>
-//               <span className="text-gray-400">Stock:</span>
-//               <span className={`ml-2 font-medium ${
-//                 scannedTileData.inStock ? 'text-green-400' : 'text-red-400'
-//               }`}>
-//                 {scannedTileData.inStock ? `${scannedTileData.stock} units` : 'Out of Stock'}
-//               </span>
-//             </div>
+
+//             <button
+//               onClick={() => setScannedTileData(null)}
+//               className="w-full mt-3 text-gray-400 hover:text-white text-sm py-2 transition-colors"
+//             >
+//               Dismiss
+//             </button>
 //           </div>
-//         </div>
-//       </div>
-//     </div>
+//         )}
 
-//     {/* Action Buttons */}
-//     <div className="grid grid-cols-2 gap-3">
-//       <button
-//         onClick={() => {
-//           setScannedTileData(null);
-//           setShowScanner(true);
-//         }}
-//         className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
-//       >
-//         <QrCode className="w-5 h-5" />
-//         Scan Another
-//       </button>
-      
-//       <button
-//         onClick={() => {
-//           navigate(`/tile/${scannedTileData.id}`);
-//         }}
-//         className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all"
-//       >
-//         <Camera className="w-5 h-5" />
-//         View in 3D
-//       </button>
-//     </div>
-
-//     <button
-//       onClick={() => setScannedTileData(null)}
-//       className="w-full mt-3 text-gray-400 hover:text-white text-sm py-2 transition-colors"
-//     >
-//       Dismiss
-//     </button>
-//   </div>
-// )}
 //         {/* Recent Scans */}
 //         {recentScans.length > 0 && (
 //           <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
@@ -796,21 +462,21 @@
 //           </h3>
 //           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
 //             <div>
-//               <h4 className="text-blue-400 font-medium mb-2">🔍 Scanning Process</h4>
+//               <h4 className="text-blue-400 font-medium mb-2">🔍 Scanning</h4>
 //               <ul className="text-gray-300 space-y-1">
-//                 <li>• Find QR code on tile or display</li>
-//                 <li>• Ensure good lighting for scanning</li>
-//                 <li>• Hold phone steady until detected</li>
-//                 <li>• Wait for automatic redirect</li>
+//                 <li>• Find QR code on tile</li>
+//                 <li>• Good lighting required</li>
+//                 <li>• Hold steady until detected</li>
+//                 <li>• ✅ Every scan is tracked!</li>
 //               </ul>
 //             </div>
 //             <div>
 //               <h4 className="text-blue-400 font-medium mb-2">👥 Customer Service</h4>
 //               <ul className="text-gray-300 space-y-1">
-//                 <li>• Show 3D visualization to customer</li>
-//                 <li>• Help select different room types</li>
-//                 <li>• Demonstrate tile combinations</li>
-//                 <li>• Share visualization links</li>
+//                 <li>• Show 3D visualization</li>
+//                 <li>• Help select room types</li>
+//                 <li>• Demonstrate combinations</li>
+//                 <li>• Share links</li>
 //               </ul>
 //             </div>
 //           </div>
@@ -826,13 +492,13 @@
 //       )}
 //     </div>
 //   );
-// };   
+// };  
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   QrCode, LogOut, Camera, AlertCircle, CheckCircle, 
-  Loader, Package, User, RefreshCw 
+  Loader, Package, User, RefreshCw, X, Eye 
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { useAppStore } from '../stores/appStore';
@@ -859,8 +525,21 @@ export const ScanPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
   const [scannedTileData, setScannedTileData] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useWorkerStatus();
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     loadRecentScans();
@@ -991,6 +670,11 @@ export const ScanPage: React.FC = () => {
         }
       }
 
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
+      }
+
       // Save to recent scans
       saveRecentScan({
         id: tileId,
@@ -1028,7 +712,11 @@ export const ScanPage: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    if (window.confirm('Are you sure you want to logout?')) {
+    const confirmMessage = isMobile 
+      ? 'Logout?' 
+      : 'Are you sure you want to logout?';
+      
+    if (window.confirm(confirmMessage)) {
       try {
         if (currentUser?.role === 'worker' && currentUser?.user_id) {
           try {
@@ -1058,56 +746,75 @@ export const ScanPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Header */}
-      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <QrCode className="w-6 h-6 text-white" />
+      <header className="bg-black/30 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <QrCode className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-white font-bold text-xl">Tile Scanner</h1>
-              <p className="text-blue-200 text-sm">
-                Welcome, {currentUser?.full_name || 'Worker'}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-white font-bold text-base sm:text-xl truncate">Tile Scanner</h1>
+              <p className="text-blue-200 text-xs sm:text-sm truncate">
+                {isMobile ? currentUser?.full_name?.split(' ')[0] || 'Worker' : `Welcome, ${currentUser?.full_name || 'Worker'}`}
               </p>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-200 rounded-lg hover:bg-red-600/30 transition-colors border border-red-500/30"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-red-600/20 text-red-200 rounded-lg hover:bg-red-600/30 active:bg-red-600/40 transition-colors border border-red-500/30 text-xs sm:text-sm font-medium touch-manipulation flex-shrink-0"
+            aria-label="Logout"
           >
-            <LogOut className="w-4 h-4" />
-            Logout
+            <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Logout</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
         
         {/* Success/Error Messages */}
         {success && (
-          <div className="bg-green-500/20 border border-green-500/30 text-green-200 px-6 py-4 rounded-lg backdrop-blur-sm flex items-center gap-3">
-            <CheckCircle className="w-6 h-6 flex-shrink-0" />
-            <p className="font-medium">{success}</p>
+          <div className="fixed top-16 sm:top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4 animate-slide-down">
+            <div className="bg-green-500/20 border border-green-500/30 text-green-200 px-4 sm:px-6 py-3 sm:py-4 rounded-lg backdrop-blur-sm flex items-center gap-2 sm:gap-3 shadow-2xl">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+              <p className="font-medium text-sm sm:text-base flex-1">{success}</p>
+              <button 
+                onClick={() => setSuccess(null)} 
+                className="ml-auto touch-manipulation p-1"
+                aria-label="Close message"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-6 py-4 rounded-lg backdrop-blur-sm flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 flex-shrink-0" />
-            <p className="font-medium">{error}</p>
+          <div className="fixed top-16 sm:top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4 animate-slide-down">
+            <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-4 sm:px-6 py-3 sm:py-4 rounded-lg backdrop-blur-sm flex items-center gap-2 sm:gap-3 shadow-2xl">
+              <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+              <p className="font-medium text-sm sm:text-base flex-1">{error}</p>
+              <button 
+                onClick={() => setError(null)} 
+                className="ml-auto touch-manipulation p-1"
+                aria-label="Close message"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Scan Section */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 text-center">
-          <div className="mb-6">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Camera className="w-10 h-10 text-white" />
+        <section className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 p-4 sm:p-6 lg:p-8 text-center">
+          <div className="mb-4 sm:mb-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 transform hover:scale-110 transition-transform">
+              <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Scan Tile QR Code</h2>
-            <p className="text-blue-200">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Scan Tile QR Code</h2>
+            <p className="text-blue-200 text-sm sm:text-base px-4">
               Point your camera at the QR code on the tile
             </p>
           </div>
@@ -1115,75 +822,76 @@ export const ScanPage: React.FC = () => {
           <button
             onClick={() => setShowScanner(true)}
             disabled={loading}
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-xl"
+            className="inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold text-base sm:text-lg hover:from-blue-700 hover:to-purple-700 active:from-blue-800 active:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-xl touch-manipulation"
           >
             {loading ? (
               <>
-                <Loader className="w-6 h-6 animate-spin" />
-                Processing...
+                <Loader className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
+                <span>Processing...</span>
               </>
             ) : (
               <>
-                <QrCode className="w-6 h-6" />
-                Start Scanning
+                <QrCode className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span>Start Scanning</span>
               </>
             )}
           </button>
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <div className="text-blue-400 mb-2">📱 Step 1</div>
+          <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm">
+            <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="text-blue-400 mb-1 sm:mb-2 font-semibold">📱 Step 1</div>
               <div className="text-white">Click "Start Scanning"</div>
             </div>
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <div className="text-blue-400 mb-2">🎯 Step 2</div>
+            <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="text-blue-400 mb-1 sm:mb-2 font-semibold">🎯 Step 2</div>
               <div className="text-white">Point at QR code</div>
             </div>
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <div className="text-blue-400 mb-2">✅ Step 3</div>
+            <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 transition-colors sm:col-span-1 col-span-1">
+              <div className="text-blue-400 mb-1 sm:mb-2 font-semibold">✅ Step 3</div>
               <div className="text-white">Auto-tracked!</div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Scan Result Card */}
         {scannedTileData && (
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <CheckCircle className="w-6 h-6 text-green-400" />
-              <h3 className="text-xl font-bold text-white">Scan Successful!</h3>
+          <section className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 p-4 sm:p-6 animate-slide-down">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 flex-shrink-0" />
+              <h3 className="text-lg sm:text-xl font-bold text-white">Scan Successful!</h3>
             </div>
 
-            <div className="bg-white/5 rounded-xl p-4 mb-4">
-              <div className="flex items-start gap-4">
+            <div className="bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <img
                   src={scannedTileData.image || '/placeholder-tile.png'}
                   alt={scannedTileData.name}
-                  className="w-24 h-24 object-cover rounded-lg border-2 border-white/20"
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-white/20 flex-shrink-0"
+                  loading="lazy"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/placeholder-tile.png';
                   }}
                 />
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-white mb-2">
+                <div className="flex-1 min-w-0 w-full">
+                  <h4 className="text-base sm:text-xl font-bold text-white mb-2 sm:mb-3 break-words">
                     {scannedTileData.name}
                   </h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
                     <div>
-                      <span className="text-gray-400">Code:</span>
-                      <span className="ml-2 text-white font-medium">{scannedTileData.code}</span>
+                      <span className="text-gray-400 block">Code:</span>
+                      <span className="text-white font-medium truncate block">{scannedTileData.code}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Size:</span>
-                      <span className="ml-2 text-white font-medium">{scannedTileData.size}</span>
+                      <span className="text-gray-400 block">Size:</span>
+                      <span className="text-white font-medium truncate block">{scannedTileData.size}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Price:</span>
-                      <span className="ml-2 text-white font-medium">₹{scannedTileData.price}</span>
+                      <span className="text-gray-400 block">Price:</span>
+                      <span className="text-white font-medium truncate block">₹{scannedTileData.price}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Stock:</span>
-                      <span className={`ml-2 font-medium ${
+                      <span className="text-gray-400 block">Stock:</span>
+                      <span className={`font-medium truncate block ${
                         scannedTileData.inStock ? 'text-green-400' : 'text-red-400'
                       }`}>
                         {scannedTileData.inStock ? `${scannedTileData.stock} units` : 'Out of Stock'}
@@ -1195,7 +903,7 @@ export const ScanPage: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <button
                 onClick={() => {
                   console.log('🔄 Scan Another clicked');
@@ -1203,94 +911,102 @@ export const ScanPage: React.FC = () => {
                   setShowScanner(true);
                   console.log('✅ Scanner reopened');
                 }}
-                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all text-sm sm:text-base touch-manipulation"
               >
-                <QrCode className="w-5 h-5" />
+                <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                 Scan Another
               </button>
               
               <button
                 onClick={() => navigate(`/tile/${scannedTileData.id}`)}
-                className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all"
+                className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-green-700 active:bg-green-800 transition-all text-sm sm:text-base touch-manipulation"
               >
-                <Camera className="w-5 h-5" />
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                 View in 3D
               </button>
             </div>
 
             <button
               onClick={() => setScannedTileData(null)}
-              className="w-full mt-3 text-gray-400 hover:text-white text-sm py-2 transition-colors"
+              className="w-full mt-2 sm:mt-3 text-gray-400 hover:text-white text-xs sm:text-sm py-2 transition-colors touch-manipulation"
             >
               Dismiss
             </button>
-          </div>
+          </section>
         )}
 
         {/* Recent Scans */}
         {recentScans.length > 0 && (
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-blue-400" />
-                Recent Scans
+          <section className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                <span>Recent Scans</span>
               </h3>
               <button
                 onClick={() => {
-                  setRecentScans([]);
-                  localStorage.removeItem('worker_recent_scans');
+                  if (window.confirm('Clear all recent scans?')) {
+                    setRecentScans([]);
+                    localStorage.removeItem('worker_recent_scans');
+                  }
                 }}
-                className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
+                className="text-gray-400 hover:text-white text-xs sm:text-sm flex items-center gap-1 touch-manipulation p-2 -mr-2 rounded-lg hover:bg-white/5"
+                aria-label="Clear recent scans"
               >
-                <RefreshCw className="w-4 h-4" />
-                Clear
+                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Clear</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {recentScans.map((scan) => (
-                <div
+                <button
                   key={scan.id}
                   onClick={() => openRecentScan(scan.tileId)}
-                  className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group"
+                  className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 active:bg-white/15 transition-colors group text-left touch-manipulation"
+                  aria-label={`View ${scan.tileName}`}
                 >
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <img
                       src={scan.tileImage}
                       alt={scan.tileName}
-                      className="w-12 h-12 object-cover rounded-lg"
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0"
+                      loading="lazy"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder-tile.png';
                       }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate group-hover:text-blue-200">
+                      <p className="text-white font-medium truncate group-hover:text-blue-200 text-sm sm:text-base transition-colors">
                         {scan.tileName}
                       </p>
-                      <p className="text-gray-400 text-sm">
-                        {new Date(scan.scannedAt).toLocaleTimeString()}
+                      <p className="text-gray-400 text-xs sm:text-sm">
+                        {new Date(scan.scannedAt).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
                       </p>
                     </div>
                   </div>
-                  <div className="text-blue-400 text-sm flex items-center gap-1">
+                  <div className="text-blue-400 text-xs sm:text-sm flex items-center gap-1">
                     <QrCode className="w-3 h-3" />
                     Tap to view again
                   </div>
-                </div>
+                </button>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
         {/* Instructions */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-400" />
-            Worker Instructions
+        <section className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl border border-white/10 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+            <span>Worker Instructions</span>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <div>
-              <h4 className="text-blue-400 font-medium mb-2">🔍 Scanning</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm">
+            <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10">
+              <h4 className="text-blue-400 font-medium mb-2 text-sm sm:text-base">🔍 Scanning</h4>
               <ul className="text-gray-300 space-y-1">
                 <li>• Find QR code on tile</li>
                 <li>• Good lighting required</li>
@@ -1298,8 +1014,8 @@ export const ScanPage: React.FC = () => {
                 <li>• ✅ Every scan is tracked!</li>
               </ul>
             </div>
-            <div>
-              <h4 className="text-blue-400 font-medium mb-2">👥 Customer Service</h4>
+            <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10">
+              <h4 className="text-blue-400 font-medium mb-2 text-sm sm:text-base">👥 Customer Service</h4>
               <ul className="text-gray-300 space-y-1">
                 <li>• Show 3D visualization</li>
                 <li>• Help select room types</li>
@@ -1308,8 +1024,17 @@ export const ScanPage: React.FC = () => {
               </ul>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        {/* Additional Info - Mobile Only */}
+        {isMobile && (
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-3 border border-blue-500/30 text-center">
+            <p className="text-blue-200 text-xs">
+              💡 Rotate your device for better scanning experience
+            </p>
+          </div>
+        )}
+      </main>
 
       {/* QR Scanner Modal */}
       {showScanner && (

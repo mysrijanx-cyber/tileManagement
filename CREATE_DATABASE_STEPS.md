@@ -1,4 +1,4 @@
-# 🚀 Step-by-Step: Create Your Database Right Now
+<!-- # 🚀 Step-by-Step: Create Your Database Right Now
 
 ## 📋 **Follow These Exact Steps**
 
@@ -92,4 +92,4 @@ Common issues and solutions:
 - **"Table not found"**: Check if all migrations ran successfully
 - **"Connection error"**: Verify your credentials are copied correctly
 
-**Total time needed: About 15 minutes**
+**Total time needed: About 15 minutes** -->

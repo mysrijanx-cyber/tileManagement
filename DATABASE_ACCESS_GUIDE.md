@@ -1,4 +1,4 @@
-# 🗄️ Complete Database Access Guide
+<!-- # 🗄️ Complete Database Access Guide
 
 ## 📍 **Where Your Database is Stored**
 
@@ -232,4 +232,4 @@ To access your specific database:
 3. Use the credentials in your applications
 4. Access via dashboard or API
 
-Your data is stored securely in Supabase's PostgreSQL cloud database with automatic backups and scaling!
+Your data is stored securely in Supabase's PostgreSQL cloud database with automatic backups and scaling! -->
