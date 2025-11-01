@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Camera, Scan } from 'lucide-react';
+import {  Scan } from 'lucide-react';
 import { QRScanner } from './QRScanner';
 import { useNavigate } from 'react-router-dom';
 

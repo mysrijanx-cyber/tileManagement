@@ -9,7 +9,6 @@ import {
   reauthenticateWithCredential, 
   updatePassword ,
   sendPasswordResetEmail,
-  
 } from 'firebase/auth';
 import { 
   initializeApp,
@@ -31,12 +30,56 @@ import {
   addDoc,
   orderBy,
   limit, 
-  Timestamp,
   writeBatch
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile, TileSeller } from '../types';
 
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ STEP 1: ADD THIS AFTER ALL IMPORTS (Around line 50-60)
+// Copy-paste exactly as is - don't change anything else
+// ═══════════════════════════════════════════════════════════════
+
+interface TileData {
+  id: string;
+  name?: string;
+  imageUrl?: string;
+  image_url?: string;
+  category?: string;
+  size?: string;
+  price?: number;
+  stock?: number;
+  inStock?: boolean;
+  tileCode?: string;
+  tile_code?: string;
+  qrCode?: string;
+  qr_code?: string;
+  sellerId?: string;
+  [key: string]: any;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ TILE VIEW ANALYTICS INTERFACES
+// ═══════════════════════════════════════════════════════════════
+
+interface TileViewAnalytics {
+  id: string;
+  name: string;
+  imageUrl: string;
+  category: string;
+  size: string;
+  price: number;
+  viewCount: number;
+  lastViewed?: string;
+}
+
+interface TileWithAnalytics extends TileData {
+  viewCount?: number;
+  applyCount?: number;
+  lastViewed?: string;
+  lastApplied?: string;
+}
 // ═══════════════════════════════════════════════════════════════
 // ✅ CONFIGURATION & DEBUG
 // ═══════════════════════════════════════════════════════════════
@@ -1638,12 +1681,19 @@ export const getMostViewedTiles = async (showroomId: string, limitCount = 10): P
         viewCount: count
       }));
 
+    // const tilesWithDetails = await Promise.all(
+    //   sortedTiles.map(async ({ tileId, viewCount }) => {
+    //     const tile = await getTileById(tileId);
+    //     return tile ? { ...tile, viewCount } : null;
+    //   })
+    // ); 
+
     const tilesWithDetails = await Promise.all(
-      sortedTiles.map(async ({ tileId, viewCount }) => {
-        const tile = await getTileById(tileId);
-        return tile ? { ...tile, viewCount } : null;
-      })
-    );
+  sortedTiles.map(async ({ tileId, viewCount }) => {
+    const tile = await getTileById(tileId) as any // ✅ Add type assertion
+    return tile ? { ...tile, viewCount } : null;
+  })
+);
 
     return tilesWithDetails.filter(Boolean);
   } catch (error) {
@@ -1682,12 +1732,19 @@ export const getMostTriedTiles = async (showroomId: string, limitCount = 10): Pr
         applyCount: count
       }));
 
+    // const tilesWithDetails = await Promise.all(
+    //   sortedTiles.map(async ({ tileId, applyCount }) => {
+    //     const tile = await getTileById(tileId);
+    //     return tile ? { ...tile, applyCount } : null;
+    //   })
+    // ); 
+
     const tilesWithDetails = await Promise.all(
-      sortedTiles.map(async ({ tileId, applyCount }) => {
-        const tile = await getTileById(tileId);
-        return tile ? { ...tile, applyCount } : null;
-      })
-    );
+  sortedTiles.map(async ({ tileId, applyCount }) => {
+    const tile = await getTileById(tileId) as any // ✅ Add type assertion
+    return tile ? { ...tile, applyCount } : null;
+  })
+);
 
     return tilesWithDetails.filter(Boolean);
   } catch (error) {
@@ -2491,8 +2548,10 @@ export const uploadTileWithImage = async (
   tileData: any,
   imageFile?: File,
   textureFile?: File,
-  onProgress?: (progress: number) => void
-): Promise<any> => {
+  onProgress?: (progress: number) => void 
+): Promise<any> => { 
+
+
   try {
     console.log('📸 uploadTileWithImage called - use cloudinaryUtils for image upload');
     return await uploadTile(tileData);
@@ -2606,122 +2665,509 @@ export const getSellerAnalyticsOverview = async (sellerId: string): Promise<any>
 /**
  * Get top viewed tiles for a seller
  */
+// export const getSellerTopViewedTiles = async (
+//   sellerId: string, 
+//   limitCount: number = 5
+// ): Promise<any[]> => {
+//   try {
+//     console.log('📊 Fetching top viewed tiles for seller:', sellerId);
+
+//     // Get seller's tiles
+//     const tilesQuery = query(
+//       collection(db, 'tiles'),
+//       where('sellerId', '==', sellerId)
+//     );
+//     const tilesSnapshot = await getDocs(tilesQuery);
+//     const tiles = tilesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+//     const tileIds = tiles.map(t => t.id);
+
+//     if (tileIds.length === 0) {
+//       return [];
+//     }
+
+//     // Get all analytics
+//     const analyticsSnapshot = await getDocs(collection(db, 'analytics'));
+    
+//     // Count views per tile
+//     const viewCounts: { [tileId: string]: number } = {};
+//     analyticsSnapshot.docs.forEach(doc => {
+//       const data = doc.data();
+//       if (data.action_type === 'view' && tileIds.includes(data.tile_id)) {
+//         viewCounts[data.tile_id] = (viewCounts[data.tile_id] || 0) + 1;
+//       }
+//     });
+
+//     // Sort and get top tiles 
+//     const sortedTiles = Object.entries(viewCounts)
+//       .sort(([, a], [, b]) => b - a)
+//       .slice(0, limitCount)
+//       .map(([tileId, viewCount]) => {
+//         const tile = tiles.find(t => t.id === tileId);
+//         return {
+//           id: tileId,
+//           name: tile?.name || 'Unknown',
+//           imageUrl: tile?.imageUrl || '',
+//           category: tile?.category || '',
+//           size: tile?.size || '',
+//           price: tile?.price || 0,
+//           viewCount 
+//         };
+//       });
+//     console.log('✅ Top viewed tiles:', sortedTiles.length);
+//     return sortedTiles;
+//   } catch (error) {
+//     console.error('❌ Error fetching top viewed tiles:', error);
+//     return [];
+//   }
+// };
+
+
+/**
+ * Get top viewed tiles for seller with analytics
+ * PRODUCTION v2.0 - Optimized & Type-Safe
+ * 
+ * @param sellerId - Seller's user ID
+ * @param limitCount - Number of top tiles to return (default 5, max 20)
+ * @returns Array of top viewed tiles with analytics data
+ * 
+ * @example
+ * const topTiles = await getSellerTopViewedTiles('seller123', 10);
+ * // Returns: [{ id, name, imageUrl, viewCount, ... }]
+ */
 export const getSellerTopViewedTiles = async (
   sellerId: string, 
   limitCount: number = 5
-): Promise<any[]> => {
-  try {
-    console.log('📊 Fetching top viewed tiles for seller:', sellerId);
+): Promise<TileViewAnalytics[]> => {
+  
+  // ═══════════════════════════════════════════════════════════
+  // VALIDATION
+  // ═══════════════════════════════════════════════════════════
+  
+  if (!sellerId?.trim()) {
+    console.error('❌ Invalid sellerId provided');
+    return [];
+  }
 
-    // Get seller's tiles
+  // Prevent excessive queries
+  const safeLimit = Math.min(Math.max(limitCount, 1), 20);
+  
+  try {
+    console.log('📊 Fetching top viewed tiles for seller:', sellerId, '| Limit:', safeLimit);
+    const startTime = Date.now();
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 1: FETCH SELLER'S TILES
+    // ═══════════════════════════════════════════════════════════
+    
     const tilesQuery = query(
       collection(db, 'tiles'),
       where('sellerId', '==', sellerId)
     );
+    
     const tilesSnapshot = await getDocs(tilesQuery);
-    const tiles = tilesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const tileIds = tiles.map(t => t.id);
-
-    if (tileIds.length === 0) {
+    
+    if (tilesSnapshot.empty) {
+      console.log('ℹ️ No tiles found for seller');
       return [];
     }
 
-    // Get all analytics
-    const analyticsSnapshot = await getDocs(collection(db, 'analytics'));
+    // ✅ PRODUCTION: Properly typed tiles array
+    const tiles: TileData[] = tilesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name || 'Untitled Tile',
+        imageUrl: data.imageUrl || data.image_url || '',
+        category: data.category || 'both',
+        size: data.size || 'N/A',
+        price: typeof data.price === 'number' ? data.price : 0,
+        stock: typeof data.stock === 'number' ? data.stock : 0,
+        inStock: data.inStock ?? true,
+        tileCode: data.tileCode || data.tile_code || '',
+        qrCode: data.qrCode || data.qr_code || '',
+        sellerId: data.sellerId || sellerId,
+        ...data
+      } as TileData;
+    });
     
-    // Count views per tile
-    const viewCounts: { [tileId: string]: number } = {};
+    const tileIds = tiles.map(t => t.id);
+    console.log(`✅ Found ${tiles.length} tiles`);
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 2: FETCH ANALYTICS DATA
+    // ═══════════════════════════════════════════════════════════
+    
+    // ✅ PRODUCTION: Query only relevant analytics
+    const analyticsQuery = query(
+      collection(db, 'analytics'),
+      where('action_type', '==', 'view'),
+      where('showroom_id', '==', sellerId) // Filter by seller first (indexed)
+    );
+    
+    const analyticsSnapshot = await getDocs(analyticsQuery);
+    console.log(`✅ Found ${analyticsSnapshot.size} analytics records`);
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 3: AGGREGATE VIEW COUNTS
+    // ═══════════════════════════════════════════════════════════
+    
+    interface ViewData {
+      count: number;
+      lastViewed: string | null;
+    }
+    
+    const viewCounts: Map<string, ViewData> = new Map();
+    
     analyticsSnapshot.docs.forEach(doc => {
       const data = doc.data();
-      if (data.action_type === 'view' && tileIds.includes(data.tile_id)) {
-        viewCounts[data.tile_id] = (viewCounts[data.tile_id] || 0) + 1;
+      const tileId = data.tile_id;
+      
+      // Only count if tile belongs to this seller
+      if (!tileIds.includes(tileId)) return;
+      
+      const existing = viewCounts.get(tileId);
+      const viewTime = data.timestamp || new Date().toISOString();
+      
+      if (!existing) {
+        viewCounts.set(tileId, {
+          count: 1,
+          lastViewed: viewTime
+        });
+      } else {
+        existing.count++;
+        // Track most recent view
+        if (!existing.lastViewed || viewTime > existing.lastViewed) {
+          existing.lastViewed = viewTime;
+        }
       }
     });
 
-    // Sort and get top tiles
-    const sortedTiles = Object.entries(viewCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, limitCount)
-      .map(([tileId, viewCount]) => {
-        const tile = tiles.find(t => t.id === tileId);
-        return {
-          id: tileId,
-          name: tile?.name || 'Unknown',
-          imageUrl: tile?.imageUrl || '',
-          category: tile?.category || '',
-          size: tile?.size || '',
-          price: tile?.price || 0,
-          viewCount
-        };
-      });
+    console.log(`✅ Processed views for ${viewCounts.size} tiles`);
 
-    console.log('✅ Top viewed tiles:', sortedTiles.length);
+    // ═══════════════════════════════════════════════════════════
+    // STEP 4: CREATE SORTED RESULTS
+    // ═══════════════════════════════════════════════════════════
+    
+        // ═══════════════════════════════════════════════════════════
+    // STEP 4: CREATE SORTED RESULTS
+    // ═══════════════════════════════════════════════════════════
+    
+    if (viewCounts.size === 0) {
+      console.log('ℹ️ No view analytics found for these tiles');
+      return [];
+    }
+
+    const sortedTiles: TileViewAnalytics[] = Array.from(viewCounts.entries())
+      .sort(([, a], [, b]) => b.count - a.count) // Sort by view count descending
+      .slice(0, safeLimit) // Take top N
+      .map(([tileId, viewData]) => {
+        const tile = tiles.find(t => t.id === tileId);
+        
+        if (!tile) {
+          console.warn(`⚠️ Tile ${tileId} not found in tiles array`);
+          return null;
+        }
+        
+        // ✅ FIX: Return with all required fields
+        const result: TileViewAnalytics = {
+          id: tileId,
+          name: tile.name || 'Unknown Tile',
+          imageUrl: tile.imageUrl || '',
+          category: tile.category || 'both',
+          size: tile.size || 'N/A',
+          price: tile.price || 0,
+          viewCount: viewData.count
+        };
+        
+        // ✅ FIX: Only add lastViewed if it exists
+        if (viewData.lastViewed) {
+          result.lastViewed = viewData.lastViewed;
+        }
+        
+        return result;
+      })
+      .filter((tile): tile is TileViewAnalytics => tile !== null); // ✅ FIX: Proper type guard
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 5: LOGGING & RETURN
+    // ═══════════════════════════════════════════════════════════
+    
+    const duration = Date.now() - startTime;
+    console.log(`✅ Top ${sortedTiles.length} viewed tiles retrieved in ${duration}ms`);
+    
+    if (sortedTiles.length > 0) {
+      console.log(`📊 Top tile: ${sortedTiles[0].name} (${sortedTiles[0].viewCount} views)`);
+    }
+
     return sortedTiles;
-  } catch (error) {
-    console.error('❌ Error fetching top viewed tiles:', error);
+
+  } catch (error: any) {
+    console.error('❌ Error fetching top viewed tiles:', {
+      sellerId,
+      error: error.message,
+      code: error.code
+    });
+    
+    // ✅ PRODUCTION: Log error for monitoring
+    try {
+      await addDoc(collection(db, 'errorLogs'), {
+        function: 'getSellerTopViewedTiles',
+        seller_id: sellerId,
+        error_message: error.message,
+        error_code: error.code || 'unknown',
+        timestamp: new Date().toISOString()
+      });
+    } catch (logError) {
+      console.warn('⚠️ Could not log error:', logError);
+    }
+    
     return [];
   }
 };
-
 /**
  * Get top QR scanned tiles for a seller
+ */
+// export const getSellerTopQRScannedTiles = async (
+//   sellerId: string,
+//   limitCount: number = 5
+// ): Promise<any[]> => {
+//   try {
+//     console.log('📱 Fetching top QR scanned tiles for seller:', sellerId);
+
+//     // Get seller's tiles
+//     const tilesQuery = query(
+//       collection(db, 'tiles'),
+//       where('sellerId', '==', sellerId)
+//     );
+//     const tilesSnapshot = await getDocs(tilesQuery);
+//     const tiles = tilesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+//     const tileIds = tiles.map(t => t.id);
+
+//     if (tileIds.length === 0) {
+//       return [];
+//     }
+
+//     // Get all QR scans
+//     const qrScansSnapshot = await getDocs(collection(db, 'qr_scans'));
+    
+//     // Count scans per tile
+//     const scanCounts: { [tileId: string]: number } = {};
+//     qrScansSnapshot.docs.forEach(doc => {
+//       const data = doc.data();
+//       if (tileIds.includes(data.tileId)) {
+//         scanCounts[data.tileId] = (scanCounts[data.tileId] || 0) + 1;
+//       }
+//     });
+
+//     // Sort and get top tiles
+//     const sortedTiles = Object.entries(scanCounts)
+//       .sort(([, a], [, b]) => b - a)
+//       .slice(0, limitCount)
+//       .map(([tileId, scanCount]) => {
+//         const tile = tiles.find(t => t.id === tileId);
+//         return {
+//           id: tileId,
+//           name: tile?.name || 'Unknown',
+//           imageUrl: tile?.imageUrl || '',
+//           category: tile?.category || '',
+//           size: tile?.size || '',
+//           price: tile?.price || 0,
+//           scanCount
+//         };
+//       });
+
+//     console.log('✅ Top QR scanned tiles:', sortedTiles.length);
+//     return sortedTiles;
+//   } catch (error) {
+//     console.error('❌ Error fetching top QR scanned tiles:', error);
+//     return [];
+//   }
+// };
+
+
+
+/**
+ * Get top QR scanned tiles for seller
+ * PRODUCTION v2.0 - Optimized & Type-Safe
+ * 
+ * @param sellerId - Seller's user ID
+ * @param limitCount - Number of top tiles to return (default 5, max 20)
+ * @returns Array of top scanned tiles with scan data
  */
 export const getSellerTopQRScannedTiles = async (
   sellerId: string,
   limitCount: number = 5
-): Promise<any[]> => {
+): Promise<Array<{
+  id: string;
+  name: string;
+  imageUrl: string;
+  category: string;
+  size: string;
+  price: number;
+  scanCount: number;
+  lastScanned?: string;
+}>> => {
+  
+  if (!sellerId?.trim()) {
+    console.error('❌ Invalid sellerId provided');
+    return [];
+  }
+
+  const safeLimit = Math.min(Math.max(limitCount, 1), 20);
+  
   try {
     console.log('📱 Fetching top QR scanned tiles for seller:', sellerId);
+    const startTime = Date.now();
 
-    // Get seller's tiles
+    // ═══════════════════════════════════════════════════════════
+    // STEP 1: FETCH SELLER'S TILES
+    // ═══════════════════════════════════════════════════════════
+    
     const tilesQuery = query(
       collection(db, 'tiles'),
       where('sellerId', '==', sellerId)
     );
     const tilesSnapshot = await getDocs(tilesQuery);
-    const tiles = tilesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const tileIds = tiles.map(t => t.id);
-
-    if (tileIds.length === 0) {
+    
+    if (tilesSnapshot.empty) {
+      console.log('ℹ️ No tiles found for seller');
       return [];
     }
 
-    // Get all QR scans
-    const qrScansSnapshot = await getDocs(collection(db, 'qr_scans'));
-    
-    // Count scans per tile
-    const scanCounts: { [tileId: string]: number } = {};
-    qrScansSnapshot.docs.forEach(doc => {
+    const tiles: TileData[] = tilesSnapshot.docs.map(doc => {
       const data = doc.data();
-      if (tileIds.includes(data.tileId)) {
-        scanCounts[data.tileId] = (scanCounts[data.tileId] || 0) + 1;
+      return {
+        id: doc.id,
+        name: data.name || 'Untitled Tile',
+        imageUrl: data.imageUrl || data.image_url || '',
+        category: data.category || 'both',
+        size: data.size || 'N/A',
+        price: typeof data.price === 'number' ? data.price : 0,
+        stock: typeof data.stock === 'number' ? data.stock : 0,
+        inStock: data.inStock ?? true,
+        tileCode: data.tileCode || data.tile_code || '',
+        qrCode: data.qrCode || data.qr_code || '',
+        sellerId: data.sellerId || sellerId,
+        ...data
+      } as TileData;
+    });
+    
+    const tileIds = tiles.map(t => t.id);
+    console.log(`✅ Found ${tiles.length} tiles`);
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 2: FETCH QR SCANS (WITH SELLERID FILTER)
+    // ═══════════════════════════════════════════════════════════
+    
+    let allScans: any[] = [];
+    const batchSize = 10;
+    
+    for (let i = 0; i < tileIds.length; i += batchSize) {
+      const batch = tileIds.slice(i, i + batchSize);
+      
+      const scansQuery = query(
+        collection(db, 'qr_scans'),
+        where('sellerId', '==', sellerId),
+        where('tileId', 'in', batch)
+      );
+      
+      try {
+        const scansSnapshot = await getDocs(scansQuery);
+        const batchScans = scansSnapshot.docs.map(doc => doc.data());
+        allScans = [...allScans, ...batchScans];
+      } catch (queryError: any) {
+        console.warn(`⚠️ Batch ${i / batchSize + 1} query failed:`, queryError.message);
+      }
+    }
+
+    console.log(`✅ Found ${allScans.length} QR scans`);
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 3: AGGREGATE SCAN COUNTS
+    // ═══════════════════════════════════════════════════════════
+    
+    interface ScanData {
+      count: number;
+      lastScanned: string | null;
+    }
+    
+    const scanCounts: Map<string, ScanData> = new Map();
+    
+    allScans.forEach(scan => {
+      const tileId = scan.tileId;
+      const scanTime = scan.scannedAt || scan.scanned_at;
+      
+      const existing = scanCounts.get(tileId);
+      
+      if (!existing) {
+        scanCounts.set(tileId, {
+          count: 1,
+          lastScanned: scanTime || null
+        });
+      } else {
+        existing.count++;
+        if (scanTime && (!existing.lastScanned || scanTime > existing.lastScanned)) {
+          existing.lastScanned = scanTime;
+        }
       }
     });
 
-    // Sort and get top tiles
-    const sortedTiles = Object.entries(scanCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, limitCount)
-      .map(([tileId, scanCount]) => {
+    if (scanCounts.size === 0) {
+      console.log('ℹ️ No QR scans found');
+      return [];
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 4: CREATE SORTED RESULTS
+    // ═══════════════════════════════════════════════════════════
+    
+    const sortedTiles = Array.from(scanCounts.entries())
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, safeLimit)
+      .map(([tileId, scanData]) => {
         const tile = tiles.find(t => t.id === tileId);
+        
+        if (!tile) {
+          console.warn(`⚠️ Tile ${tileId} not found`);
+          return null;
+        }
+        
         return {
           id: tileId,
-          name: tile?.name || 'Unknown',
-          imageUrl: tile?.imageUrl || '',
-          category: tile?.category || '',
-          size: tile?.size || '',
-          price: tile?.price || 0,
-          scanCount
+          name: tile.name || 'Unknown Tile',
+          imageUrl: tile.imageUrl || '',
+          category: tile.category || 'both',
+          size: tile.size || 'N/A',
+          price: tile.price || 0,
+          scanCount: scanData.count,
+          lastScanned: scanData.lastScanned || undefined
         };
-      });
+      })
+      .filter((tile): tile is NonNullable<typeof tile> => tile !== null);
 
-    console.log('✅ Top QR scanned tiles:', sortedTiles.length);
+    const duration = Date.now() - startTime;
+    console.log(`✅ Top ${sortedTiles.length} scanned tiles retrieved in ${duration}ms`);
+
     return sortedTiles;
-  } catch (error) {
-    console.error('❌ Error fetching top QR scanned tiles:', error);
+
+  } catch (error: any) {
+    console.error('❌ Error fetching top scanned tiles:', error);
+    
+    try {
+      await addDoc(collection(db, 'errorLogs'), {
+        function: 'getSellerTopQRScannedTiles',
+        seller_id: sellerId,
+        error_message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    } catch (logError) {
+      console.warn('⚠️ Could not log error:', logError);
+    }
+    
     return [];
   }
 };
+
 
 /**
  * Ensure seller has user profile (required for worker creation)
@@ -2966,204 +3412,7 @@ export const generateWorkerPassword = (): string => {
  * @param workerEmail - Worker's email
  * @returns Worker details with generated password
  */
-// export const createWorkerAccount = async (
-//   sellerEmail: string,
-//   workerEmail: string
-// ): Promise<{
-//   success: boolean;
-//   workerId?: string;
-//   workerEmail?: string;
-//   generatedPassword?: string;
-//   error?: string;
-// }> => {
-//   try {
-//     console.log('🔄 Creating worker account...');
-//     console.log('Seller:', sellerEmail);
-//     console.log('Worker email:', workerEmail);
 
-//     // Step 1: Get current authenticated seller
-//     const currentUser = auth.currentUser;
-//     if (!currentUser) {
-//       throw new Error('No authenticated user. Please log in.');
-//     }
-
-//     if (currentUser.email !== sellerEmail) {
-//       throw new Error('Email mismatch. Please log in with correct seller account.');
-//     }
-
-//     // Step 2: Get seller profile
-//     const sellerQuery = query(
-//       collection(db, 'sellers'),
-//       where('email', '==', sellerEmail)
-//     );
-//     const sellerSnapshot = await getDocs(sellerQuery);
-
-//     if (sellerSnapshot.empty) {
-//       throw new Error('Seller profile not found.');
-//     }
-
-//     const sellerDoc = sellerSnapshot.docs[0];
-//     const sellerData = sellerDoc.data();
-//     const sellerId = currentUser.uid;
-
-//     // Step 3: Check if seller already has a worker
-//     if (sellerData.worker_id) {
-//       throw new Error('You already have a worker. Please delete the existing worker first.');
-//     }
-
-//     // Step 4: Validate worker email
-//     if (!validateEmail(workerEmail)) {
-//       throw new Error('Invalid email format.');
-//     }
-
-//     // Step 5: Check if worker email already exists
-//     const existingUserQuery = query(
-//       collection(db, 'users'),
-//       where('email', '==', workerEmail)
-//     );
-//     const existingUserSnapshot = await getDocs(existingUserQuery);
-
-//     if (!existingUserSnapshot.empty) {
-//       throw new Error('Email already in use. Please use a different email.');
-//     }
-
-//     // Step 6: Generate secure password
-//     const generatedPassword = generateWorkerPassword();
-//     console.log('✅ Password generated');
-
-//     // Step 7: Create Firebase Auth user (using secondary app)
-//     console.log('🔄 Creating Firebase Auth account...');
-    
-//     const secondaryApp = initializeApp(
-//       {
-//         apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-//         authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-//         projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-//         storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-//         messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-//         appId: import.meta.env.VITE_FIREBASE_APP_ID
-//       },
-//       `secondary-worker-${Date.now()}`
-//     );
-
-//     const secondaryAuth = getAuth(secondaryApp);
-//     let workerCredential;
-
-//     try {
-//       workerCredential = await createUserWithEmailAndPassword(
-//         secondaryAuth,
-//         workerEmail,
-//         generatedPassword
-//       );
-//       console.log('✅ Firebase Auth account created:', workerCredential.user.uid);
-//     } catch (authError: any) {
-//       console.error('❌ Firebase Auth error:', authError);
-//       await deleteApp(secondaryApp);
-//       throw new Error(`Failed to create worker account: ${authError.message}`);
-//     }
-
-//     const workerId = workerCredential.user.uid;
-
-//     // Step 8: Sign out from secondary auth and cleanup
-//     await firebaseSignOut(secondaryAuth);
-//     await deleteApp(secondaryApp);
-//     console.log('✅ Secondary auth cleaned up');
-
-//     // Step 9: Verify main seller session still active
-//     if (auth.currentUser?.uid !== currentUser.uid) {
-//       throw new Error('Seller session lost during worker creation');
-//     }
-
-//     // Step 10: Create worker user profile
-//     const workerProfile: Partial<UserProfile> = {
-//       id: workerId,
-//       user_id: workerId,
-//       email: workerEmail,
-//       full_name: `Worker (${sellerData.business_name || 'Showroom'})`,
-//       role: 'worker',
-//       seller_id: sellerId,
-//       is_active: true,
-//       account_status: 'active',
-//       created_at: new Date().toISOString(),
-//       updated_at: new Date().toISOString(),
-//       created_by: sellerId,
-//       onboarding_completed: true,
-//       permissions: []
-//     };
-
-//     await setDoc(doc(db, 'users', workerId), workerProfile);
-//     console.log('✅ Worker user profile created');
-
-//     // Step 11: Update seller document
-//     await updateDoc(doc(db, 'sellers', sellerDoc.id), {
-//       worker_id: workerId,
-//       worker_email: workerEmail,
-//       worker_created_at: new Date().toISOString(),
-//       updated_at: new Date().toISOString()
-//     });
-//     console.log('✅ Seller document updated');
-
-//     // Step 12: Store temporary password (expires in 24 hours)
-//     const expiresAt = new Date();
-//     expiresAt.setHours(expiresAt.getHours() + 24);
-
-//     await setDoc(doc(db, 'worker_credentials', workerId), {
-//       worker_id: workerId,
-//       seller_id: sellerId,
-//       generated_password: generatedPassword,
-//       created_at: new Date().toISOString(),
-//       viewed: false,
-//       expires_at: expiresAt.toISOString()
-//     });
-//     console.log('✅ Temporary password stored');
-
-//     // Step 13: Log activity
-//     await addDoc(collection(db, 'adminLogs'), {
-//       action: 'worker_account_created',
-//       seller_id: sellerId,
-//       seller_email: sellerEmail,
-//       worker_id: workerId,
-//       worker_email: workerEmail,
-//       timestamp: new Date().toISOString(),
-//       success: true
-//     });
-
-//     console.log('🎉 Worker account created successfully');
-
-//     return {
-//       success: true,
-//       workerId,
-//       workerEmail,
-//       generatedPassword
-//     };
-
-//   } catch (error: any) {
-//     console.error('❌ Error creating worker account:', error);
-
-//     // Log failure
-//     try {
-//       const currentUser = auth.currentUser;
-//       if (currentUser) {
-//         await addDoc(collection(db, 'adminLogs'), {
-//           action: 'worker_account_creation_failed',
-//           seller_id: currentUser.uid,
-//           seller_email: sellerEmail,
-//           attempted_worker_email: workerEmail,
-//           error_message: error.message,
-//           timestamp: new Date().toISOString(),
-//           success: false
-//         });
-//       }
-//     } catch (logError) {
-//       console.warn('Failed to log error:', logError);
-//     }
-
-//     return {
-//       success: false,
-//       error: error.message || 'Failed to create worker account'
-//     };
-//   }
-// };
 export const createWorkerAccount = async (
   sellerEmail: string,
   workerEmail: string
@@ -3533,34 +3782,6 @@ export const createWorkerAccount = async (
  * @param sellerId - Seller's user ID
  * @returns Worker profile or null
  */
-// export const getSellerWorker = async (sellerId: string): Promise<UserProfile | null> => {
-//   try {
-//     console.log('🔍 Fetching worker for seller:', sellerId);
-
-//     const workerQuery = query(
-//       collection(db, 'users'),
-//       where('seller_id', '==', sellerId),
-//       where('role', '==', 'worker')
-//     );
-
-//     const workerSnapshot = await getDocs(workerQuery);
-
-//     if (workerSnapshot.empty) {
-//       console.log('No worker found for this seller');
-//       return null;
-//     }
-
-//     const workerDoc = workerSnapshot.docs[0];
-//     const workerData = workerDoc.data() as UserProfile;
-
-//     console.log('✅ Worker found:', workerData.email);
-//     return workerData;
-
-//   } catch (error) {
-//     console.error('❌ Error fetching worker:', error);
-//     return null;
-//   }
-// };
 
 /**
  * Get seller's worker account (PRODUCTION v2.0 - Filters Deleted)
@@ -3698,381 +3919,7 @@ export const updateWorkerEmail = async (
  * @param sellerId - Seller's user ID (for verification)
  * @returns New generated password
  */
-// export const resetWorkerPassword = async (
-//   workerId: string,
-//   sellerId: string
-// ): Promise<{ success: boolean; generatedPassword?: string; error?: string }> => {
-//   try {
-//     console.log('🔄 Resetting worker password...');
 
-//     // Verify worker belongs to seller
-//     const workerDoc = await getDoc(doc(db, 'users', workerId));
-//     if (!workerDoc.exists()) {
-//       throw new Error('Worker not found');
-//     }
-
-//     const workerData = workerDoc.data();
-//     if (workerData.seller_id !== sellerId) {
-//       throw new Error('Unauthorized: Worker does not belong to this seller');
-//     }
-
-//     // Generate new password
-//     const newPassword = generateWorkerPassword();
-//     console.log('✅ New password generated');
-
-//     // Update Firebase Auth password
-//     // Note: This requires Firebase Admin SDK in production
-//     // For now, sending password reset email
-//     await sendPasswordResetEmail(auth, workerData.email);
-//     console.log('✅ Password reset email sent');
-
-//     // Update temporary credentials storage
-//     const expiresAt = new Date();
-//     expiresAt.setHours(expiresAt.getHours() + 24);
-
-//     await setDoc(doc(db, 'worker_credentials', workerId), {
-//       worker_id: workerId,
-//       seller_id: sellerId,
-//       generated_password: newPassword,
-//       created_at: new Date().toISOString(),
-//       viewed: false,
-//       expires_at: expiresAt.toISOString()
-//     });
-
-//     // Update seller document
-//     const sellerQuery = query(
-//       collection(db, 'sellers'),
-//       where('worker_id', '==', workerId)
-//     );
-//     const sellerSnapshot = await getDocs(sellerQuery);
-
-//     if (!sellerSnapshot.empty) {
-//       const sellerDoc = sellerSnapshot.docs[0];
-//       await updateDoc(doc(db, 'sellers', sellerDoc.id), {
-//         worker_last_password_reset: new Date().toISOString(),
-//         updated_at: new Date().toISOString()
-//       });
-//     }
-
-//     // Log activity
-//     await addDoc(collection(db, 'adminLogs'), {
-//       action: 'worker_password_reset',
-//       worker_id: workerId,
-//       seller_id: sellerId,
-//       timestamp: new Date().toISOString(),
-//       success: true
-//     });
-
-//     console.log('✅ Worker password reset successfully');
-//     return { success: true, generatedPassword: newPassword };
-
-//   } catch (error: any) {
-//     console.error('❌ Error resetting worker password:', error);
-//     return { success: false, error: error.message };
-//   }
-// };
-/**
- * Reset worker password (FIXED v2.0)
- * @param workerId - Worker's user ID
- * @param sellerId - Seller's user ID (for verification)
- * @returns Success message (no password returned)
- */
-// export const resetWorkerPassword = async (
-//   workerId: string,
-//   sellerId: string
-// ): Promise<{ 
-//   success: boolean; 
-//   method: 'email_sent' | 'password_generated';
-//   generatedPassword?: string; 
-//   error?: string 
-// }> => {
-//   try {
-//     console.log('🔄 Resetting worker password...');
-
-//     // ✅ Verify worker belongs to seller
-//     const workerDoc = await getDoc(doc(db, 'users', workerId));
-//     if (!workerDoc.exists()) {
-//       throw new Error('Worker not found');
-//     }
-
-//     const workerData = workerDoc.data();
-//     if (workerData.seller_id !== sellerId) {
-//       throw new Error('Unauthorized: Worker does not belong to this seller');
-//     }
-
-//     // ═══════════════════════════════════════════════════════════
-//     // ✅ OPTION 1: Email-Only Reset (SAFE & RECOMMENDED)
-//     // ═══════════════════════════════════════════════════════════
-    
-//     console.log('📧 Sending password reset email to:', workerData.email);
-    
-//     try {
-//       await sendPasswordResetEmail(auth, workerData.email);
-//       console.log('✅ Password reset email sent successfully');
-//     } catch (emailError: any) {
-//       console.error('❌ Failed to send reset email:', emailError);
-//       throw new Error('Failed to send password reset email. Please try again.');
-//     }
-
-//     // ✅ Update seller document
-//     const sellerQuery = query(
-//       collection(db, 'sellers'),
-//       where('worker_id', '==', workerId)
-//     );
-//     const sellerSnapshot = await getDocs(sellerQuery);
-
-//     if (!sellerSnapshot.empty) {
-//       const sellerDoc = sellerSnapshot.docs[0];
-//       await updateDoc(doc(db, 'sellers', sellerDoc.id), {
-//         worker_last_password_reset: new Date().toISOString(),
-//         worker_reset_method: 'email_link',
-//         updated_at: new Date().toISOString()
-//       });
-//     }
-
-//     // ✅ Log activity
-//     await addDoc(collection(db, 'adminLogs'), {
-//       action: 'worker_password_reset_email_sent',
-//       worker_id: workerId,
-//       worker_email: workerData.email,
-//       seller_id: sellerId,
-//       reset_method: 'email_link',
-//       timestamp: new Date().toISOString(),
-//       success: true
-//     });
-
-//     // ✅ Track worker activity
-//     await addDoc(collection(db, 'workerActivity'), {
-//       worker_id: workerId,
-//       seller_id: sellerId,
-//       action: 'PASSWORD_RESET_INITIATED',
-//       details: {
-//         reset_method: 'email_link',
-//         initiated_by: sellerId
-//       },
-//       timestamp: new Date().toISOString()
-//     });
-
-//     console.log('✅ Password reset process completed');
-
-//     return { 
-//       success: true, 
-//       method: 'email_sent'
-//     };
-
-//   } catch (error: any) {
-//     console.error('❌ Error resetting worker password:', error);
-
-//     // Log failure
-//     try {
-//       await addDoc(collection(db, 'adminLogs'), {
-//         action: 'worker_password_reset_failed',
-//         worker_id: workerId,
-//         seller_id: sellerId,
-//         error_message: error.message,
-//         timestamp: new Date().toISOString(),
-//         success: false
-//       });
-//     } catch (logError) {
-//       console.warn('⚠️ Failed to log error:', logError);
-//     }
-
-//     return { 
-//       success: false, 
-//       method: 'email_sent',
-//       error: error.message 
-//     };
-//   }
-// };
-/**
- * Reset worker password - SIMPLE VERSION (Production Ready)
- * Deletes old worker and creates new one with new password
- */
-// export const resetWorkerPassword = async (
-//   workerId: string,
-//   sellerId: string
-// ): Promise<{
-//   success: boolean;
-//   generatedPassword?: string;
-//   workerEmail?: string;
-//   error?: string;
-// }> => {
-  
-//   let secondaryApp: FirebaseApp | null = null;
-
-//   try {
-//     console.log('🔄 Resetting worker password...');
-
-//     // Get worker details
-//     const workerDoc = await getDoc(doc(db, 'users', workerId));
-//     if (!workerDoc.exists()) {
-//       throw new Error('Worker not found');
-//     }
-
-//     const workerData = workerDoc.data();
-    
-//     if (workerData.seller_id !== sellerId) {
-//       throw new Error('Unauthorized');
-//     }
-
-//     const workerEmail = workerData.email;
-//     const workerName = workerData.full_name;
-//     const workerCreatedAt = workerData.created_at;
-
-//     console.log('✅ Worker found:', workerEmail);
-
-//     // Soft delete old worker in Firestore
-//     await updateDoc(doc(db, 'users', workerId), {
-//       account_status: 'deleted',
-//       is_active: false,
-//       deleted_at: new Date().toISOString(),
-//       deleted_by: sellerId,
-//       updated_at: new Date().toISOString()
-//     });
-
-//     console.log('✅ Old worker deleted');
-
-//     // Wait for Firebase propagation (3 seconds minimum)
-//     await new Promise(resolve => setTimeout(resolve, 3000));
-
-//     // Generate new password
-//     const newPassword = generateWorkerPassword();
-//     console.log('✅ New password generated');
-
-//     // Create new Firebase Auth account
-//     console.log('🔄 Creating new account...');
-
-//     secondaryApp = initializeApp(
-//       {
-//         apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-//         authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-//         projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-//         storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-//         messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-//         appId: import.meta.env.VITE_FIREBASE_APP_ID
-//       },
-//       `temp-${Date.now()}`
-//     );
-
-//     const secondaryAuth = getAuth(secondaryApp);
-    
-//     let newWorkerCredential;
-    
-//     try {
-//       newWorkerCredential = await createUserWithEmailAndPassword(
-//         secondaryAuth,
-//         workerEmail,
-//         newPassword
-//       );
-//       console.log('✅ New account created');
-//     } catch (authError: any) {
-//       // Cleanup
-//       if (secondaryApp) {
-//         await deleteApp(secondaryApp);
-//       }
-
-//       // Handle "email in use" error
-//       if (authError.code === 'auth/email-already-in-use') {
-//         throw new Error(
-//           'Please wait 1 minute and try again. Firebase needs time to process the deletion.'
-//         );
-//       }
-      
-//       throw new Error('Failed to create new account: ' + authError.message);
-//     }
-
-//     const newWorkerId = newWorkerCredential.user.uid;
-
-//     // Cleanup secondary auth
-//     await firebaseSignOut(secondaryAuth);
-//     await deleteApp(secondaryApp);
-    
-//     // Create new Firestore profile
-//     const newWorkerProfile: Partial<UserProfile> = {
-//       id: newWorkerId,
-//       user_id: newWorkerId,
-//       email: workerEmail,
-//       full_name: workerName,
-//       role: 'worker',
-//       seller_id: sellerId,
-//       is_active: true,
-//       account_status: 'active',
-//       created_at: workerCreatedAt,
-//       updated_at: new Date().toISOString(),
-//       created_by: sellerId,
-//       onboarding_completed: true,
-//       permissions: ['view_tiles', 'scan_qr', 'view_analytics']
-//     };
-
-//     await setDoc(doc(db, 'users', newWorkerId), newWorkerProfile);
-
-//     // Update seller document
-//     const sellerQuery = query(
-//       collection(db, 'sellers'),
-//       where('worker_id', '==', workerId)
-//     );
-//     const sellerSnapshot = await getDocs(sellerQuery);
-
-//     if (!sellerSnapshot.empty) {
-//       await updateDoc(doc(db, 'sellers', sellerSnapshot.docs[0].id), {
-//         worker_id: newWorkerId,
-//         worker_email: workerEmail,
-//         updated_at: new Date().toISOString()
-//       });
-//     }
-
-//     // Store credentials
-//     const expiresAt = new Date();
-//     expiresAt.setHours(expiresAt.getHours() + 24);
-
-//     await setDoc(doc(db, 'worker_credentials', newWorkerId), {
-//       worker_id: newWorkerId,
-//       seller_id: sellerId,
-//       email: workerEmail,
-//       generated_password: newPassword,
-//       created_at: new Date().toISOString(),
-//       viewed: false,
-//       expires_at: expiresAt.toISOString()
-//     });
-
-//     // Log activity
-//     await addDoc(collection(db, 'adminLogs'), {
-//       action: 'worker_password_reset',
-//       old_worker_id: workerId,
-//       new_worker_id: newWorkerId,
-//       worker_email: workerEmail,
-//       seller_id: sellerId,
-//       timestamp: new Date().toISOString(),
-//       success: true
-//     });
-
-//     console.log('🎉 Password reset complete!');
-
-//     return {
-//       success: true,
-//       generatedPassword: newPassword,
-//       workerEmail: workerEmail
-//     };
-
-//   } catch (error: any) {
-//     console.error('❌ Reset failed:', error);
-
-//     if (secondaryApp) {
-//       try {
-//         await deleteApp(secondaryApp);
-//       } catch (e) {}
-//     }
-
-//     return {
-//       success: false,
-//       error: error.message || 'Failed to reset password'
-//     };
-//   }
-// };
-/**
- * Reset worker password (PRODUCTION v2.0 - Fixed Password Return)
- * Deletes old worker and creates new one with new password
- */
 export const resetWorkerPassword = async (
   workerId: string,
   sellerId: string
@@ -4386,77 +4233,7 @@ export const toggleWorkerStatus = async (
  * Delete worker account
  * @param workerId - Worker's user ID
  * @param sellerId - Seller's user ID (for verification)
- */
-// export const deleteWorkerAccount = async (
-//   workerId: string,
-//   sellerId: string
-// ): Promise<{ success: boolean; error?: string }> => {
-//   try {
-//     console.log('🔄 Deleting worker account...');
 
-//     // Verify worker belongs to seller
-//     const workerDoc = await getDoc(doc(db, 'users', workerId));
-//     if (!workerDoc.exists()) {
-//       throw new Error('Worker not found');
-//     }
-
-//     const workerData = workerDoc.data();
-//     if (workerData.seller_id !== sellerId) {
-//       throw new Error('Unauthorized: Worker does not belong to this seller');
-//     }
-
-//     // Soft delete: Update worker status
-//     await updateDoc(doc(db, 'users', workerId), {
-//       account_status: 'deleted',
-//       is_active: false,
-//       deleted_at: new Date().toISOString(),
-//       deleted_by: sellerId,
-//       updated_at: new Date().toISOString()
-//     });
-
-//     // Update seller document
-//     const sellerQuery = query(
-//       collection(db, 'sellers'),
-//       where('worker_id', '==', workerId)
-//     );
-//     const sellerSnapshot = await getDocs(sellerQuery);
-
-//     if (!sellerSnapshot.empty) {
-//       const sellerDoc = sellerSnapshot.docs[0];
-//       await updateDoc(doc(db, 'sellers', sellerDoc.id), {
-//         worker_id: null,
-//         worker_email: null,
-//         updated_at: new Date().toISOString()
-//       });
-//     }
-
-//     // Delete temporary credentials
-//     try {
-//       await deleteDoc(doc(db, 'worker_credentials', workerId));
-//     } catch (e) {
-//       console.warn('No temporary credentials to delete');
-//     }
-
-//     // Log activity
-//     await addDoc(collection(db, 'adminLogs'), {
-//       action: 'worker_account_deleted',
-//       worker_id: workerId,
-//       worker_email: workerData.email,
-//       seller_id: sellerId,
-//       timestamp: new Date().toISOString(),
-//       success: true
-//     });
-
-//     console.log('✅ Worker account deleted successfully');
-//     return { success: true };
-
-//   } catch (error: any) {
-//     console.error('❌ Error deleting worker account:', error);
-//     return { success: false, error: error.message };
-//   }
-// };
-
-/**
  * Delete worker account (PRODUCTION v2.0 - Complete Cleanup)
  * @param workerId - Worker's user ID
  * @param sellerId - Seller's user ID (for verification)
@@ -4640,101 +4417,7 @@ export const trackWorkerActivity = async (
  * @param sellerId - Seller's user ID
  * @returns Array of tiles with scan analytics
  */
-// export const getSellerScanAnalytics = async (sellerId: string): Promise<any[]> => {
-//   try {
-//     console.log('📊 Fetching scan analytics for seller:', sellerId);
 
-//     // Step 1: Get seller's tiles
-//     const tilesQuery = query(
-//       collection(db, 'tiles'),
-//       where('sellerId', '==', sellerId)
-//     );
-//     const tilesSnapshot = await getDocs(tilesQuery);
-    
-//     if (tilesSnapshot.empty) {
-//       console.log('No tiles found for seller');
-//       return [];
-//     }
-
-//     const tiles = tilesSnapshot.docs.map(doc => ({
-//       id: doc.id,
-//       ...doc.data()
-//     }));
-
-//     const tileIds = tiles.map(t => t.id);
-//     console.log('✅ Found tiles:', tiles.length);
-
-//     // Step 2: Get all QR scans for these tiles
-//     let allScans: any[] = [];
-    
-//     // Firestore 'in' query limit is 10, so batch if needed
-//     const batchSize = 10;
-//     for (let i = 0; i < tileIds.length; i += batchSize) {
-//       const batch = tileIds.slice(i, i + batchSize);
-      
-//       const scansQuery = query(
-//         collection(db, 'qr_scans'),
-//         where('tileId', 'in', batch)
-//       );
-      
-//       const scansSnapshot = await getDocs(scansQuery);
-//       const batchScans = scansSnapshot.docs.map(doc => doc.data());
-//       allScans = [...allScans, ...batchScans];
-//     }
-
-//     console.log('✅ Found scans:', allScans.length);
-
-//     // Step 3: Aggregate scan data per tile
-//     const scanCounts: { [tileId: string]: { count: number; lastScanned: string | null } } = {};
-    
-//     allScans.forEach(scan => {
-//       const tileId = scan.tileId;
-      
-//       if (!scanCounts[tileId]) {
-//         scanCounts[tileId] = {
-//           count: 0,
-//           lastScanned: null
-//         };
-//       }
-      
-//       scanCounts[tileId].count++;
-      
-//       // Track most recent scan
-//       const scanTime = scan.scannedAt || scan.scanned_at;
-//       if (scanTime) {
-//         if (!scanCounts[tileId].lastScanned || scanTime > scanCounts[tileId].lastScanned) {
-//           scanCounts[tileId].lastScanned = scanTime;
-//         }
-//       }
-//     });
-
-//     // Step 4: Combine tile data with scan analytics
-//     const analytics = tiles.map(tile => ({
-//       tile_id: tile.id,
-//       tile_name: tile.name || 'Unknown',
-//       tile_code: tile.tileCode || tile.tile_code || 'N/A',
-//       category: tile.category || 'both',
-//       size: tile.size || 'N/A',
-//       price: tile.price || 0,
-//       stock: tile.stock || 0,
-//       in_stock: tile.inStock !== undefined ? tile.inStock : true,
-//       image_url: tile.imageUrl || tile.image_url || '',
-//       total_scans: scanCounts[tile.id]?.count || 0,
-//       last_scanned: scanCounts[tile.id]?.lastScanned || null,
-//       qr_code: tile.qrCode || tile.qr_code || null
-//     }));
-
-//     // Step 5: Sort by scan count (descending)
-//     analytics.sort((a, b) => b.total_scans - a.total_scans);
-
-//     console.log('✅ Analytics calculated for', analytics.length, 'tiles');
-//     return analytics;
-
-//   } catch (error) {
-//     console.error('❌ Error fetching seller scan analytics:', error);
-//     return [];
-//   }
-// };
 
 /**
  * Get complete seller scan analytics with stock data (FIXED v2)
@@ -4757,10 +4440,29 @@ export const getSellerScanAnalytics = async (sellerId: string): Promise<any[]> =
       return [];
     }
 
-    const tiles = tilesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // const tiles = tilesSnapshot.docs.map(doc => ({
+    //   id: doc.id,
+    //   ...doc.data()
+    // }));
+const tiles: TileData[] = tilesSnapshot.docs.map(doc => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    name: data.name,
+    imageUrl: data.imageUrl || data.image_url,
+    category: data.category,
+    size: data.size,
+    price: data.price,
+    stock: data.stock,
+    inStock: data.inStock,
+    tileCode: data.tileCode || data.tile_code,
+    qrCode: data.qrCode || data.qr_code,
+    ...data
+  } as TileData; // ✅ Type assertion
+});
+
+// Keep the analytics mapping same - it will now work
+
 
     const tileIds = tiles.map(t => t.id);
     console.log('✅ Found tiles:', tiles.length);
@@ -4948,83 +4650,6 @@ export const getSellerStockSummary = async (sellerId: string): Promise<{
  * @param days - Number of days to look back (default 7)
  * @returns Daily scan counts
  */
-// export const getScanTimeline = async (
-//   sellerId: string,
-//   days: number = 7
-// ): Promise<any[]> => {
-//   try {
-//     console.log(`📊 Fetching scan timeline for last ${days} days`);
-
-//     // Get seller's tiles
-//     const tilesQuery = query(
-//       collection(db, 'tiles'),
-//       where('sellerId', '==', sellerId)
-//     );
-//     const tilesSnapshot = await getDocs(tilesQuery);
-//     const tileIds = tilesSnapshot.docs.map(doc => doc.id);
-
-//     if (tileIds.length === 0) {
-//       return [];
-//     }
-
-//     // Calculate date range
-//     const endDate = new Date();
-//     const startDate = new Date();
-//     startDate.setDate(startDate.getDate() - days);
-
-//     // Get all scans
-//     let allScans: any[] = [];
-//     const batchSize = 10;
-    
-//     for (let i = 0; i < tileIds.length; i += batchSize) {
-//       const batch = tileIds.slice(i, i + batchSize);
-      
-//       const scansQuery = query(
-//         collection(db, 'qr_scans'),
-//         where('tileId', 'in', batch)
-//       );
-      
-//       const scansSnapshot = await getDocs(scansQuery);
-//       const batchScans = scansSnapshot.docs.map(doc => doc.data());
-//       allScans = [...allScans, ...batchScans];
-//     }
-
-//     // Group by date
-//     const scansByDate: { [date: string]: number } = {};
-    
-//     allScans.forEach(scan => {
-//       const scanTime = scan.scannedAt || scan.scanned_at;
-//       if (!scanTime) return;
-      
-//       const scanDate = new Date(scanTime);
-//       if (scanDate >= startDate && scanDate <= endDate) {
-//         const dateStr = scanDate.toISOString().split('T')[0];
-//         scansByDate[dateStr] = (scansByDate[dateStr] || 0) + 1;
-//       }
-//     });
-
-//     // Generate timeline for all days (fill gaps with 0)
-//     const timeline = [];
-//     for (let i = 0; i < days; i++) {
-//       const date = new Date();
-//       date.setDate(date.getDate() - (days - 1 - i));
-//       const dateStr = date.toISOString().split('T')[0];
-      
-//       timeline.push({
-//         date: dateStr,
-//         day_name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-//         scans: scansByDate[dateStr] || 0
-//       });
-//     }
-
-//     console.log('✅ Timeline generated for', timeline.length, 'days');
-//     return timeline;
-
-//   } catch (error) {
-//     console.error('❌ Error fetching scan timeline:', error);
-//     return [];
-//   }
-// };
 
 /**
  * Get scan timeline data for charts (FIXED v2)
@@ -5150,7 +4775,7 @@ export const trackTileScanEnhanced = async (
     console.log('📱 Tracking QR scan for tile:', tileId);
 
     // Get tile data if seller ID not provided
-    let finalSellerId = sellerId;
+    let finalSellerId : string | undefined = sellerId;
     
     if (!finalSellerId) {
       const tileDoc = await getDoc(doc(db, 'tiles', tileId));
