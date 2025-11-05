@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { Tile, Room, Showroom, TileApplication, UserProfile } from '../types';
-
+import { persist } from 'zustand/middleware';
 interface AppState {
   currentShowroom: Showroom | null;
   selectedTile: Tile | null;

@@ -1,22 +1,4 @@
 
-// export interface Tile {
-//   id: string;
-//   name: string;
-//   imageUrl: string;
-//   textureUrl: string;
-//   category: 'floor' | 'wall' | 'both';
-//   size: string;
-//   price: number;
-//   inStock: boolean;
-//   stock: number; // Added for inventory management
-//   showroomId: string;
-//   sellerId: string; // Added for seller association
-//   tileCode?: string; // Added for unique identification
-//   qrCode?: string; // Base64 encoded QR code image
-//   qrCodeUrl?: string; // URL for QR code access
-//   createdAt: string; // Added for tracking
-//   updatedAt: string; // Added for tracking
-// }
 export interface Tile {
   id: string;
   name: string;

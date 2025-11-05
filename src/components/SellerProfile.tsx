@@ -598,7 +598,7 @@ export const SellerProfile: React.FC = () => {
 
           {/* Submit Button - Responsive */}
           <div className="pt-2 sm:pt-4">
-            <button
+            {/* <button
               type="submit"
               disabled={submitting || !isPasswordStrong() || passwordForm.newPassword !== passwordForm.confirmPassword}
               className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-2.5 sm:py-3 rounded-lg hover:from-orange-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-all transform hover:scale-[1.02] text-sm sm:text-base"
@@ -615,7 +615,54 @@ export const SellerProfile: React.FC = () => {
                   Update Password
                 </>
               )}
-            </button>
+            </button> */}
+        // ✅ FIXED: Show validation status clearly
+<button
+  type="submit"
+  disabled={submitting || !isPasswordStrong() || passwordForm.newPassword !== passwordForm.confirmPassword}
+  className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-2.5 sm:py-3 rounded-lg hover:from-orange-700 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-all transform hover:scale-[1.02] text-sm sm:text-base"
+  title={
+    submitting ? 'Updating password...' :
+    !isPasswordStrong() ? 'Password does not meet security requirements' :
+    passwordForm.newPassword !== passwordForm.confirmPassword ? 'Passwords do not match' :
+    'Update your password'
+  }
+>
+  {submitting ? (
+    <>
+      <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+      <span className="hidden sm:inline">Updating Password...</span>
+      <span className="sm:hidden">Updating...</span>
+    </>
+  ) : (
+    <>
+      <Save className="w-4 h-4 sm:w-5 sm:h-5" />
+      Update Password
+    </>
+  )}
+</button>
+
+{/* ✅ ADD: Show why button is disabled */}
+{!submitting && (
+  <div className="mt-2 text-center">
+    {!isPasswordStrong() && (
+      <p className="text-xs sm:text-sm text-orange-600 font-medium">
+        ⚠️ Please meet all password requirements above
+      </p>
+    )}
+    {isPasswordStrong() && passwordForm.newPassword !== passwordForm.confirmPassword && (
+      <p className="text-xs sm:text-sm text-red-600 font-medium">
+        ❌ New password and confirmation must match
+      </p>
+    )}
+    {isPasswordStrong() && passwordForm.newPassword === passwordForm.confirmPassword && passwordForm.newPassword && (
+      <p className="text-xs sm:text-sm text-green-600 font-medium">
+        ✅ Password meets all requirements - ready to update
+      </p>
+    )}
+  </div>
+)}
+        
           </div>
 
           {/* Security Note - Responsive */}

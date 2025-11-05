@@ -28,7 +28,10 @@ export const SellerRequestForm: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [nameError, setNameError] = useState('');
 
+  // ✅ EMAIL VALIDATION
   const validateBusinessEmail = (email: string): { isValid: boolean; error?: string } => {
     if (!email.trim()) {
       return { isValid: false, error: 'Email is required' };
@@ -41,27 +44,93 @@ export const SellerRequestForm: React.FC = () => {
     return { isValid: true };
   };
 
+  // ✅ PHONE VALIDATION
+  const validatePhone = (phone: string): { isValid: boolean; error?: string } => {
+    const cleaned = phone.replace(/\D/g, '');
+    
+    if (!cleaned) {
+      return { isValid: false, error: 'Phone number is required' };
+    }
+    
+    if (cleaned.length !== 10) {
+      return { isValid: false, error: 'Phone must be exactly 10 digits' };
+    }
+    
+    if (!/^[6-9]/.test(cleaned)) {
+      return { isValid: false, error: 'Phone must start with 6, 7, 8, or 9' };
+    }
+    
+    return { isValid: true };
+  };
+
+  // ✅ OWNER NAME VALIDATION
+  const validateOwnerName = (name: string): { isValid: boolean; error?: string } => {
+    if (!name.trim()) {
+      return { isValid: false, error: 'Owner name is required' };
+    }
+    
+    if (name.trim().length < 2) {
+      return { isValid: false, error: 'Name must be at least 2 characters' };
+    }
+    
+    if (/\d/.test(name)) {
+      return { isValid: false, error: 'Name cannot contain numbers' };
+    }
+    
+    if (!/^[a-zA-Z\s]+$/.test(name)) {
+      return { isValid: false, error: 'Name can only contain letters and spaces' };
+    }
+    
+    return { isValid: true };
+  };
+
+  // ✅ INPUT CHANGE HANDLER
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     if (error) setError('');
-    if (field === 'email' && emailError) setEmailError('');
     
-    if (field === 'email' && value) {
-      const validation = validateBusinessEmail(value);
-      if (!validation.isValid) {
-        setEmailError(validation.error || 'Invalid email');
+    if (field === 'email') {
+      if (emailError) setEmailError('');
+      if (value) {
+        const validation = validateBusinessEmail(value);
+        if (!validation.isValid) {
+          setEmailError(validation.error || 'Invalid email');
+        }
+      }
+    }
+    
+    if (field === 'phone') {
+      if (phoneError) setPhoneError('');
+      if (value) {
+        const validation = validatePhone(value);
+        if (!validation.isValid) {
+          setPhoneError(validation.error || 'Invalid phone');
+        }
+      }
+    }
+    
+    if (field === 'ownerName') {
+      if (nameError) setNameError('');
+      if (value) {
+        const validation = validateOwnerName(value);
+        if (!validation.isValid) {
+          setNameError(validation.error || 'Invalid name');
+        }
       }
     }
   };
 
+  // ✅ FORM VALIDATION
   const validateForm = (): boolean => {
     if (!formData.businessName.trim()) {
       setError('Business name is required');
       return false;
     }
-    if (!formData.ownerName.trim()) {
-      setError('Owner name is required');
+    
+    const nameValidation = validateOwnerName(formData.ownerName);
+    if (!nameValidation.isValid) {
+      setNameError(nameValidation.error || 'Invalid name');
       return false;
     }
     
@@ -71,49 +140,77 @@ export const SellerRequestForm: React.FC = () => {
       return false;
     }
     
-    if (!formData.phone.trim()) {
-      setError('Phone number is required');
+    const phoneValidation = validatePhone(formData.phone);
+    if (!phoneValidation.isValid) {
+      setPhoneError(phoneValidation.error || 'Invalid phone');
       return false;
     }
+    
     if (!formData.businessAddress.trim()) {
       setError('Business address is required');
       return false;
     }
+    
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ✅ FORM SUBMIT
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!validateForm()) return;
+  
+  setSubmitting(true);
+  setError('');
+
+  try {
+    console.log('📝 Submitting seller request:', formData);
+
+    // ❌ YE LINES DELETE KARO:
+    // const lastSubmit = localStorage.getItem('lastSellerRequest');
+    // const now = Date.now();
+    // if (lastSubmit && (now - parseInt(lastSubmit)) < 300000) {
+    //   const remainingTime = Math.ceil((300000 - (now - parseInt(lastSubmit))) / 60000);
+    //   setError(`Please wait ${remainingTime} minute(s) before submitting another request`);
+    //   setSubmitting(false);
+    //   return;
+    // }
+
+    // ✅ DIRECT SUBMISSION
+    const docRef = await addDoc(collection(db, 'sellerRequests'), {
+      businessName: formData.businessName.trim(),
+      ownerName: formData.ownerName.trim(),
+      email: formData.email.toLowerCase().trim(),
+      phone: formData.phone.replace(/\D/g, ''),
+      businessAddress: formData.businessAddress.trim(),
+      additionalInfo: formData.additionalInfo.trim() || null,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+      adminNotes: null,
+      reviewedAt: null,
+      reviewedBy: null,
+      emailDeliveryStatus: null,
+      accountCreated: false
+    });
+
+    // ❌ YE BHI DELETE KARO:
+    // localStorage.setItem('lastSellerRequest', now.toString());
+
+    console.log('✅ Request submitted with ID:', docRef.id);
+    setSubmitted(true);
     
-    if (!validateForm()) return;
+  } catch (error: any) {
+    console.error('❌ Error submitting request:', error);
     
-    setSubmitting(true);
-    setError('');
-
-    try {
-      console.log('📝 Submitting seller request:', formData);
-
-      const docRef = await addDoc(collection(db, 'sellerRequests'), {
-        ...formData,
-        status: 'pending',
-        requestedAt: new Date().toISOString(),
-        adminNotes: null,
-        reviewedAt: null,
-        reviewedBy: null,
-        emailDeliveryStatus: null,
-        accountCreated: false
-      });
-
-      console.log('✅ Request submitted with ID:', docRef.id);
-      setSubmitted(true);
-      
-    } catch (error: any) {
-      console.error('❌ Error submitting request:', error);
+    if (error.code === 'permission-denied') {
+      setError('Submission failed due to security settings. Please contact support.');
+    } else {
       setError('Failed to submit request. Please try again.');
-    } finally {
-      setSubmitting(false);
     }
-  };
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (submitted) {
     return (
@@ -164,6 +261,7 @@ export const SellerRequestForm: React.FC = () => {
 
         {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          {/* Business Name */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
               <Store className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
@@ -179,6 +277,7 @@ export const SellerRequestForm: React.FC = () => {
             />
           </div>
 
+          {/* Owner Name */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
               <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
@@ -188,12 +287,18 @@ export const SellerRequestForm: React.FC = () => {
               type="text"
               value={formData.ownerName}
               onChange={(e) => handleInputChange('ownerName', e.target.value)}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                nameError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="e.g. John Doe"
               required
             />
+            {nameError && (
+              <p className="text-red-600 text-xs mt-1">{nameError}</p>
+            )}
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
               <Mail className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
@@ -215,6 +320,7 @@ export const SellerRequestForm: React.FC = () => {
             )}
           </div>
 
+          {/* Phone */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
               <Phone className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
@@ -224,13 +330,20 @@ export const SellerRequestForm: React.FC = () => {
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="+91 9876543210"
+              className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                phoneError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="9876543210"
+              maxLength={10}
               required
             />
+            {phoneError && (
+              <p className="text-red-600 text-xs mt-1">{phoneError}</p>
+            )}
           </div>
         </div>
         
+        {/* Address */}
         <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
             <MapPin className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
@@ -246,6 +359,7 @@ export const SellerRequestForm: React.FC = () => {
           />
         </div>
         
+        {/* Additional Info */}
         <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
             Tell us about your tile business (optional)
@@ -262,7 +376,7 @@ export const SellerRequestForm: React.FC = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={submitting || !!emailError}
+          disabled={submitting || !!emailError || !!phoneError || !!nameError}
           className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-3 sm:py-3.5 md:py-4 rounded-lg hover:from-blue-700 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium text-base sm:text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
         >
           {submitting ? (

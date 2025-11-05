@@ -153,6 +153,7 @@ export const generateSecurePassword = (): string => {
   
   let password = "";
   
+// ✅ ENSURE AT LEAST ONE OF EACH:
   password += lowercase[Math.floor(Math.random() * lowercase.length)];
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
   password += numbers[Math.floor(Math.random() * numbers.length)];
@@ -171,11 +172,24 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePassword = (password: string): { isValid: boolean; message: string } => {
-  if (password.length < 6) {
-    return { isValid: false, message: 'Password must be at least 6 characters long' };
-  }
   if (password.length < 8) {
-    return { isValid: true, message: 'Password is acceptable but consider using 8+ characters' };
+    return { isValid: false, message: 'Password must be at least 8 characters long' };
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one uppercase letter' };
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one lowercase letter' };
+  }
+  
+  if (!/[0-9]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one number' };
+  }
+  
+  if (!/[!@#$%^&*]/.test(password)) {
+    return { isValid: false, message: 'Password must contain at least one special character (!@#$%^&*)' };
   }
   return { isValid: true, message: 'Password meets security requirements' };
 };
@@ -645,6 +659,87 @@ export const signUpSeller = async (
   }
 };
 
+// export const signIn = async (email: string, password: string): Promise<any> => {
+//   if (!isFirebaseConfigured()) {
+//     throw new Error('Firebase not configured. Please check environment variables.');
+//   }
+
+//   try {
+//     console.log('🔄 Attempting sign in for:', email.trim());
+
+//     if (!validateEmail(email)) {
+//       throw new Error('Please provide a valid email address.');
+//     }
+
+//     if (!password.trim()) {
+//       throw new Error('Password is required.');
+//     }
+
+//     const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+
+//     if (!userCredential?.user) {
+//       throw new Error('Authentication failed - no user data returned.');
+//     }
+
+//     // ✅ CHECK ACCOUNT STATUS ON LOGIN
+//     const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+    
+//     if (userDoc.exists()) {
+//       const userData = userDoc.data();
+      
+//       if (userData.account_status === 'deleted') {
+//         await firebaseSignOut(auth);
+//         throw new Error('Your account has been deactivated. Please contact support.');
+//       }
+      
+//       if (userData.account_status === 'suspended') {
+//         await firebaseSignOut(auth);
+//         throw new Error('Your account has been suspended. Please contact support.');
+//       }
+//     }
+
+//     try {
+//       await updateDoc(doc(db, 'users', userCredential.user.uid), {
+//         last_login: new Date().toISOString(),
+//         updated_at: new Date().toISOString()
+//       });
+//     } catch (updateError) {
+//       console.warn('⚠️ Could not update last login:', updateError);
+//     }
+
+//     console.log('✅ Sign in successful for user:', userCredential.user.uid);
+//     return { user: userCredential.user, session: null };
+    
+//   } catch (error: any) {
+//     console.error('❌ Sign in error:', error);
+    
+//     let errorMessage = 'Authentication failed: ';
+    
+//     switch (error.code) {
+//       case 'auth/invalid-credential':
+//       case 'auth/wrong-password':
+//         errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+//         break;
+//       case 'auth/user-not-found':
+//         errorMessage = 'No account found with this email address.';
+//         break;
+//       case 'auth/invalid-email':
+//         errorMessage = 'Invalid email format.';
+//         break;
+//       case 'auth/user-disabled':
+//         errorMessage = 'This account has been disabled. Please contact support.';
+//         break;
+//       case 'auth/too-many-requests':
+//         errorMessage = 'Too many failed login attempts. Please wait a few minutes and try again.';
+//         break;
+//       default:
+//         errorMessage += error.message;
+//     }
+    
+//     throw new Error(errorMessage);
+//   }
+// };
+
 export const signIn = async (email: string, password: string): Promise<any> => {
   if (!isFirebaseConfigured()) {
     throw new Error('Firebase not configured. Please check environment variables.');
@@ -667,12 +762,68 @@ export const signIn = async (email: string, password: string): Promise<any> => {
       throw new Error('Authentication failed - no user data returned.');
     }
 
-    // ✅ CHECK ACCOUNT STATUS ON LOGIN
+    // ═══════════════════════════════════════════════════════════
+    // ✅ NEW: CHECK ACCOUNT STATUS BEFORE ALLOWING LOGIN
+    // ═══════════════════════════════════════════════════════════
+    
+    const accountCheck = await checkSellerAccountActive(userCredential.user.uid);
+    
+    if (!accountCheck.isActive) {
+      // Force logout
+      await firebaseSignOut(auth);
+      
+      // Log blocked login attempt
+      try {
+        await addDoc(collection(db, 'adminLogs'), {
+          action: 'login_blocked_inactive_account',
+          user_id: userCredential.user.uid,
+          email: email.trim(),
+          status: accountCheck.status,
+          reason: accountCheck.reason,
+          timestamp: new Date().toISOString()
+        });
+      } catch (logError) {
+        console.warn('⚠️ Could not log blocked login:', logError);
+      }
+      
+      // Throw descriptive error
+      let errorMessage = '⚠️ Account Access Restricted\n\n';
+      
+      if (accountCheck.status === 'deleted') {
+        errorMessage += 'Your account has been permanently deleted.\n\n';
+        errorMessage += 'Please contact support if you believe this is an error.\n';
+        errorMessage += '📧 admin@tilevision.com';
+      } else if (accountCheck.status === 'inactive') {
+        errorMessage += 'Your account has been temporarily deactivated.\n\n';
+        errorMessage += `Reason: ${accountCheck.reason}\n\n`;
+        if (accountCheck.inactiveSince) {
+          errorMessage += `Deactivated on: ${new Date(accountCheck.inactiveSince).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}\n\n`;
+        }
+        errorMessage += 'Please contact administrator:\n';
+        errorMessage += '📧 admin@tilevision.com';
+      } else if (accountCheck.status === 'suspended') {
+        errorMessage += 'Your account has been suspended.\n\n';
+        errorMessage += `Reason: ${accountCheck.reason}\n\n`;
+        errorMessage += 'Please contact support:\n';
+        errorMessage += '📧 admin@tilevision.com';
+      } else {
+        errorMessage += accountCheck.reason || 'Account access denied.';
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // ✅ EXISTING CODE - Account status check passed
     const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
     
     if (userDoc.exists()) {
       const userData = userDoc.data();
       
+      // Double-check status (paranoid mode)
       if (userData.account_status === 'deleted') {
         await firebaseSignOut(auth);
         throw new Error('Your account has been deactivated. Please contact support.');
@@ -701,6 +852,11 @@ export const signIn = async (email: string, password: string): Promise<any> => {
     
     let errorMessage = 'Authentication failed: ';
     
+    // Preserve custom error messages (like inactive account)
+    if (error.message.includes('⚠️') || error.message.includes('Account')) {
+      throw error; // Re-throw as-is
+    }
+    
     switch (error.code) {
       case 'auth/invalid-credential':
       case 'auth/wrong-password':
@@ -725,6 +881,7 @@ export const signIn = async (email: string, password: string): Promise<any> => {
     throw new Error(errorMessage);
   }
 };
+
 
 export const signOut = async (): Promise<void> => {
   if (!isFirebaseConfigured()) {
@@ -788,6 +945,64 @@ export const signOut = async (): Promise<void> => {
 // ✅ ADMIN DASHBOARD FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
+// export const getAdminDashboardStats = async (): Promise<any> => {
+  
+//   try {
+//     console.log('📊 Fetching admin dashboard statistics...');
+    
+//     const [sellersSnapshot, requestsSnapshot] = await Promise.all([
+//       getDocs(collection(db, 'sellers')),
+//       getDocs(collection(db, 'sellerRequests'))
+//     ]);
+//      const allSellers = sellersSnapshot.docs.map(doc => doc.data());
+
+//     const sellers = sellersSnapshot.docs.map(doc => doc.data());
+//     const requests = requestsSnapshot.docs.map(doc => doc.data());
+    
+
+//      const activeSellersOnly = sellers.filter(s => s.account_status !== 'deleted');
+
+//     const stats = {
+//       totalSellers: activeSellersOnly.length,
+//       activeSellers: sellers.filter(s => s.account_status === 'active' || s.subscription_status === 'active').length,
+//       inactiveSellers: sellers.filter(s => s.account_status === 'inactive' || s.subscription_status === 'inactive').length,
+//       deletedSellers: sellers.filter(s => s.account_status === 'deleted').length,
+//       suspendedSellers: sellers.filter(s => s.account_status === 'suspended').length,
+      
+//       pendingRequests: requests.filter(r => r.status === 'pending').length,
+//       approvedRequests: requests.filter(r => r.status === 'approved').length,
+//       rejectedRequests: requests.filter(r => r.status === 'rejected').length,
+      
+//       totalRequests: requests.length,
+      
+//       thisMonthSellers:activeSellersOnly.filter(s => {
+//         const createdDate = new Date(s.created_at);
+//         const now = new Date();
+//         return createdDate.getMonth() === now.getMonth() && 
+//                createdDate.getFullYear() === now.getFullYear();
+//       }).length
+//     };
+    
+//     console.log('✅ Dashboard stats calculated:', stats);
+//     return stats;
+    
+//   } catch (error) {
+//     console.error('❌ Error fetching dashboard stats:', error);
+//     return {
+//       totalSellers: 0,
+//       activeSellers: 0,
+//       inactiveSellers: 0,
+//       deletedSellers: 0,
+//       suspendedSellers: 0,
+//       pendingRequests: 0,
+//       approvedRequests: 0,
+//       rejectedRequests: 0,
+//       totalRequests: 0,
+//       thisMonthSellers: 0
+//     };
+//   }
+// };
+
 export const getAdminDashboardStats = async (): Promise<any> => {
   try {
     console.log('📊 Fetching admin dashboard statistics...');
@@ -797,15 +1012,25 @@ export const getAdminDashboardStats = async (): Promise<any> => {
       getDocs(collection(db, 'sellerRequests'))
     ]);
     
-    const sellers = sellersSnapshot.docs.map(doc => doc.data());
+    const allSellers = sellersSnapshot.docs.map(doc => doc.data());
+    const activeSellersOnly = allSellers.filter(s => s.account_status !== 'deleted');
     const requests = requestsSnapshot.docs.map(doc => doc.data());
     
     const stats = {
-      totalSellers: sellers.length,
-      activeSellers: sellers.filter(s => s.account_status === 'active' || s.subscription_status === 'active').length,
-      inactiveSellers: sellers.filter(s => s.account_status === 'inactive' || s.subscription_status === 'inactive').length,
-      deletedSellers: sellers.filter(s => s.account_status === 'deleted').length,
-      suspendedSellers: sellers.filter(s => s.account_status === 'suspended').length,
+      totalSellers: activeSellersOnly.length,
+      activeSellers: activeSellersOnly.filter(s => 
+        (s.account_status === 'active' || !s.account_status) &&
+        s.is_active !== false
+      ).length,
+      
+      // ✅ NEW: Inactive sellers count
+      inactiveSellers: activeSellersOnly.filter(s => 
+        s.account_status === 'inactive' || 
+        s.is_active === false
+      ).length,
+      
+      deletedSellers: allSellers.filter(s => s.account_status === 'deleted').length,
+      suspendedSellers: activeSellersOnly.filter(s => s.account_status === 'suspended').length,
       
       pendingRequests: requests.filter(r => r.status === 'pending').length,
       approvedRequests: requests.filter(r => r.status === 'approved').length,
@@ -813,7 +1038,7 @@ export const getAdminDashboardStats = async (): Promise<any> => {
       
       totalRequests: requests.length,
       
-      thisMonthSellers: sellers.filter(s => {
+      thisMonthSellers: activeSellersOnly.filter(s => {
         const createdDate = new Date(s.created_at);
         const now = new Date();
         return createdDate.getMonth() === now.getMonth() && 
@@ -841,6 +1066,550 @@ export const getAdminDashboardStats = async (): Promise<any> => {
   }
 };
 
+// export const getAdminDashboardStats = async (): Promise<any> => {
+//   try {
+//     console.log('📊 Fetching admin dashboard statistics...');
+    
+//     const [sellersSnapshot, requestsSnapshot] = await Promise.all([
+//       getDocs(collection(db, 'sellers')),
+//       getDocs(collection(db, 'sellerRequests'))
+//     ]);
+//        const activeSellersOnly = allSellers.filter(s => s.account_status !== 'deleted');
+    
+//     // ✅ FIX: Filter deleted sellers from the start
+//     const allSellers = sellersSnapshot.docs.map(doc => doc.data());
+//     const sellers = allSellers.filter(s => s.account_status !== 'deleted');
+    
+//     const requests = requestsSnapshot.docs.map(doc => doc.data());
+    
+//     const stats = {
+//       totalSellers: sellers.length,  // ✅ Only non-deleted
+//       activeSellers: sellers.filter(s => 
+//         s.account_status === 'active' || s.subscription_status === 'active'
+//       ).length,
+//       inactiveSellers: sellers.filter(s => 
+//         s.account_status === 'inactive' || s.subscription_status === 'inactive'
+//       ).length,
+//       deletedSellers: allSellers.filter(s => s.account_status === 'deleted').length,  // ✅ Count deleted separately
+//       suspendedSellers: sellers.filter(s => s.account_status === 'suspended').length,
+      
+//       pendingRequests: requests.filter(r => r.status === 'pending').length,
+//       approvedRequests: requests.filter(r => r.status === 'approved').length,
+//       rejectedRequests: requests.filter(r => r.status === 'rejected').length,
+      
+//       totalRequests: requests.length,
+      
+//       thisMonthSellers: sellers.filter(s => {
+//         const createdDate = new Date(s.created_at);
+//         const now = new Date();
+//         return createdDate.getMonth() === now.getMonth() && 
+//                createdDate.getFullYear() === now.getFullYear();
+//       }).length
+//     };
+    
+//     console.log('✅ Dashboard stats calculated:', stats);
+//     return stats;
+    
+//   } catch (error) {
+//     console.error('❌ Error fetching dashboard stats:', error);
+//     return {
+//       totalSellers: 0,
+//       activeSellers: 0,
+//       inactiveSellers: 0,
+//       deletedSellers: 0,
+//       suspendedSellers: 0,
+//       pendingRequests: 0,
+//       approvedRequests: 0,
+//       rejectedRequests: 0,
+//       totalRequests: 0,
+//       thisMonthSellers: 0
+//     };
+//   }
+//
+
+// export const getSellersWithFullData = async (): Promise<any[]> => {
+//   try {
+//     console.log('🔄 Fetching sellers with complete data...');
+    
+//     const [sellersSnapshot, requestsSnapshot, usersSnapshot] = await Promise.all([
+//       getDocs(collection(db, 'sellers')),
+//       getDocs(collection(db, 'sellerRequests')),
+//       getDocs(collection(db, 'users'))
+//     ]);
+    
+//     const sellers: any[] = [];
+//     sellersSnapshot.forEach(doc => {
+//       const data = doc.data();
+//       if (data.account_status !== 'deleted') {
+//         sellers.push({ id: doc.id, ...data });
+//       }
+//     });
+    
+//     const requests: any[] = [];
+//     requestsSnapshot.forEach(doc => {
+//       requests.push({ id: doc.id, ...doc.data() });
+//     });
+    
+//     const users: any[] = [];
+//     usersSnapshot.forEach(doc => {
+//       users.push({ id: doc.id, ...doc.data() });
+//     });
+    
+//     console.log('📊 Fetched:', { sellers: sellers.length, requests: requests.length, users: users.length });
+    
+//     const mergedData: any[] = [];
+    
+//     for (const seller of sellers) {
+//       if (!seller || !seller.id) {
+//         console.warn('⚠️ Skipping invalid seller');
+//         continue;
+//       }
+      
+//       let matchingRequest: any = null;
+      
+//       for (const r of requests) {
+//         if (!r) continue;
+        
+//         if (r.email && seller.email) {
+//           const rEmail = String(r.email).toLowerCase().trim();
+//           const sEmail = String(seller.email).toLowerCase().trim();
+//           if (rEmail === sEmail) {
+//             matchingRequest = r;
+//             break;
+//           }
+//         }
+        
+//         if (r.id && seller.request_id && r.id === seller.request_id) {
+//           matchingRequest = r;
+//           break;
+//         }
+        
+//         if (r.seller_id && seller.id && r.seller_id === seller.id) {
+//           matchingRequest = r;
+//           break;
+//         }
+//       }
+      
+//       let matchingUser: any = null;
+      
+//       for (const u of users) {
+//         if (!u) continue;
+        
+//         if (u.id && seller.user_id && u.id === seller.user_id) {
+//           matchingUser = u;
+//           break;
+//         }
+        
+//         if (u.email && seller.email) {
+//           const uEmail = String(u.email).toLowerCase().trim();
+//           const sEmail = String(seller.email).toLowerCase().trim();
+//           if (uEmail === sEmail) {
+//             matchingUser = u;
+//             break;
+//           }
+//         }
+//       }
+      
+//       const mergedSeller: any = {
+//         id: seller.id || '',
+//         user_id: seller.user_id || seller.userId || null,
+//         businessName: seller.business_name || seller.businessName || 'Unknown',
+//         ownerName: seller.owner_name || seller.ownerName || 'Unknown',
+//         email: seller.email || '',
+//         phone: seller.phone || seller.phoneNumber || '',
+//         businessAddress: seller.business_address || seller.businessAddress || '',
+//         requestedDate: '',
+//         approvalDate: null,
+//         rejectedDate: null,
+//         requestStatus: 'approved',
+//         accountStatus: 'active',
+//         subscriptionStatus: 'active',
+//         createdAt: '',
+//         updatedAt: '',
+//         lastLogin: null,
+//         deleted: false,
+//         deletedAt: null,
+//         deletedBy: null,
+//         deletionReason: null,
+//         passwordResetSent: null,
+//         passwordResetBy: null,
+//         isActive: true,
+//         daysSinceRequest: 0
+//       };
+      
+//       if (matchingRequest && matchingRequest.requestedAt) {
+//         mergedSeller.requestedDate = matchingRequest.requestedAt;
+//       } else if (matchingRequest && matchingRequest.requested_date) {
+//         mergedSeller.requestedDate = matchingRequest.requested_date;
+//       } else if (seller.created_at) {
+//         mergedSeller.requestedDate = seller.created_at;
+//       } else {
+//         mergedSeller.requestedDate = new Date().toISOString();
+//       }
+      
+//       if (matchingRequest && matchingRequest.reviewedAt) {
+//         mergedSeller.approvalDate = matchingRequest.reviewedAt;
+//       } else if (matchingRequest && matchingRequest.approval_date) {
+//         mergedSeller.approvalDate = matchingRequest.approval_date;
+//       }
+      
+//       if (matchingRequest && matchingRequest.rejectedAt) {
+//         mergedSeller.rejectedDate = matchingRequest.rejectedAt;
+//       } else if (matchingRequest && matchingRequest.rejected_date) {
+//         mergedSeller.rejectedDate = matchingRequest.rejected_date;
+//       }
+      
+//       if (matchingRequest && matchingRequest.status) {
+//         mergedSeller.requestStatus = matchingRequest.status;
+//       }
+      
+//       if (seller.account_status) {
+//         mergedSeller.accountStatus = seller.account_status;
+//       } else if (matchingUser && matchingUser.account_status) {
+//         mergedSeller.accountStatus = matchingUser.account_status;
+//       }
+      
+//       if (seller.subscription_status) {
+//         mergedSeller.subscriptionStatus = seller.subscription_status;
+//       }
+      
+//       if (seller.created_at) {
+//         mergedSeller.createdAt = seller.created_at;
+//       } else {
+//         mergedSeller.createdAt = new Date().toISOString();
+//       }
+      
+//       if (seller.updated_at) {
+//         mergedSeller.updatedAt = seller.updated_at;
+//       } else {
+//         mergedSeller.updatedAt = new Date().toISOString();
+//       }
+      
+//       if (matchingUser && matchingUser.last_login) {
+//         mergedSeller.lastLogin = matchingUser.last_login;
+//       } else if (seller.last_login) {
+//         mergedSeller.lastLogin = seller.last_login;
+//       }
+      
+//       if (seller.account_status === 'deleted') {
+//         mergedSeller.deleted = true;
+//       }
+      
+//       if (seller.deleted_at) {
+//         mergedSeller.deletedAt = seller.deleted_at;
+//       }
+      
+//       if (seller.deleted_by) {
+//         mergedSeller.deletedBy = seller.deleted_by;
+//       }
+      
+//       if (seller.deletion_reason) {
+//         mergedSeller.deletionReason = seller.deletion_reason;
+//       }
+      
+//       if (seller.password_reset_sent) {
+//         mergedSeller.passwordResetSent = seller.password_reset_sent;
+//       }
+      
+//       if (seller.password_reset_by) {
+//         mergedSeller.passwordResetBy = seller.password_reset_by;
+//       }
+      
+//       const accountActive = (
+//         mergedSeller.accountStatus === 'active' || 
+//         !seller.account_status
+//       );
+      
+//       const subscriptionActive = (
+//         mergedSeller.subscriptionStatus === 'active' || 
+//         !seller.subscription_status
+//       );
+      
+//       mergedSeller.isActive = accountActive && subscriptionActive;
+      
+//       try {
+//         let requestDateStr = '';
+        
+//         if (matchingRequest && matchingRequest.requestedAt) {
+//           requestDateStr = matchingRequest.requestedAt;
+//         } else if (matchingRequest && matchingRequest.requested_date) {
+//           requestDateStr = matchingRequest.requested_date;
+//         }
+        
+//         if (requestDateStr) {
+//           const requestDate = new Date(requestDateStr);
+//           if (!isNaN(requestDate.getTime())) {
+//             const diffMs = Date.now() - requestDate.getTime();
+//             const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+//             mergedSeller.daysSinceRequest = days >= 0 ? days : 0;
+//           }
+//         }
+//       } catch (error) {
+//         console.warn('Error calculating days:', error);
+//         mergedSeller.daysSinceRequest = 0;
+//       }
+      
+//       mergedData.push(mergedSeller);
+//     }
+    
+//    const validData = mergedData.filter(s => {
+//       return s.id && 
+//              s.email && 
+//              s.businessName && 
+//              s.businessName !== 'Unknown' &&
+//              s.accountStatus !== 'deleted';  // ← ADD THIS
+//     });
+    
+//     console.log('✅ Merge complete:', {
+//       total: mergedData.length,
+//       valid: validData.length
+//     });
+    
+//     return validData;
+    
+//   } catch (error) {
+//     console.error('❌ Error in getSellersWithFullData:', error);
+//     return [];
+//   }
+// };
+
+// export const getSellersWithFullData = async (): Promise<any[]> => {
+//   try {
+//     console.log('🔄 Fetching sellers with complete data...');
+    
+//     const [sellersSnapshot, requestsSnapshot, usersSnapshot] = await Promise.all([
+//       getDocs(collection(db, 'sellers')),
+//       getDocs(collection(db, 'sellerRequests')),
+//       getDocs(collection(db, 'users'))
+//     ]);
+    
+//     // ✅ FIX: Filter deleted sellers immediately
+//     const sellers: any[] = [];
+//     sellersSnapshot.forEach(doc => {
+//       const data = doc.data();
+//       if (data.account_status !== 'deleted') {  // ✅ Skip deleted
+//         sellers.push({ id: doc.id, ...data });
+//       }
+//     });
+    
+//     const requests: any[] = [];
+//     requestsSnapshot.forEach(doc => {
+//       requests.push({ id: doc.id, ...doc.data() });
+//     });
+    
+//     const users: any[] = [];
+//     usersSnapshot.forEach(doc => {
+//       users.push({ id: doc.id, ...doc.data() });
+//     });
+    
+//     console.log('📊 Fetched:', { sellers: sellers.length, requests: requests.length, users: users.length });
+    
+//     const mergedData: any[] = [];
+    
+//     for (const seller of sellers) {
+//       if (!seller || !seller.id) {
+//         console.warn('⚠️ Skipping invalid seller');
+//         continue;
+//       }
+      
+//       // Find matching request
+//       let matchingRequest: any = null;
+//       for (const r of requests) {
+//         if (!r) continue;
+        
+//         if (r.email && seller.email) {
+//           const rEmail = String(r.email).toLowerCase().trim();
+//           const sEmail = String(seller.email).toLowerCase().trim();
+//           if (rEmail === sEmail) {
+//             matchingRequest = r;
+//             break;
+//           }
+//         }
+        
+//         if (r.id && seller.request_id && r.id === seller.request_id) {
+//           matchingRequest = r;
+//           break;
+//         }
+        
+//         if (r.seller_id && seller.id && r.seller_id === seller.id) {
+//           matchingRequest = r;
+//           break;
+//         }
+//       }
+      
+//       // Find matching user
+//       let matchingUser: any = null;
+//       for (const u of users) {
+//         if (!u) continue;
+        
+//         if (u.id && seller.user_id && u.id === seller.user_id) {
+//           matchingUser = u;
+//           break;
+//         }
+        
+//         if (u.email && seller.email) {
+//           const uEmail = String(u.email).toLowerCase().trim();
+//           const sEmail = String(seller.email).toLowerCase().trim();
+//           if (uEmail === sEmail) {
+//             matchingUser = u;
+//             break;
+//           }
+//         }
+//       }
+      
+//       const mergedSeller: any = {
+//         id: seller.id || '',
+//         user_id: seller.user_id || seller.userId || null,
+//         businessName: seller.business_name || seller.businessName || 'Unknown',
+//         ownerName: seller.owner_name || seller.ownerName || 'Unknown',
+//         email: seller.email || '',
+//         phone: seller.phone || seller.phoneNumber || '',
+//         businessAddress: seller.business_address || seller.businessAddress || '',
+//         requestedDate: '',
+//         approvalDate: null,
+//         rejectedDate: null,
+//         requestStatus: 'approved',
+//         accountStatus: 'active',
+//         subscriptionStatus: 'active',
+//         createdAt: '',
+//         updatedAt: '',
+//         lastLogin: null,
+//         deleted: false,
+//         deletedAt: null,
+//         deletedBy: null,
+//         deletionReason: null,
+//         passwordResetSent: null,
+//         passwordResetBy: null,
+//         isActive: true,
+//         daysSinceRequest: 0
+//       };
+      
+//       // Date mapping
+//       if (matchingRequest && matchingRequest.requestedAt) {
+//         mergedSeller.requestedDate = matchingRequest.requestedAt;
+//       } else if (matchingRequest && matchingRequest.requested_date) {
+//         mergedSeller.requestedDate = matchingRequest.requested_date;
+//       } else if (seller.created_at) {
+//         mergedSeller.requestedDate = seller.created_at;
+//       } else {
+//         mergedSeller.requestedDate = new Date().toISOString();
+//       }
+      
+//       if (matchingRequest && matchingRequest.reviewedAt) {
+//         mergedSeller.approvalDate = matchingRequest.reviewedAt;
+//       } else if (matchingRequest && matchingRequest.approval_date) {
+//         mergedSeller.approvalDate = matchingRequest.approval_date;
+//       }
+      
+//       if (matchingRequest && matchingRequest.rejectedAt) {
+//         mergedSeller.rejectedDate = matchingRequest.rejectedAt;
+//       } else if (matchingRequest && matchingRequest.rejected_date) {
+//         mergedSeller.rejectedDate = matchingRequest.rejected_date;
+//       }
+      
+//       if (matchingRequest && matchingRequest.status) {
+//         mergedSeller.requestStatus = matchingRequest.status;
+//       }
+      
+//       if (seller.account_status) {
+//         mergedSeller.accountStatus = seller.account_status;
+//       } else if (matchingUser && matchingUser.account_status) {
+//         mergedSeller.accountStatus = matchingUser.account_status;
+//       }
+      
+//       if (seller.subscription_status) {
+//         mergedSeller.subscriptionStatus = seller.subscription_status;
+//       }
+      
+//       if (seller.created_at) {
+//         mergedSeller.createdAt = seller.created_at;
+//       } else {
+//         mergedSeller.createdAt = new Date().toISOString();
+//       }
+      
+//       if (seller.updated_at) {
+//         mergedSeller.updatedAt = seller.updated_at;
+//       } else {
+//         mergedSeller.updatedAt = new Date().toISOString();
+//       }
+      
+//       if (matchingUser && matchingUser.last_login) {
+//         mergedSeller.lastLogin = matchingUser.last_login;
+//       } else if (seller.last_login) {
+//         mergedSeller.lastLogin = seller.last_login;
+//       }
+      
+//       // ✅ Already filtered deleted, so deleted should always be false here
+//       mergedSeller.deleted = false;
+      
+//       if (seller.password_reset_sent) {
+//         mergedSeller.passwordResetSent = seller.password_reset_sent;
+//       }
+      
+//       if (seller.password_reset_by) {
+//         mergedSeller.passwordResetBy = seller.password_reset_by;
+//       }
+      
+//       const accountActive = (
+//         mergedSeller.accountStatus === 'active' || 
+//         !seller.account_status
+//       );
+      
+//       const subscriptionActive = (
+//         mergedSeller.subscriptionStatus === 'active' || 
+//         !seller.subscription_status
+//       );
+      
+//       mergedSeller.isActive = accountActive && subscriptionActive;
+      
+//       // Calculate days since request
+//       try {
+//         let requestDateStr = '';
+        
+//         if (matchingRequest && matchingRequest.requestedAt) {
+//           requestDateStr = matchingRequest.requestedAt;
+//         } else if (matchingRequest && matchingRequest.requested_date) {
+//           requestDateStr = matchingRequest.requested_date;
+//         }
+        
+//         if (requestDateStr) {
+//           const requestDate = new Date(requestDateStr);
+//           if (!isNaN(requestDate.getTime())) {
+//             const diffMs = Date.now() - requestDate.getTime();
+//             const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+//             mergedSeller.daysSinceRequest = days >= 0 ? days : 0;
+//           }
+//         }
+//       } catch (error) {
+//         console.warn('Error calculating days:', error);
+//         mergedSeller.daysSinceRequest = 0;
+//       }
+      
+//       mergedData.push(mergedSeller);
+//     }
+    
+//     // ✅ Final validation - ensure no deleted sellers
+//     const validData = mergedData.filter(s => {
+//       return s.id && 
+//              s.email && 
+//              s.businessName && 
+//              s.businessName !== 'Unknown' &&
+//              s.accountStatus !== 'deleted';  // ✅ Double check
+//     });
+    
+//     console.log('✅ Merge complete:', {
+//       total: mergedData.length,
+//       valid: validData.length
+//     });
+    
+//     return validData;
+    
+//   } catch (error) {
+//     console.error('❌ Error in getSellersWithFullData:', error);
+//     return [];
+//   }
+// };  
+
 export const getSellersWithFullData = async (): Promise<any[]> => {
   try {
     console.log('🔄 Fetching sellers with complete data...');
@@ -851,9 +1620,10 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
       getDocs(collection(db, 'users'))
     ]);
     
+    // ✅ FIX: DON'T filter deleted - include ALL sellers
     const sellers: any[] = [];
     sellersSnapshot.forEach(doc => {
-      sellers.push({ id: doc.id, ...doc.data() });
+      sellers.push({ id: doc.id, ...doc.data() });  // ← Include deleted too
     });
     
     const requests: any[] = [];
@@ -877,7 +1647,6 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
       }
       
       let matchingRequest: any = null;
-      
       for (const r of requests) {
         if (!r) continue;
         
@@ -902,7 +1671,6 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
       }
       
       let matchingUser: any = null;
-      
       for (const u of users) {
         if (!u) continue;
         
@@ -974,6 +1742,7 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
         mergedSeller.requestStatus = matchingRequest.status;
       }
       
+      // ✅ FIX: Properly set account status from seller data
       if (seller.account_status) {
         mergedSeller.accountStatus = seller.account_status;
       } else if (matchingUser && matchingUser.account_status) {
@@ -1002,20 +1771,12 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
         mergedSeller.lastLogin = seller.last_login;
       }
       
+      // ✅ FIX: Mark deleted sellers properly
       if (seller.account_status === 'deleted') {
         mergedSeller.deleted = true;
-      }
-      
-      if (seller.deleted_at) {
-        mergedSeller.deletedAt = seller.deleted_at;
-      }
-      
-      if (seller.deleted_by) {
-        mergedSeller.deletedBy = seller.deleted_by;
-      }
-      
-      if (seller.deletion_reason) {
-        mergedSeller.deletionReason = seller.deletion_reason;
+        mergedSeller.deletedAt = seller.deleted_at || null;
+        mergedSeller.deletedBy = seller.deleted_by || null;
+        mergedSeller.deletionReason = seller.deletion_reason || 'No reason provided';
       }
       
       if (seller.password_reset_sent) {
@@ -1026,17 +1787,22 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
         mergedSeller.passwordResetBy = seller.password_reset_by;
       }
       
-      const accountActive = (
-        mergedSeller.accountStatus === 'active' || 
-        !seller.account_status
-      );
-      
-      const subscriptionActive = (
-        mergedSeller.subscriptionStatus === 'active' || 
-        !seller.subscription_status
-      );
-      
-      mergedSeller.isActive = accountActive && subscriptionActive;
+      // ✅ FIX: isActive should be false for deleted
+      if (seller.account_status === 'deleted') {
+        mergedSeller.isActive = false;
+      } else {
+        const accountActive = (
+          mergedSeller.accountStatus === 'active' || 
+          !seller.account_status
+        );
+        
+        const subscriptionActive = (
+          mergedSeller.subscriptionStatus === 'active' || 
+          !seller.subscription_status
+        );
+        
+        mergedSeller.isActive = accountActive && subscriptionActive;
+      }
       
       try {
         let requestDateStr = '';
@@ -1063,13 +1829,19 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
       mergedData.push(mergedSeller);
     }
     
+    // ✅ FIX: Only filter invalid data, NOT deleted
     const validData = mergedData.filter(s => {
-      return s.id && s.email && s.businessName && s.businessName !== 'Unknown';
+      return s.id && 
+             s.email && 
+             s.businessName && 
+             s.businessName !== 'Unknown';
+      // ← Removed accountStatus !== 'deleted' filter
     });
     
     console.log('✅ Merge complete:', {
       total: mergedData.length,
-      valid: validData.length
+      valid: validData.length,
+      deleted: validData.filter(s => s.deleted).length
     });
     
     return validData;
@@ -1080,10 +1852,49 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
   }
 };
 
+// export const filterSellers = (
+//   sellers: any[], 
+//   filterOptions: {
+//     status?: 'all' | 'approved' | 'rejected' | 'pending' | 'active' | 'deleted';
+//     dateRange?: { start: Date; end: Date };
+//   }
+// ): any[] => {
+//   try {
+//     let filtered = [...sellers];
+    
+//     if (filterOptions.status && filterOptions.status !== 'all') {
+//       if (filterOptions.status === 'approved') {
+//         filtered = filtered.filter(s => s.requestStatus === 'approved');
+//       } else if (filterOptions.status === 'rejected') {
+//         filtered = filtered.filter(s => s.requestStatus === 'rejected');
+//       } else if (filterOptions.status === 'pending') {
+//         filtered = filtered.filter(s => s.requestStatus === 'pending');
+//       } else if (filterOptions.status === 'active') {
+//         filtered = filtered.filter(s => s.isActive);
+//       } else if (filterOptions.status === 'deleted') {
+//         filtered = filtered.filter(s => s.deleted);
+//       }
+//     }
+    
+//     if (filterOptions.dateRange) {
+//       const { start, end } = filterOptions.dateRange;
+//       filtered = filtered.filter(s => {
+//         const requestDate = new Date(s.requestedDate);
+//         return requestDate >= start && requestDate <= end;
+//       });
+//     }
+    
+//     return filtered;
+//   } catch (error) {
+//     console.error('❌ Error filtering sellers:', error);
+//     return sellers;
+//   }
+// };
+
 export const filterSellers = (
   sellers: any[], 
   filterOptions: {
-    status?: 'all' | 'approved' | 'rejected' | 'pending' | 'active' | 'deleted';
+    status?: 'all' | 'approved' | 'rejected' | 'pending' | 'active' | 'inactive' | 'deleted';
     dateRange?: { start: Date; end: Date };
   }
 ): any[] => {
@@ -1098,9 +1909,19 @@ export const filterSellers = (
       } else if (filterOptions.status === 'pending') {
         filtered = filtered.filter(s => s.requestStatus === 'pending');
       } else if (filterOptions.status === 'active') {
-        filtered = filtered.filter(s => s.isActive);
+        filtered = filtered.filter(s => 
+          s.isActive && 
+          s.accountStatus !== 'inactive' && 
+          s.accountStatus !== 'deleted'
+        );
+      } else if (filterOptions.status === 'inactive') {
+        // ✅ NEW: Filter inactive sellers
+        filtered = filtered.filter(s => 
+          s.accountStatus === 'inactive' || 
+          (s.isActive === false && s.accountStatus !== 'deleted')
+        );
       } else if (filterOptions.status === 'deleted') {
-        filtered = filtered.filter(s => s.deleted);
+        filtered = filtered.filter(s => s.deleted || s.accountStatus === 'deleted');
       }
     }
     
@@ -1118,7 +1939,6 @@ export const filterSellers = (
     return sellers;
   }
 };
-
 export const searchSellers = (sellers: any[], searchQuery: string): any[] => {
   try {
     if (!searchQuery || !searchQuery.trim()) {
@@ -4012,7 +4832,7 @@ export const resetWorkerPassword = async (
     try {
       newWorkerCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
-        workerEmail,
+        // workerEmail,
         newPassword
       );
       console.log('✅ New Firebase Auth account created');
@@ -4838,6 +5658,547 @@ export const uploadBulkTilesWithImages = async (
   
   return results;
 };
+
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ SELLER INACTIVE/ACTIVE MANAGEMENT - NEW FEATURE
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Toggle seller account status (Active ↔ Inactive)
+ * PRODUCTION v1.0 - Manual seller account control
+ * 
+ * @param sellerId - Seller's user ID
+ * @param newStatus - 'active' or 'inactive'
+ * @param reason - Admin's reason for status change
+ * @returns Success result with updated status
+ */
+export const toggleSellerAccountStatus = async (
+  sellerId: string,
+  newStatus: 'active' | 'inactive',
+  reason: string
+): Promise<{ success: boolean; error?: string; previousStatus?: string }> => {
+  
+  try {
+    console.log(`🔄 Toggling seller status to: ${newStatus}`, { sellerId, reason });
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 1: VERIFY ADMIN PERMISSIONS
+    // ═══════════════════════════════════════════════════════════
+    
+    const isAdmin = await isCurrentUserAdmin();
+    if (!isAdmin) {
+      throw new Error('Only administrators can change seller account status');
+    }
+
+    const currentAdmin = auth.currentUser;
+    if (!currentAdmin) {
+      throw new Error('No authenticated admin found');
+    }
+
+    console.log('✅ Admin verified:', currentAdmin.email);
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 2: PREVENT SELF-DEACTIVATION
+    // ═══════════════════════════════════════════════════════════
+    
+    if (sellerId === currentAdmin.uid && newStatus === 'inactive') {
+      throw new Error('You cannot deactivate your own account');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 3: GET CURRENT SELLER STATUS
+    // ═══════════════════════════════════════════════════════════
+    
+    const sellerDoc = await getDoc(doc(db, 'sellers', sellerId));
+    
+    if (!sellerDoc.exists()) {
+      throw new Error('Seller not found');
+    }
+
+    const sellerData = sellerDoc.data();
+    const previousStatus = sellerData.account_status || 'active';
+
+    console.log('📊 Current status:', previousStatus);
+
+    // Check if already in requested status
+    if (previousStatus === newStatus) {
+      console.log('⚠️ Already in requested status');
+      return { 
+        success: true, 
+        previousStatus,
+        message: `Account is already ${newStatus}`
+      } as any;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 4: UPDATE SELLER DOCUMENT
+    // ═══════════════════════════════════════════════════════════
+    
+    const statusUpdateData = {
+      account_status: newStatus,
+      is_active: newStatus === 'active',
+      status_changed_at: new Date().toISOString(),
+      status_changed_by: currentAdmin.uid,
+      status_change_reason: reason || (newStatus === 'inactive' ? 'Admin action' : 'Reactivated by admin'),
+      updated_at: new Date().toISOString(),
+      
+      // Track status history
+      ...(newStatus === 'inactive' && {
+        inactive_since: new Date().toISOString(),
+        inactive_by: currentAdmin.uid,
+        inactive_reason: reason
+      }),
+      
+      ...(newStatus === 'active' && {
+        reactivated_at: new Date().toISOString(),
+        reactivated_by: currentAdmin.uid,
+        reactivation_note: reason,
+        previous_inactive_period: sellerData.inactive_since 
+          ? Math.floor((Date.now() - new Date(sellerData.inactive_since).getTime()) / (1000 * 60 * 60 * 24))
+          : 0
+      })
+    };
+
+    await updateDoc(doc(db, 'sellers', sellerId), statusUpdateData);
+    console.log('✅ Seller document updated');
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 5: UPDATE USER DOCUMENT (SYNC)
+    // ═══════════════════════════════════════════════════════════
+    
+    if (sellerData.user_id) {
+      try {
+        await updateDoc(doc(db, 'users', sellerData.user_id), {
+          account_status: newStatus,
+          is_active: newStatus === 'active',
+          status_changed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        console.log('✅ User document synced');
+      } catch (userError) {
+        console.warn('⚠️ Could not update user document:', userError);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 6: UPDATE SELLER'S WORKERS (CASCADE)
+    // ═══════════════════════════════════════════════════════════
+    
+    if (sellerData.worker_id) {
+      try {
+        await updateDoc(doc(db, 'users', sellerData.worker_id), {
+          is_active: newStatus === 'active',
+          seller_account_status: newStatus,
+          updated_at: new Date().toISOString()
+        });
+        console.log('✅ Worker status synced');
+      } catch (workerError) {
+        console.warn('⚠️ Could not update worker:', workerError);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 7: UPDATE TILES VISIBILITY
+    // ═══════════════════════════════════════════════════════════
+    
+    try {
+      const tilesQuery = query(
+        collection(db, 'tiles'),
+        where('sellerId', '==', sellerId)
+      );
+      const tilesSnapshot = await getDocs(tilesQuery);
+      
+      const batch = writeBatch(db);
+      tilesSnapshot.docs.forEach(tileDoc => {
+        batch.update(tileDoc.ref, {
+          visible: newStatus === 'active',
+          seller_account_active: newStatus === 'active',
+          updated_at: new Date().toISOString()
+        });
+      });
+      
+      await batch.commit();
+      console.log(`✅ ${tilesSnapshot.size} tiles visibility updated`);
+    } catch (tilesError) {
+      console.warn('⚠️ Could not update tiles:', tilesError);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 8: LOG ADMIN ACTION
+    // ═══════════════════════════════════════════════════════════
+    
+    await addDoc(collection(db, 'adminLogs'), {
+      action: newStatus === 'inactive' ? 'seller_marked_inactive' : 'seller_reactivated',
+      admin_id: currentAdmin.uid,
+      admin_email: currentAdmin.email,
+      seller_id: sellerId,
+      seller_email: sellerData.email,
+      seller_business: sellerData.business_name,
+      previous_status: previousStatus,
+      new_status: newStatus,
+      reason: reason,
+      timestamp: new Date().toISOString(),
+      success: true
+    });
+
+    console.log('📝 Admin action logged');
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 9: SEND EMAIL NOTIFICATION (OPTIONAL)
+    // ═══════════════════════════════════════════════════════════
+    
+    try {
+      const emailServiceStatus = await checkEmailServiceHealth();
+      
+      if (emailServiceStatus.configured) {
+        if (newStatus === 'inactive') {
+          await sendSellerDeactivationEmail(
+            sellerData.email,
+            sellerData.business_name,
+            sellerData.owner_name,
+            reason
+          );
+        } else {
+          await sendSellerReactivationEmail(
+            sellerData.email,
+            sellerData.business_name,
+            sellerData.owner_name,
+            reason
+          );
+        }
+        console.log('✅ Email notification sent');
+      } else {
+        console.log('⚠️ Email service not configured - skipping notification');
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Email notification failed:', emailError);
+      // Don't throw - status change was successful
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 10: SUCCESS RESPONSE
+    // ═══════════════════════════════════════════════════════════
+    
+    console.log(`🎉 Seller status changed: ${previousStatus} → ${newStatus}`);
+
+    return {
+      success: true,
+      previousStatus,
+      newStatus,
+      sellerEmail: sellerData.email,
+      businessName: sellerData.business_name
+    } as any;
+
+  } catch (error: any) {
+    console.error('❌ Error toggling seller status:', error);
+
+    // Log failure
+    try {
+      const currentAdmin = auth.currentUser;
+      if (currentAdmin) {
+        await addDoc(collection(db, 'adminLogs'), {
+          action: 'seller_status_change_failed',
+          admin_id: currentAdmin.uid,
+          seller_id: sellerId,
+          attempted_status: newStatus,
+          error_message: error.message,
+          timestamp: new Date().toISOString(),
+          success: false
+        });
+      }
+    } catch (logError) {
+      console.warn('⚠️ Failed to log error:', logError);
+    }
+
+    return {
+      success: false,
+      error: error.message || 'Failed to change seller status'
+    };
+  }
+};
+
+/**
+ * Get seller account status history
+ * @param sellerId - Seller's user ID
+ * @returns Array of status change events
+ */
+export const getSellerStatusHistory = async (sellerId: string): Promise<any[]> => {
+  try {
+    const q = query(
+      collection(db, 'adminLogs'),
+      where('seller_id', '==', sellerId),
+      where('action', 'in', ['seller_marked_inactive', 'seller_reactivated']),
+      orderBy('timestamp', 'desc'),
+      limit(20)
+    );
+
+    const snapshot = await getDocs(q);
+    
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching status history:', error);
+    return [];
+  }
+};
+
+/**
+ * Check if seller account is active (for login)
+ * CRITICAL: This runs on every seller login attempt
+ * 
+ * @param userId - User ID attempting login
+ * @returns Object with active status and reason if inactive
+ */
+export const checkSellerAccountActive = async (
+  userId: string
+): Promise<{ 
+  isActive: boolean; 
+  status: string;
+  reason?: string;
+  inactiveSince?: string;
+}> => {
+  try {
+    console.log('🔍 Checking account status for user:', userId);
+
+    // Check users collection first (faster)
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    
+    if (!userDoc.exists()) {
+      console.log('⚠️ User document not found');
+      return { 
+        isActive: false, 
+        status: 'not_found',
+        reason: 'User profile not found'
+      };
+    }
+
+    const userData = userDoc.data();
+    const accountStatus = userData.account_status?.toLowerCase().trim();
+
+    console.log('📊 Account status:', accountStatus);
+
+    // Check for deleted account
+    if (accountStatus === 'deleted') {
+      return {
+        isActive: false,
+        status: 'deleted',
+        reason: 'Your account has been permanently deleted. Please contact support.'
+      };
+    }
+
+    // Check for inactive account
+    if (accountStatus === 'inactive' || userData.is_active === false) {
+      // Get more details from seller document
+      let inactiveReason = 'Your account has been temporarily deactivated by administrator.';
+      let inactiveSince = null;
+
+      try {
+        const sellerQuery = query(
+          collection(db, 'sellers'),
+          where('user_id', '==', userId)
+        );
+        const sellerSnapshot = await getDocs(sellerQuery);
+        
+        if (!sellerSnapshot.empty) {
+          const sellerData = sellerSnapshot.docs[0].data();
+          inactiveReason = sellerData.inactive_reason || sellerData.status_change_reason || inactiveReason;
+          inactiveSince = sellerData.inactive_since || sellerData.status_changed_at;
+        }
+      } catch (sellerError) {
+        console.warn('⚠️ Could not fetch seller details:', sellerError);
+      }
+
+      return {
+        isActive: false,
+        status: 'inactive',
+        reason: inactiveReason,
+        inactiveSince: inactiveSince
+      };
+    }
+
+    // Check for suspended account
+    if (accountStatus === 'suspended') {
+      return {
+        isActive: false,
+        status: 'suspended',
+        reason: 'Your account has been suspended. Please contact support.'
+      };
+    }
+
+    // Account is active
+    console.log('✅ Account is active');
+    return {
+      isActive: true,
+      status: 'active'
+    };
+
+  } catch (error) {
+    console.error('❌ Error checking account status:', error);
+    
+    // Fail-safe: Allow login if check fails (prevent lockout)
+    // But log the error for admin review
+    try {
+      await addDoc(collection(db, 'errorLogs'), {
+        error_type: 'account_status_check_failed',
+        user_id: userId,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    } catch (logError) {
+      console.warn('⚠️ Could not log error:', logError);
+    }
+
+    return {
+      isActive: true, // Fail-safe
+      status: 'unknown',
+      reason: 'Could not verify account status'
+    };
+  }
+};
+
+/**
+ * Send deactivation email notification
+ */
+export const sendSellerDeactivationEmail = async (
+  email: string,
+  businessName: string,
+  ownerName: string,
+  reason: string
+): Promise<any> => {
+  try {
+    // Using existing emailService
+    const templateParams = {
+      to_email: email,
+      to_name: ownerName,
+      business_name: businessName,
+      subject: 'Account Temporarily Deactivated ⚠️',
+      message: `
+Dear ${ownerName},
+
+Your TileVision seller account has been temporarily deactivated.
+
+Account Details:
+• Business: ${businessName}
+• Email: ${email}
+• Status: Inactive
+• Date: ${new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}
+
+Reason:
+${reason || 'Administrative action'}
+
+What This Means:
+✗ You cannot login to your account
+✗ Your tiles are hidden from customers
+✗ QR codes are temporarily disabled
+
+Need Help?
+Please contact our support team
+
+Best regards,
+TileVision Admin Team
+      `.trim()
+    };
+
+    // Use existing sendEmail function from emailService
+    return await sendEmail(templateParams);
+  } catch (error) {
+    console.error('❌ Deactivation email failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send reactivation email notification
+ */
+export const sendSellerReactivationEmail = async (
+  email: string,
+  businessName: string,
+  ownerName: string,
+  note?: string
+): Promise<any> => {
+  try {
+    const templateParams = {
+      to_email: email,
+      to_name: ownerName,
+      business_name: businessName,
+      subject: 'Account Reactivated ✅',
+      message: `
+Dear ${ownerName},
+
+Good news! Your TileVision seller account is now active.
+
+Account Details:
+• Business: ${businessName}
+• Status: Active ✅
+• Reactivated: ${new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}
+
+${note ? `Note: ${note}\n` : ''}
+You Can Now:
+✅ Login to your dashboard
+✅ Manage your tiles
+✅ View analytics
+✅ QR codes are active again
+
+Login Now:
+🔗 ${window.location.origin}/login
+
+Thank you for your patience!
+
+Best regards,
+TileVision Admin Team
+      `.trim()
+    };
+
+    return await sendEmail(templateParams);
+  } catch (error) {
+    console.error('❌ Reactivation email failed:', error);
+    throw error;
+  }
+};
+
+// Helper function for sending emails (reuse existing implementation)
+const sendEmail = async (templateParams: any): Promise<any> => {
+  try {
+    // This will use your existing EmailJS setup
+    // Assuming you have sendSellerCredentialsEmail pattern
+    // Adapt to your existing email service
+    
+    console.log('📧 Sending email:', templateParams.subject);
+    
+    // If EmailJS is configured
+    const emailjs = (window as any).emailjs;
+    if (emailjs) {
+      const response = await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        templateParams,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      
+      return { success: true, response };
+    }
+    
+    return { success: false, error: 'EmailJS not configured' };
+  } catch (error) {
+    console.error('❌ Email send failed:', error);
+    return { success: false, error };
+  }
+};
+
+console.log('✅ Seller Inactive/Active Management functions loaded');
+
 
 // Initialize on import
 if (typeof window !== 'undefined') {

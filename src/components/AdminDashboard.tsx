@@ -1,4 +1,3 @@
- 
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -12,6 +11,7 @@ import {
   getAllAnalytics, 
   getAdminDashboardStats,
   getSellersWithFullData,
+  toggleSellerAccountStatus,
   filterSellers,
   searchSellers,
   sendPasswordResetToSeller,
@@ -101,6 +101,7 @@ interface DashboardStats {
   thisMonthSellers: number;
 }
 
+type FilterStatus = 'all' | 'approved' | 'rejected' | 'pending' | 'active' | 'inactive' | 'deleted';
 interface TileData {
   id: string;
   tile_code: string;
@@ -127,7 +128,8 @@ export const AdminDashboard: React.FC = () => {
   const [sellers, setSellers] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  // ✅ ADD THIS STATE (existing states ke baad)
+const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
   // ✅ RESPONSIVE MOBILE MENU STATE
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -187,7 +189,7 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
   
   // ✅ FILTER & SEARCH STATES
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'rejected' | 'pending' | 'active' | 'deleted'>('all');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filteredSellers, setFilteredSellers] = useState<any[]>([]);
   
   // ✅ ACTION STATES
@@ -430,7 +432,79 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
       return [];
     }
   };
+// ═══════════════════════════════════════════════════════════════
+// ✅ NEW: TOGGLE SELLER STATUS HANDLER
+// ═══════════════════════════════════════════════════════════════
 
+const handleToggleSellerStatus = async (seller: any, newStatus: 'active' | 'inactive') => {
+  try {
+    const actionWord = newStatus === 'inactive' ? 'Deactivate' : 'Reactivate';
+    const statusEmoji = newStatus === 'inactive' ? '🔴' : '🟢';
+    
+    const confirmed = confirm(
+      `${statusEmoji} ${actionWord} Seller Account?\n\n` +
+      `Business: ${seller.businessName}\n` +
+      `Owner: ${seller.ownerName}\n` +
+      `Email: ${seller.email}\n\n` +
+      `This will ${newStatus === 'inactive' ? 'block' : 'allow'} seller login and ` +
+      `${newStatus === 'inactive' ? 'hide' : 'show'} their tiles.\n\n` +
+      `Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    // Prompt for reason
+    const reason = prompt(
+      `Enter reason for ${actionWord.toLowerCase()}ing this account:\n\n` +
+      `(This will be visible to the seller and logged in admin records)`
+    );
+    
+    if (reason === null) return; // Cancelled
+    
+    if (!reason.trim()) {
+      alert('❌ Reason is required for status changes');
+      return;
+    }
+    
+    setTogglingStatus(seller.id);
+    
+    console.log(`🔄 Toggling seller status to ${newStatus}:`, seller.id);
+    
+    const result = await toggleSellerAccountStatus(seller.id, newStatus, reason.trim());
+    
+    if (result.success) {
+      const actionPast = newStatus === 'inactive' ? 'Deactivated' : 'Reactivated';
+      const statusIcon = newStatus === 'inactive' ? '🔴' : '🟢';
+      
+      alert(
+        `${statusIcon} Account ${actionPast} Successfully!\n\n` +
+        // `Business: ${result.businessName || seller.businessName}\n` +
+        // `Email: ${result.sellerEmail || seller.email}\n` +
+        `Previous Status: ${result.previousStatus}\n` +
+        `New Status: ${newStatus}\n\n` +
+        `Reason: ${reason}\n\n` +
+        `${emailServiceStatus?.configured 
+          ? '✅ Email notification sent to seller' 
+          : '⚠️ Please inform seller manually'}`
+      );
+      
+      // Refresh data
+      await loadData();
+    } else {
+      throw new Error(result.error || 'Failed to change status');
+    }
+    
+  } catch (error: any) {
+    console.error('❌ Error toggling seller status:', error);
+    alert(
+      `❌ Status Change Failed!\n\n` +
+      `Error: ${error.message}\n\n` +
+      `Please try again or contact technical support.`
+    );
+  } finally {
+    setTogglingStatus(null);
+  }
+};
   const checkEmailService = async () => {
     try {
       const status = await checkEmailServiceHealth();
@@ -1087,15 +1161,8 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
                 
                 {/* Login URL */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xs sm:text-sm font-medium text-gray-600 sm:w-32">Login URL:</span>
-                  <a 
-                    href="/login" 
-                    className="text-xs sm:text-sm text-blue-600 hover:underline font-medium break-all"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {window.location.origin}/login
-                  </a>
+                
+              
                 </div>
               </div>
 
@@ -1120,7 +1187,7 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
                     `Owner: ${createdSeller.ownerName}\n` +
                     `Email: ${createdSeller.email}\n` +
                     `Password: ${createdSeller.password}\n` +
-                    `Login: ${window.location.origin}/login\n\n` +
+                    // `Login: ${window.location.origin}/login\n\n` +
                     `Welcome to TileVision! 🎉`
                   );
                   alert('📋 Credentials copied to clipboard!');
@@ -1504,6 +1571,17 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
           <Store className="w-10 h-10 sm:w-12 sm:h-12 text-purple-200 opacity-80" />
         </div>
       </div>
+      {/* ✅ NEW: Inactive Sellers Card */}
+<div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6 rounded-xl shadow-lg">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-orange-100 text-xs sm:text-sm font-medium">🔴 Inactive</p>
+      <p className="text-2xl sm:text-3xl font-bold mt-1">{stats.inactiveSellers}</p>
+      <p className="text-orange-200 text-[10px] sm:text-xs mt-1">Temporarily deactivated</p>
+    </div>
+    <UserX className="w-10 h-10 sm:w-12 sm:h-12 text-orange-200 opacity-80" />
+  </div>
+</div>
       
       <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-xl shadow-lg">
         <div className="flex items-center justify-between">
@@ -2400,7 +2478,7 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
         </div>
         
         {/* Filter Buttons - Responsive Grid */}
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+        {/* <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           <button
             onClick={() => setFilterStatus('all')}
             className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
@@ -2441,7 +2519,62 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
           >
             🗑️ Deleted
           </button>
-        </div>
+        </div> */}
+
+        {/* Filter Buttons - UPDATED with Inactive filter */}
+<div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+  <button
+    onClick={() => setFilterStatus('all')}
+    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+      filterStatus === 'all'
+        ? 'bg-purple-600 text-white'
+        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+    }`}
+  >
+    All ({sellers.length})
+  </button>
+  <button
+    onClick={() => setFilterStatus('approved')}
+    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+      filterStatus === 'approved'
+        ? 'bg-green-600 text-white'
+        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+    }`}
+  >
+    ✅ Approved
+  </button>
+  <button
+    onClick={() => setFilterStatus('active')}
+    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+      filterStatus === 'active'
+        ? 'bg-blue-600 text-white'
+        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+    }`}
+  >
+    🟢 Active
+  </button>
+  {/* ✅ NEW: Inactive Filter Button */}
+  <button
+    onClick={() => setFilterStatus('inactive')}
+    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+      filterStatus === 'inactive'
+        ? 'bg-orange-600 text-white'
+        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+    }`}
+  >
+    🔴 Inactive
+  </button>
+  <button
+    onClick={() => setFilterStatus('deleted')}
+    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+      filterStatus === 'deleted'
+        ? 'bg-gray-600 text-white'
+        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+    }`}
+  >
+    🗑️ Deleted
+  </button>
+</div>
       </div>
       
       <div className="mt-3 text-xs sm:text-sm text-gray-600">
@@ -2450,7 +2583,7 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
     </div>
 
     {/* Mobile Card View */}
-    <div className="block lg:hidden space-y-3">
+    {/* <div className="block lg:hidden space-y-3">
       {filteredSellers.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
@@ -2546,10 +2679,143 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
           </div>
         ))
       )}
+    </div> */}
+
+{/* Mobile Card View - UPDATED with Toggle Button */}
+<div className="block lg:hidden space-y-3">
+  {filteredSellers.length === 0 ? (
+    <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+      <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+      <p className="text-gray-500 font-medium">No sellers found</p>
     </div>
+  ) : (
+    filteredSellers.map((seller) => (
+      <div 
+        key={seller.id} 
+        className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
+          seller.deleted ? 'opacity-60 border-gray-300' : 'border-gray-200'
+        }`}
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h4 className={`font-bold text-gray-800 text-sm mb-1 ${seller.deleted ? 'line-through' : ''}`}>
+              {seller.businessName}
+            </h4>
+            <p className="text-xs text-gray-600 truncate">{seller.ownerName}</p>
+          </div>
+          <div className="flex flex-col gap-1 ml-2">
+            <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
+              seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
+              seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+              seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {seller.requestStatus === 'approved' && '✅'}
+              {seller.requestStatus === 'pending' && '⏳'}
+              {seller.requestStatus === 'rejected' && '❌'}
+              {!seller.requestStatus && '?'}
+            </span>
+            <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
+              seller.deleted ? 'bg-gray-100 text-gray-800' :
+              seller.accountStatus === 'inactive' ? 'bg-orange-100 text-orange-800' :
+              seller.isActive ? 'bg-green-100 text-green-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              {seller.deleted ? '🗑️' : 
+               seller.accountStatus === 'inactive' ? '🔴' :
+               seller.isActive ? '🟢' : '⚪'}
+            </span>
+          </div>
+        </div>
+        
+        <a href={`mailto:${seller.email}`} className="text-xs text-blue-600 hover:underline block mb-2 break-all">
+          {seller.email}
+        </a>
+        
+        <p className="text-xs text-gray-600 mb-3">{seller.phone || 'No phone'}</p>
+        
+        {!seller.deleted && (
+          <div className="grid grid-cols-2 gap-2 pt-3 border-t">
+            {/* ✅ NEW: Toggle Button for Mobile */}
+            {seller.accountStatus === 'inactive' || !seller.isActive ? (
+              <button
+                onClick={() => handleToggleSellerStatus(seller, 'active')}
+                disabled={togglingStatus === seller.id}
+                className="col-span-2 flex items-center justify-center gap-2 p-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 text-xs font-medium"
+              >
+                {togglingStatus === seller.id ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                ) : (
+                  <>
+                    <Activity className="w-3 h-3" />
+                    Reactivate Account
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => handleToggleSellerStatus(seller, 'inactive')}
+                disabled={togglingStatus === seller.id}
+                className="col-span-2 flex items-center justify-center gap-2 p-2 text-orange-700 bg-orange-100 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50 text-xs font-medium"
+              >
+                {togglingStatus === seller.id ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-700"></div>
+                ) : (
+                  <>
+                    <UserX className="w-3 h-3" />
+                    Mark Inactive
+                  </>
+                )}
+              </button>
+            )}
+            
+            {/* Existing buttons */}
+            <button
+              onClick={() => handlePasswordReset(seller)}
+              disabled={processingAction === seller.id}
+              className="flex items-center justify-center gap-1 p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 text-xs"
+            >
+              {processingAction === seller.id ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+              ) : (
+                <>
+                  <Key className="w-3 h-3" />
+                  Reset
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={() => handleViewDetails(seller)}
+              className="flex items-center justify-center gap-1 p-2 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-xs"
+            >
+              <Eye className="w-3 h-3" />
+              Details
+            </button>
+            
+            <button
+              onClick={() => handleDeleteSeller(seller)}
+              disabled={processingAction === seller.id}
+              className="col-span-2 flex items-center justify-center gap-1 p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 text-xs"
+            >
+              {processingAction === seller.id ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+              ) : (
+                <>
+                  <Trash2 className="w-3 h-3" />
+                  Delete
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    ))
+  )}
+</div>
 
     {/* Desktop Table View */}
-    <div className="hidden lg:block overflow-x-auto bg-white rounded-lg border border-gray-200">
+    {/* <div className="hidden lg:block overflow-x-auto bg-white rounded-lg border border-gray-200">
       <table className="w-full">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
@@ -2665,7 +2931,164 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
           )}
         </tbody>
       </table>
-    </div>
+    </div> */}
+
+{/* Desktop Table View - UPDATED with Toggle Button */}
+<div className="hidden lg:block overflow-x-auto bg-white rounded-lg border border-gray-200">
+  <table className="w-full">
+    <thead className="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Business Name</th>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Owner</th>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Email</th>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Phone</th>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Status</th>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Account</th>
+        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredSellers.length === 0 ? (
+        <tr>
+          <td colSpan={7} className="p-8 text-center text-gray-500">
+            <div className="flex flex-col items-center gap-2">
+              <AlertCircle className="w-8 h-8 text-gray-400" />
+              <p className="font-medium">No sellers found</p>
+            </div>
+          </td>
+        </tr>
+      ) : (
+        filteredSellers.map((seller) => (
+          <tr 
+            key={seller.id} 
+            className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${
+              seller.deleted ? 'opacity-60 bg-gray-50' : ''
+            }`}
+          >
+            <td className="p-4">
+              <div className={`font-medium text-gray-800 text-sm ${seller.deleted ? 'line-through' : ''}`}>
+                {seller.businessName}
+              </div>
+            </td>
+            <td className="p-4 text-gray-700 text-sm">{seller.ownerName}</td>
+            <td className="p-4">
+              <a 
+                href={`mailto:${seller.email}`}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                {seller.email}
+              </a>
+            </td>
+            <td className="p-4 text-gray-600 text-sm">{seller.phone || 'N/A'}</td>
+            <td className="p-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {seller.requestStatus === 'approved' && '✅ Approved'}
+                {seller.requestStatus === 'pending' && '⏳ Pending'}
+                {seller.requestStatus === 'rejected' && '❌ Rejected'}
+                {!seller.requestStatus && 'Unknown'}
+              </span>
+            </td>
+            <td className="p-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                seller.deleted ? 'bg-gray-100 text-gray-800' :
+                seller.accountStatus === 'inactive' ? 'bg-orange-100 text-orange-800' :
+                seller.isActive ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {seller.deleted && '🗑️ Deleted'}
+                {!seller.deleted && seller.accountStatus === 'inactive' && '🔴 Inactive'}
+                {!seller.deleted && seller.accountStatus !== 'inactive' && seller.isActive && '🟢 Active'}
+                {!seller.deleted && seller.accountStatus !== 'inactive' && !seller.isActive && '⚪ Inactive'}
+              </span>
+            </td>
+            <td className="p-4">
+              <div className="flex gap-2 flex-wrap">
+                {!seller.deleted && (
+                  <>
+                    {/* ✅ NEW: Toggle Active/Inactive Button */}
+                    {seller.accountStatus === 'inactive' || !seller.isActive ? (
+                      <button
+                        onClick={() => handleToggleSellerStatus(seller, 'active')}
+                        disabled={togglingStatus === seller.id}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                        title="Reactivate Account"
+                      >
+                        {togglingStatus === seller.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        ) : (
+                          <>
+                            <Activity className="w-4 h-4" />
+                            <span className="text-xs hidden xl:inline">Activate</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleSellerStatus(seller, 'inactive')}
+                        disabled={togglingStatus === seller.id}
+                        className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                        title="Deactivate Account"
+                      >
+                        {togglingStatus === seller.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                        ) : (
+                          <>
+                            <UserX className="w-4 h-4" />
+                            <span className="text-xs hidden xl:inline">Deactivate</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Existing buttons */}
+                    <button
+                      onClick={() => handlePasswordReset(seller)}
+                      disabled={processingAction === seller.id}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Send Password Reset Link"
+                    >
+                      {processingAction === seller.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      ) : (
+                        <Key className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleViewDetails(seller)}
+                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDeleteSeller(seller)}
+                      disabled={processingAction === seller.id}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Delete Account"
+                    >
+                      {processingAction === seller.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))
+      )}
+    </tbody>
+  </table>
+</div>
 
     {/* Footer - Responsive */}
     <div className="flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200 gap-3">
@@ -3401,7 +3824,6 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
     </div>
   </div>
 )}
-
     </div>
   );
 };
