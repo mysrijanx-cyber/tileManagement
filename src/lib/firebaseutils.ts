@@ -2957,6 +2957,68 @@ export const deleteTile = async (tileId: string): Promise<void> => {
   }
 };
 
+// export const getSellerTiles = async (sellerId?: string): Promise<any[]> => {
+//   if (!isFirebaseConfigured()) {
+//     return [];
+//   }
+
+//   try {
+//     const userId = sellerId || auth.currentUser?.uid;
+//     if (!userId) {
+//       console.log('⚠️ No seller ID available');
+//       return [];
+//     }
+
+//     console.log('🔍 Fetching tiles for seller:', userId);
+
+//     const q1 = query(
+//       collection(db, 'tiles'),
+//       where('sellerId', '==', userId)
+//     );
+    
+//     const q2 = query(
+//       collection(db, 'tiles'),
+//       where('seller_id', '==', userId)
+//     );
+
+//     const [snapshot1, snapshot2] = await Promise.all([
+//       getDocs(q1),
+//       getDocs(q2)
+//     ]);
+
+//     const tiles1 = snapshot1.docs.map(doc => {
+//       const { id: _, ...data } = doc.data();
+//       return { 
+//         id: doc.id,
+//         ...data 
+//       };
+//     });
+    
+//     const tiles2 = snapshot2.docs.map(doc => {
+//       const { id: _, ...data } = doc.data();
+//       return { 
+//         id: doc.id, 
+//         ...data 
+//       };
+//     });
+
+//     const allTiles = [...tiles1, ...tiles2];
+//     const uniqueTiles = Array.from(
+//       new Map(allTiles.map(tile => [tile.id, tile])).values()
+//     );
+
+//     console.log('✅ Tiles fetched:', {
+//       camelCase: tiles1.length,
+//       snake_case: tiles2.length,
+//       total: uniqueTiles.length
+//     });
+
+//     return uniqueTiles;
+//   } catch (error) {
+//     console.error('❌ Error getting seller tiles:', error);
+//     return [];
+//   }
+// };
 export const getSellerTiles = async (sellerId?: string): Promise<any[]> => {
   if (!isFirebaseConfigured()) {
     return [];
@@ -2971,49 +3033,61 @@ export const getSellerTiles = async (sellerId?: string): Promise<any[]> => {
 
     console.log('🔍 Fetching tiles for seller:', userId);
 
+    // ✅ FIX: Primary query only (sellerId is standard)
     const q1 = query(
       collection(db, 'tiles'),
       where('sellerId', '==', userId)
     );
     
-    const q2 = query(
-      collection(db, 'tiles'),
-      where('seller_id', '==', userId)
-    );
-
-    const [snapshot1, snapshot2] = await Promise.all([
-      getDocs(q1),
-      getDocs(q2)
-    ]);
-
-    const tiles1 = snapshot1.docs.map(doc => {
-      const { id: _, ...data } = doc.data();
-      return { 
-        id: doc.id,
-        ...data 
-      };
+    const snapshot1 = await getDocs(q1);
+    
+    // ✅ FIX: Map with proper deduplication
+    const tilesMap = new Map();
+    
+    snapshot1.docs.forEach(doc => {
+      const data = doc.data();
+      // Only add if not already in map (prevents duplicates)
+      if (!tilesMap.has(doc.id)) {
+        const { id: _, ...cleanData } = data;
+        tilesMap.set(doc.id, { 
+          id: doc.id,
+          ...cleanData 
+        });
+      }
     });
     
-    const tiles2 = snapshot2.docs.map(doc => {
-      const { id: _, ...data } = doc.data();
-      return { 
-        id: doc.id, 
-        ...data 
-      };
-    });
-
-    const allTiles = [...tiles1, ...tiles2];
-    const uniqueTiles = Array.from(
-      new Map(allTiles.map(tile => [tile.id, tile])).values()
-    );
+    // ✅ FIX: Fallback query only if no results (for backward compatibility)
+    if (tilesMap.size === 0) {
+      console.log('🔄 No tiles with sellerId, trying seller_id...');
+      
+      const q2 = query(
+        collection(db, 'tiles'),
+        where('seller_id', '==', userId)
+      );
+      
+      const snapshot2 = await getDocs(q2);
+      
+      snapshot2.docs.forEach(doc => {
+        const data = doc.data();
+        if (!tilesMap.has(doc.id)) {
+          const { id: _, ...cleanData } = data;
+          tilesMap.set(doc.id, { 
+            id: doc.id,
+            ...cleanData 
+          });
+        }
+      });
+    }
+    
+    const uniqueTiles = Array.from(tilesMap.values());
 
     console.log('✅ Tiles fetched:', {
-      camelCase: tiles1.length,
-      snake_case: tiles2.length,
-      total: uniqueTiles.length
+      total: uniqueTiles.length,
+      unique: tilesMap.size
     });
 
     return uniqueTiles;
+    
   } catch (error) {
     console.error('❌ Error getting seller tiles:', error);
     return [];

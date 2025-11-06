@@ -60,7 +60,7 @@ export const TileCard: React.FC<TileCardProps> = ({
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         />
       </div>
-      <div className="p-3 sm:p-4">
+      {/* <div className="p-3 sm:p-4">
         <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-1 truncate">
           {tile.name}
         </h3>
@@ -93,7 +93,61 @@ export const TileCard: React.FC<TileCardProps> = ({
              tile.category === 'floor' ? 'Floor Only' : 'Wall Only'}
           </span>
         </div>
-      </div>
+      </div> */}
+
+      <div className="p-3 sm:p-4">
+  <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-1 truncate">
+    {tile.name}
+  </h3>
+  
+  {/* ✅ NEW: SURFACE & MATERIAL (Compact) */}
+  {(tile.tileSurface || tile.tileMaterial) && (
+    <div className="flex flex-wrap gap-1 mb-1.5">
+      {tile.tileSurface && (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full text-xs">
+          <span>🔘</span>
+          <span className="hidden sm:inline">{tile.tileSurface}</span>
+        </span>
+      )}
+      {tile.tileMaterial && (
+        <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full text-xs">
+          <span>🧱</span>
+          <span className="hidden sm:inline">{tile.tileMaterial}</span>
+        </span>
+      )}
+    </div>
+  )}
+  
+  <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
+    {tile.size}
+  </p>
+  <div className="flex justify-between items-center gap-2">
+    <span className="text-base sm:text-lg font-bold text-blue-600">
+      ₹{tile.price}
+    </span>
+    <span className={`
+      px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap
+      ${tile.inStock 
+        ? 'bg-green-100 text-green-800' 
+        : 'bg-red-100 text-red-800'
+      }
+    `}>
+      {tile.inStock ? 'In Stock' : 'Out of Stock'}
+    </span>
+  </div>
+  <div className="mt-1.5 sm:mt-2">
+    <span className={`
+      px-2 py-1 rounded-full text-xs font-medium inline-block
+      ${tile.category === 'floor' ? 'bg-blue-100 text-blue-800' :
+        tile.category === 'wall' ? 'bg-purple-100 text-purple-800' :
+        'bg-gray-100 text-gray-800'
+      }
+    `}>
+      {tile.category === 'both' ? 'Floor & Wall' : 
+       tile.category === 'floor' ? 'Floor Only' : 'Wall Only'}
+    </span>
+  </div>
+</div>
     </div>
   );
 };

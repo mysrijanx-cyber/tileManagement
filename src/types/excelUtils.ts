@@ -1,7 +1,11 @@
 import * as XLSX from 'xlsx';
 import { ExcelTileData } from '../types';
 
+
 export const readExcelFile = (file: File): Promise<ExcelTileData[]> => {
+
+
+  
   return new Promise((resolve, reject) => {
     if (!file) {
       reject(new Error('No file provided'));

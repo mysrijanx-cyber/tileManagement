@@ -363,7 +363,35 @@ export const TileDetailsPage: React.FC = () => {
             </p>
           )}
         </div>
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ NEW: SURFACE */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+{tile.tileSurface && (
+  <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-100">
+    <span className="text-xl sm:text-2xl mt-1">🔘</span>
+    <div className="min-w-0 flex-1">
+      <p className="text-xs text-blue-600 font-medium uppercase tracking-wide">Surface</p>
+      <p className="text-base sm:text-lg font-bold text-gray-900 truncate">
+        {tile.tileSurface}
+      </p>
+    </div>
+  </div>
+)}
 
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ NEW: MATERIAL */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+{tile.tileMaterial && (
+  <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
+    <span className="text-xl sm:text-2xl mt-1">🧱</span>
+    <div className="min-w-0 flex-1">
+      <p className="text-xs text-purple-600 font-medium uppercase tracking-wide">Material</p>
+      <p className="text-base sm:text-lg font-bold text-gray-900 truncate">
+        {tile.tileMaterial}
+      </p>
+    </div>
+  </div>
+)}
         {/* Additional Info - RESPONSIVE */}
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-blue-100">
           <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">

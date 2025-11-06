@@ -365,7 +365,7 @@ export const Room3DViewPage: React.FC = () => {
 
               <div className={`space-y-3 ${isMobile && expandedSection !== 'floor' ? 'hidden' : 'block'}`}>
                 {/* Floor Tile Info */}
-                <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+                {/* <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
                   <div className="flex items-center gap-3">
                     <img
                       src={tile.imageUrl}
@@ -382,7 +382,44 @@ export const Room3DViewPage: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                </div>
+                </div> */}
+
+                {/* Floor Tile Info */}
+<div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+  <div className="flex items-center gap-3">
+    <img
+      src={tile.imageUrl}
+      alt={tile.name}
+      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg ring-2 ring-blue-500/50"
+      loading="lazy"
+    />
+    <div className="flex-1 min-w-0">
+      <p className="text-white font-medium text-xs sm:text-sm truncate">{tile.name}</p>
+      <p className="text-gray-400 text-xs">{tile.size}</p>
+      
+      {/* ✅ NEW: SURFACE & MATERIAL */}
+      {(tile.tileSurface || tile.tileMaterial) && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {tile.tileSurface && (
+            <span className="inline-flex items-center gap-1 bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-xs">
+              🔘 {tile.tileSurface}
+            </span>
+          )}
+          {tile.tileMaterial && (
+            <span className="inline-flex items-center gap-1 bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded text-xs">
+              🧱 {tile.tileMaterial}
+            </span>
+          )}
+        </div>
+      )}
+      
+      <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+        <CheckCircle className="w-3 h-3 flex-shrink-0" />
+        <span className="truncate">Applied from QR</span>
+      </p>
+    </div>
+  </div>
+</div>
               </div>
             </section>
 

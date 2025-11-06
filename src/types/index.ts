@@ -16,7 +16,8 @@ export interface Tile {
   qrCodeUrl?: string;
   createdAt: string;
   updatedAt: string;
-  
+  tileSurface?: string;
+  tileMaterial?: string;
   // Analytics fields
   viewCount?: number;
   scanCount?: number;
@@ -86,6 +87,9 @@ export interface ExcelTileData {
   tileCode?: string;
   imageUrl: string;
   textureUrl: string;
+   tileSurface?: string;
+  tileMaterial?: string;
+  
 }
 
 // ===== USER & PROFILE INTERFACES =====

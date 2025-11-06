@@ -1,8 +1,13 @@
 import * as XLSX from 'xlsx';
 import { ExcelTileData } from '../types';
-
+import { TILE_SURFACES, TILE_MATERIALS } from './tileConstants';
 // Read and parse Excel file
+
+
+
 export const readExcelFile = (file: File): Promise<ExcelTileData[]> => {
+
+  
   return new Promise((resolve, reject) => {
     if (!file) {
       reject(new Error('No file provided'));
@@ -333,7 +338,13 @@ export const validateTileData = (tiles: ExcelTileData[]): { valid: ExcelTileData
     } else {
       usedNames.add(tile.name.toLowerCase());
     }
+if (tile.tileSurface && !TILE_SURFACES.includes(tile.tileSurface)) {
+  errors.push(`Row ${index + 2}: Invalid tile surface "${tile.tileSurface}"`);
+}
 
+if (tile.tileMaterial && !TILE_MATERIALS.includes(tile.tileMaterial)) {
+  errors.push(`Row ${index + 2}: Invalid tile material "${tile.tileMaterial}"`);
+}
     // Category validation
     if (!['floor', 'wall', 'both'].includes(tile.category)) {
       rowErrors.push(`Row ${rowNumber}: Invalid category "${tile.category}"`);

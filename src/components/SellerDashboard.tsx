@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Edit, Trash2, Upload, Save, BarChart3, Store, Package, 
   FileSpreadsheet, AlertCircle, CheckCircle, Loader, Search, Filter,
-  RefreshCw, Eye, TrendingUp, QrCode, Download, User, Menu, X
+  RefreshCw,ChevronUp, ChevronDown,Eye, TrendingUp, QrCode, Download, User, Menu, X
 } from 'lucide-react';
 import { Tile } from '../types';
 import { useAppStore } from '../stores/appStore';
@@ -40,7 +40,7 @@ export const SellerDashboard: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [stockFilter, setStockFilter] = useState<string>('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+  const [expandedTileId, setExpandedTileId] = useState<string | null>(null);
   const [newTile, setNewTile] = useState<Partial<Tile>>({
     name: '',
     category: 'both',
@@ -81,32 +81,76 @@ export const SellerDashboard: React.FC = () => {
     }
   }, [error, success]);
 
+  // const loadData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+      
+  //     console.log('🔄 Loading seller data for:', currentUser?.email);
+      
+  //     const [profile, sellerTiles] = await Promise.all([
+  //       getSellerProfile(currentUser?.user_id || ''),
+  //       getSellerTiles(currentUser?.user_id || '')
+  //     ]);
+      
+  //     setSellerProfile(profile);
+  //     setTiles(sellerTiles || []);
+      
+  //     console.log('✅ Seller data loaded:', {
+  //       profile: profile?.business_name || 'No profile',
+  //       tilesCount: sellerTiles?.length || 0
+  //     });
+  //   } catch (error: any) {
+  //     console.error('❌ Error loading seller data:', error);
+  //     setError('Failed to load dashboard data. Please refresh the page.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    setError(null);
+    
+    console.log('🔄 Loading seller data for:', currentUser?.email);
+    
+    const [profile, sellerTiles] = await Promise.all([
+      getSellerProfile(currentUser?.user_id || ''),
+      getSellerTiles(currentUser?.user_id || '')
+    ]);
+    
+    setSellerProfile(profile);
+    
+    // ✅ FIX: Extra deduplication layer in component
+    if (sellerTiles && sellerTiles.length > 0) {
+      const uniqueTilesMap = new Map();
+      sellerTiles.forEach(tile => {
+        if (tile.id && !uniqueTilesMap.has(tile.id)) {
+          uniqueTilesMap.set(tile.id, tile);
+        }
+      });
       
-      console.log('🔄 Loading seller data for:', currentUser?.email);
-      
-      const [profile, sellerTiles] = await Promise.all([
-        getSellerProfile(currentUser?.user_id || ''),
-        getSellerTiles(currentUser?.user_id || '')
-      ]);
-      
-      setSellerProfile(profile);
-      setTiles(sellerTiles || []);
+      const uniqueTiles = Array.from(uniqueTilesMap.values());
       
       console.log('✅ Seller data loaded:', {
         profile: profile?.business_name || 'No profile',
-        tilesCount: sellerTiles?.length || 0
+        tilesRaw: sellerTiles.length,
+        tilesUnique: uniqueTiles.length
       });
-    } catch (error: any) {
-      console.error('❌ Error loading seller data:', error);
-      setError('Failed to load dashboard data. Please refresh the page.');
-    } finally {
-      setLoading(false);
+      
+      setTiles(uniqueTiles);
+    } else {
+      setTiles([]);
+      console.log('ℹ️ No tiles found');
     }
-  };
+    
+  } catch (error: any) {
+    console.error('❌ Error loading seller data:', error);
+    setError('Failed to load dashboard data. Please refresh the page.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const filterTiles = () => {
     let filtered = tiles;
@@ -178,14 +222,40 @@ export const SellerDashboard: React.FC = () => {
     }
   };
 
+  // const validateTileForm = (): string | null => {
+  //   if (!newTile.name?.trim()) return 'Tile name is required';
+  //   if (!newTile.size?.trim()) return 'Tile size is required';
+  //   if (!newTile.price || newTile.price <= 0) return 'Valid price is required';
+  //   if (newTile.stock === undefined || newTile.stock < 0) return 'Valid stock quantity is required';
+  //   if (!newTile.imageUrl?.trim()) return 'Image is required';
+  //   return null;
+  // };
+
   const validateTileForm = (): string | null => {
-    if (!newTile.name?.trim()) return 'Tile name is required';
-    if (!newTile.size?.trim()) return 'Tile size is required';
-    if (!newTile.price || newTile.price <= 0) return 'Valid price is required';
-    if (newTile.stock === undefined || newTile.stock < 0) return 'Valid stock quantity is required';
-    if (!newTile.imageUrl?.trim()) return 'Image is required';
-    return null;
-  };
+  // ✅ Detailed validation with field identification
+  if (!newTile.name?.trim()) {
+    return '❌ Tile Name is required. Please enter a tile name.';
+  }
+  
+  if (!newTile.size?.trim()) {
+    return '❌ Tile Size is required. Please enter or select a size (e.g., 60x60 cm).';
+  }
+  
+  if (!newTile.price || newTile.price <= 0) {
+    return '❌ Valid Price is required. Please enter a price greater than 0.';
+  }
+  
+  if (newTile.stock === undefined || newTile.stock < 0) {
+    return '❌ Valid Stock Quantity is required. Please enter stock (0 or more).';
+  }
+  
+  if (!newTile.imageUrl?.trim()) {
+    return '❌ Tile Image is required. Please upload an image before saving.';
+  }
+  
+  // ✅ All validations passed
+  return null;
+};
 
   const handleAddTile = async () => {
     try {
@@ -194,11 +264,19 @@ export const SellerDashboard: React.FC = () => {
       const validationError = validateTileForm();
       if (validationError) {
         setError(validationError);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // ✅ FIX 3: Auto-clear after 8 seconds (longer than current 5s)
+      setTimeout(() => {
+        // Don't clear if there's a new error
+        setError(prev => prev === validationError ? null : prev);
+      }, 8000);
         return;
       }
 
       if (!currentUser) {
         setError('User not authenticated');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       
@@ -904,7 +982,54 @@ export const SellerDashboard: React.FC = () => {
                     <option value="6x25 cm" />
                   </datalist>
                 </div>
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ NEW: TILE SURFACE */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+<div className="space-y-2">
+  <label className="block text-xs sm:text-sm font-medium text-gray-700">
+    Tile Surface
+  </label>
+  <select
+    value={newTile.tileSurface || ''}
+    onChange={(e) => setNewTile({ ...newTile, tileSurface: e.target.value || undefined })}
+    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+  >
+    <option value="">Select Surface Finish</option>
+    <option value="Polished">Polished</option>
+    <option value="Step Side">Step Side</option>
+    <option value="Matt">Matt</option>
+    <option value="Carving">Carving</option>
+    <option value="High Gloss">High Gloss</option>
+    <option value="Metallic">Metallic</option>
+    <option value="Sugar">Sugar</option>
+    <option value="Glue">Glue</option>
+    <option value="Punch">Punch</option>
+  </select>
+</div>
 
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ NEW: TILE MATERIAL */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+<div className="space-y-2">
+  <label className="block text-xs sm:text-sm font-medium text-gray-700">
+    Tile Material
+  </label>
+  <select
+    value={newTile.tileMaterial || ''}
+    onChange={(e) => setNewTile({ ...newTile, tileMaterial: e.target.value || undefined })}
+    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+  >
+    <option value="">Select Material Type</option>
+    <option value="Slabs">Slabs</option>
+    <option value="GVT & PGVT">GVT & PGVT</option>
+    <option value="Double Charge">Double Charge</option>
+    <option value="Counter Tops">Counter Tops</option>
+    <option value="Full Body">Full Body</option>
+    <option value="Ceramic">Ceramic</option>
+    <option value="Mosaic">Mosaic</option>
+    <option value="Subway">Subway</option>
+  </select>
+</div>
                 {/* Price */}
                 <div className="space-y-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1045,14 +1170,23 @@ export const SellerDashboard: React.FC = () => {
 
               {/* Form Actions */}
               <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-6">
-                <button
+                {/* <button
                   onClick={editingTile ? handleUpdateTile : handleAddTile}
                   disabled={imageUploading || textureUploading}
                   className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
                 >
                   <Save className="w-4 h-4" />
                   {editingTile ? 'Update Tile' : 'Save Tile'}
-                </button>
+                </button> */}
+
+                <button
+  onClick={editingTile ? handleUpdateTile : handleAddTile}
+  disabled={imageUploading || textureUploading}
+  className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base active:scale-95"
+>
+  <Save className="w-4 h-4" />
+  {editingTile ? 'Update Tile' : 'Save Tile'}
+</button>
                 <button
                   onClick={() => {
                     setIsAddingTile(false);
@@ -1067,13 +1201,31 @@ export const SellerDashboard: React.FC = () => {
               </div>
             </div>
           )}
-
+{/* ✅ VALIDATION ERROR - PROMINENT DISPLAY */}
+{error && (isAddingTile || editingTile) && (
+  <div className="mb-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg animate-shake">
+    <div className="flex items-start gap-3">
+      <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
+      <div className="flex-1">
+        <p className="text-red-800 font-bold text-base mb-1">Cannot Save Tile</p>
+        <p className="text-red-700 text-sm">{error}</p>
+      </div>
+      <button 
+        onClick={() => setError(null)}
+        className="text-red-400 hover:text-red-600 font-bold text-xl"
+        aria-label="Close error"
+      >
+        ×
+      </button>
+    </div>
+  </div>
+)}
           {/* Tiles Display - Desktop Table / Mobile Cards */}
           
           {/* Desktop Table View */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full border-collapse bg-white rounded-lg border border-gray-200">
-              <thead>
+              {/* <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Image</th>
                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Name</th>
@@ -1086,7 +1238,27 @@ export const SellerDashboard: React.FC = () => {
                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">QR</th>
                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Actions</th>
                 </tr>
-              </thead>
+              </thead> */}
+
+<thead>
+  <tr className="bg-gray-50 border-b border-gray-200">
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Image</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Name</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Code</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Category</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Size</th>
+    {/* ✅ NEW COLUMNS */}
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Surface</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Material</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Price</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Stock</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Status</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">QR</th>
+    <th className="text-left p-3 font-semibold text-gray-700 text-sm">Actions</th>
+  </tr>
+</thead>
+
+
               <tbody>
                 {filteredTiles.length === 0 ? (
                   <tr>
@@ -1141,6 +1313,30 @@ export const SellerDashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-3 text-gray-600 text-sm">{tile.size}</td>
+
+                      <td className="p-3 text-xs sm:text-sm">
+  {tile.tileSurface ? (
+    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs">
+      <span>🔘</span>
+      <span className="hidden md:inline">{tile.tileSurface}</span>
+    </span>
+  ) : (
+    <span className="text-gray-400 text-xs">—</span>
+  )}
+</td>
+
+{/* ✅ NEW: MATERIAL */}
+<td className="p-3 text-xs sm:text-sm">
+  {tile.tileMaterial ? (
+    <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs">
+      <span>🧱</span>
+      <span className="hidden md:inline">{tile.tileMaterial}</span>
+    </span>
+  ) : (
+    <span className="text-gray-400 text-xs">—</span>
+  )}
+</td>
+
                       <td className="p-3 font-semibold text-gray-900 text-sm">₹{tile.price.toLocaleString()}</td>
                       <td className="p-3">
                         <div className="text-sm">
@@ -1247,7 +1443,7 @@ export const SellerDashboard: React.FC = () => {
                       </div>
 
                       {/* Info Grid */}
-                      <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                      {/* <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
                         <div>
                           <span className="text-gray-500">Category:</span>
                           <div className="mt-0.5">
@@ -1279,8 +1475,91 @@ export const SellerDashboard: React.FC = () => {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </div> */}
 
+{/* Info Grid */}
+<div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+  <div>
+    <span className="text-gray-500">Category:</span>
+    <div className="mt-0.5">
+      <span className={`
+        px-2 py-0.5 rounded-full text-xs font-medium
+        ${tile.category === 'floor' ? 'bg-blue-100 text-blue-800' :
+          tile.category === 'wall' ? 'bg-purple-100 text-purple-800' :
+          'bg-gray-100 text-gray-800'
+        }
+      `}>
+        {tile.category === 'both' ? 'Both' : tile.category}
+      </span>
+    </div>
+  </div>
+  <div>
+    <span className="text-gray-500">Size:</span>
+    <div className="font-medium text-gray-900">{tile.size}</div>
+  </div>
+  <div>
+    <span className="text-gray-500">Price:</span>
+    <div className="font-semibold text-gray-900">₹{tile.price.toLocaleString()}</div>
+  </div>
+  <div>
+    <span className="text-gray-500">Stock:</span>
+    <div className="font-medium text-gray-900">
+      {tile.stock || 0}
+      {(tile.stock || 0) < 10 && tile.inStock && (
+        <span className="text-orange-600 ml-1">(Low)</span>
+      )}
+    </div>
+  </div>
+</div>
+
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ NEW: SURFACE & MATERIAL ACCORDION (MOBILE ONLY) */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+{(tile.tileSurface || tile.tileMaterial) && (
+  <div className="mt-3 border-t border-gray-200 pt-3">
+    <button
+      onClick={() => setExpandedTileId(expandedTileId === tile.id ? null : tile.id)}
+      className="w-full flex items-center justify-between text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+    >
+      <span className="flex items-center gap-1.5">
+        <Package className="w-3.5 h-3.5" />
+        Tile Specifications
+      </span>
+      {expandedTileId === tile.id ? (
+        <ChevronUp className="w-4 h-4 text-gray-500" />
+      ) : (
+        <ChevronDown className="w-4 h-4 text-gray-500" />
+      )}
+    </button>
+
+    {expandedTileId === tile.id && (
+      <div className="mt-2 space-y-2 animate-slide-down">
+        {tile.tileSurface && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-600 flex items-center gap-1">
+              <span>🔘</span>
+              Surface:
+            </span>
+            <span className="font-medium text-gray-900 bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+              {tile.tileSurface}
+            </span>
+          </div>
+        )}
+        {tile.tileMaterial && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-600 flex items-center gap-1">
+              <span>🧱</span>
+              Material:
+            </span>
+            <span className="font-medium text-gray-900 bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+              {tile.tileMaterial}
+            </span>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
                       {/* Status Row */}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(tile)}`}>

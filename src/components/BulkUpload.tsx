@@ -69,13 +69,9 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onUploadComplete }) => {
     '6x25 cm', '20x20 cm', '100x100 cm', '45x45 cm', '50x50 cm', '75x75 cm'
   ];
 
-  const sampleCSV = `name,category,size,price,stock,imageUrl,textureUrl,tileCode
-"Marble White Elite",both,"60x60 cm",2500,100,"https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400","https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400","MWE001"
-"Dark Wood Pattern",floor,"20x120 cm",1800,50,"https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?w=400","https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?w=400","DWP002"
-"Modern Gray Stone",both,"30x60 cm",2200,75,"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400","https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400","MGS003"
-"Ceramic Subway White",wall,"10x30 cm",1200,200,"https://images.unsplash.com/photo-1604709177225-055f99402ea3?w=400","","CSW004"
-"Polished Concrete",floor,"80x80 cm",2800,30,"https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=400","https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=400","PC005"`;
-
+  const sampleCSV = `name,category,size,price,stock,imageUrl,textureUrl,tileCode,tileSurface,tileMaterial
+"Marble White Elite",both,"60x60 cm",2500,100,"https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400","https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400","MWE001","Polished","Slabs"
+"Dark Wood Pattern",floor,"20x120 cm",1800,50,"https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?w=400","https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?w=400","DWP002","Matt","Ceramic"`;
   // ===== HELPER FUNCTIONS =====
 
   /**
@@ -217,6 +213,18 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onUploadComplete }) => {
               }
               tile.textureUrl = value || '';
               break;
+              case 'tilesurface':
+  if (value) {
+    tile.tileSurface = value;
+  }
+  break;
+
+case 'tilematerial':
+  if (value) {
+    tile.tileMaterial = value;
+  }
+  break;
+
               
             case 'tilecode':
               tile.tileCode = value || generateTileCode(tile.name, i);
@@ -561,7 +569,7 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onUploadComplete }) => {
               {showInstructions && (
                 <>
                   {/* Required Columns */}
-                  <div className="bg-purple-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                  {/* <div className="bg-purple-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                     <h4 className="font-semibold text-purple-800 mb-2 text-xs sm:text-sm">Required CSV Columns:</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2 text-xs sm:text-sm text-purple-700">
                       <span className="font-medium">• name *</span>
@@ -574,8 +582,26 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onUploadComplete }) => {
                       <span>• tileCode</span>
                     </div>
                     <p className="text-xs text-purple-600 mt-2">* Required fields | Other fields are optional</p>
-                  </div>
+                  </div> */}
 
+{/* Required Columns */}
+<div className="bg-purple-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+  <h4 className="font-semibold text-purple-800 mb-2 text-xs sm:text-sm">Required CSV Columns:</h4>
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2 text-xs sm:text-sm text-purple-700">
+    <span className="font-medium">• name *</span>
+    <span className="font-medium">• category *</span>
+    <span className="font-medium">• size *</span>
+    <span className="font-medium">• price *</span>
+    <span className="font-medium">• stock *</span>
+    <span className="font-medium">• imageUrl *</span>
+    <span>• textureUrl</span>
+    <span>• tileCode</span>
+    {/* ✅ NEW */}
+    <span>• tileSurface</span>
+    <span>• tileMaterial</span>
+  </div>
+  <p className="text-xs text-purple-600 mt-2">* Required fields | Other fields are optional</p>
+</div>
                   {/* Common Sizes */}
                   <div className="mb-3 sm:mb-4">
                     <p className="text-purple-700 text-xs sm:text-sm font-medium mb-2">Common Tile Sizes:</p>
