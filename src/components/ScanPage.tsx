@@ -82,140 +82,280 @@ export const ScanPage: React.FC = () => {
     }
   };
 
-  const handleScanSuccess = async (data: any) => {
-    console.log('🎯 ===== SCAN HANDLER CALLED =====');
-    console.log('📥 Data:', data);
+  // const handleScanSuccess = async (data: any) => {
+
+
+  //   console.log('🎯 ===== SCAN HANDLER CALLED =====');
+  //   console.log('📥 Data:', data);
     
-    try {
-      setLoading(true);
-      setError(null);
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
 
-      // Extract tile ID
-      let tileId: string;
+  //     // Extract tile ID
+  //     let tileId: string;
       
-      if (data.tileId) {
-        tileId = data.tileId;
-      } else if (data.type === 'manual_entry' && data.tileCode) {
-        setError('Manual tile code lookup not implemented yet.');
-        setLoading(false);
-        return;
-      } else {
-        setError('Invalid QR code format.');
-        setLoading(false);
-        return;
-      }
+  //     if (data.tileId) {
+  //       tileId = data.tileId;
+  //     } else if (data.type === 'manual_entry' && data.tileCode) {
+  //       setError('Manual tile code lookup not implemented yet.');
+  //       setLoading(false);
+  //       return;
+  //     } else {
+  //       setError('Invalid QR code format.');
+  //       setLoading(false);
+  //       return;
+  //     }
 
-      console.log('✅ Tile ID:', tileId);
+  //     console.log('✅ Tile ID:', tileId);
 
-      // Fetch tile data
-      console.log('📦 Fetching tile...');
-      const tileData = await getTileById(tileId);
+  //     // Fetch tile data
+  //     console.log('📦 Fetching tile...');
+  //     const tileData = await getTileById(tileId);
       
-      if (!tileData) {
-        console.error('❌ Tile not found');
-        setError('Tile not found.');
-        setLoading(false);
-        return;
-      }
+  //     if (!tileData) {
+  //       console.error('❌ Tile not found');
+  //       setError('Tile not found.');
+  //       setLoading(false);
+  //       return;
+  //     }
 
-      console.log('✅ Tile:', tileData.name);
+  //     console.log('✅ Tile:', tileData.name);
 
-      const sellerId = tileData.sellerId || tileData.seller_id;
-      const showroomId = tileData.showroomId || tileData.showroom_id;
+  //     const sellerId = tileData.sellerId || tileData.seller_id;
+  //     const showroomId = tileData.showroomId || tileData.showroom_id;
 
-      console.log('👤 Seller:', sellerId);
+  //     console.log('👤 Seller:', sellerId);
 
-      // ═══════════════════════════════════════════════════════════
-      // MAIN TRACKING - NO COOLDOWN
-      // ═══════════════════════════════════════════════════════════
+  //     // ═══════════════════════════════════════════════════════════
+  //     // MAIN TRACKING - NO COOLDOWN
+  //     // ═══════════════════════════════════════════════════════════
       
-      console.log('📊 Tracking in qr_scans...');
+  //     console.log('📊 Tracking in qr_scans...');
       
-      try {
-        await trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id);
-        console.log('✅ TRACKED IN QR_SCANS!');
+  //     try {
+  //       await trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id);
+  //       console.log('✅ TRACKED IN QR_SCANS!');
         
-        // Broadcast event
-        const event = new CustomEvent('tile-scanned', { 
-          detail: { 
-            tileId, 
-            sellerId,
-            tileName: tileData.name,
-            timestamp: new Date().toISOString()
-          } 
-        });
-        window.dispatchEvent(event);
-        console.log('✅ EVENT BROADCASTED!');
+  //       // Broadcast event
+  //       const event = new CustomEvent('tile-scanned', { 
+  //         detail: { 
+  //           tileId, 
+  //           sellerId,
+  //           tileName: tileData.name,
+  //           timestamp: new Date().toISOString()
+  //         } 
+  //       });
+  //       window.dispatchEvent(event);
+  //       console.log('✅ EVENT BROADCASTED!');
         
-      } catch (trackError: any) {
-        console.error('❌ Main tracking failed:', trackError);
-      }
+  //     } catch (trackError: any) {
+  //       console.error('❌ Main tracking failed:', trackError);
+  //     }
 
-      // Legacy tracking - NO COOLDOWN
-      try {
-        await trackQRScan(tileId, {
-          sellerId: sellerId,
-          showroomId: showroomId,
-          scannedBy: currentUser?.user_id ?? 'anonymous',
-          userRole: currentUser?.role ?? 'visitor',
-          scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-        });
-        console.log('✅ Legacy tracked!');
-      } catch (e) {
-        console.warn('⚠️ Legacy tracking failed');
-      }
+  //     // Legacy tracking - NO COOLDOWN
+  //     try {
+  //       await trackQRScan(tileId, {
+  //         sellerId: sellerId,
+  //         showroomId: showroomId,
+  //         scannedBy: currentUser?.user_id ?? 'anonymous',
+  //         userRole: currentUser?.role ?? 'visitor',
+  //         scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
+  //       });
+  //       console.log('✅ Legacy tracked!');
+  //     } catch (e) {
+  //       console.warn('⚠️ Legacy tracking failed');
+  //     }
 
-      // Worker activity
-      if (currentUser?.role === 'worker' && currentUser?.user_id) {
-        try {
-          await trackWorkerActivity(currentUser.user_id, 'scan', { tileId, tileName: tileData.name, sellerId });
-          console.log('✅ Worker activity tracked!');
-        } catch (e) {
-          console.warn('⚠️ Worker tracking failed');
-        }
-      }
+  //     // Worker activity
+  //     if (currentUser?.role === 'worker' && currentUser?.user_id) {
+  //       try {
+  //         await trackWorkerActivity(currentUser.user_id, 'scan', { tileId, tileName: tileData.name, sellerId });
+  //         console.log('✅ Worker activity tracked!');
+  //       } catch (e) {
+  //         console.warn('⚠️ Worker tracking failed');
+  //       }
+  //     }
 
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
+  //     // Haptic feedback
+  //     if (navigator.vibrate) {
+  //       navigator.vibrate(200);
+  //     }
 
-      // Save to recent scans
-      saveRecentScan({
-        id: tileId,
-        tileName: tileData.name,
-        tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
-        scannedAt: new Date().toISOString(),
-        tileId: tileId
-      });
+  //     // Save to recent scans
+  //     saveRecentScan({
+  //       id: tileId,
+  //       tileName: tileData.name,
+  //       tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
+  //       scannedAt: new Date().toISOString(),
+  //       tileId: tileId
+  //     });
 
-      console.log('✅ Saved to recent scans');
+  //     console.log('✅ Saved to recent scans');
 
-      // Show result
-      setSuccess(`✅ ${tileData.name} scanned!`);
-      setShowScanner(false);
+  //     // Show result
+  //     setSuccess(`✅ ${tileData.name} scanned!`);
+  //     setShowScanner(false);
       
-      setScannedTileData({
-        id: tileId,
-        name: tileData.name,
-        image: tileData.imageUrl || tileData.image_url,
-        code: tileData.tileCode || tileData.tile_code,
-        size: tileData.size,
-        price: tileData.price,
-        stock: tileData.stock,
-        inStock: tileData.inStock
-      });
+  //     setScannedTileData({
+  //       id: tileId,
+  //       name: tileData.name,
+  //       image: tileData.imageUrl || tileData.image_url,
+  //       code: tileData.tileCode || tileData.tile_code,
+  //       size: tileData.size,
+  //       price: tileData.price,
+  //       stock: tileData.stock,
+  //       inStock: tileData.inStock
+  //     });
 
-      console.log('🎯 ===== SCAN COMPLETED =====');
+  //     console.log('🎯 ===== SCAN COMPLETED =====');
 
-    } catch (err: any) {
-      console.error('❌ Scan error:', err);
-      setError('Failed to process scan.');
-    } finally {
+  //   } catch (err: any) {
+  //     console.error('❌ Scan error:', err);
+  //     setError('Failed to process scan.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const handleScanSuccess = async (data: any) => {
+  console.log('🎯 ===== SCAN HANDLER CALLED =====');
+  console.log('📥 Data:', data);
+  
+  try {
+    setLoading(true);
+    setError(null);
+
+    // Extract tile ID
+    let tileId: string;
+    
+    if (data.tileId) {
+      tileId = data.tileId;
+    } else if (data.type === 'manual_entry' && data.tileCode) {
+      setError('Manual tile code lookup not implemented yet.');
       setLoading(false);
+      return;
+    } else {
+      setError('Invalid QR code format.');
+      setLoading(false);
+      return;
     }
-  };
 
+    console.log('✅ Tile ID:', tileId);
+
+    // ═══════════════════════════════════════════════════════════
+    // ✅ OPTIMIZATION: FETCH TILE DATA FIRST (PRIORITY)
+    // ═══════════════════════════════════════════════════════════
+    console.log('📦 Fetching tile...');
+    const tileData = await getTileById(tileId);
+    
+    if (!tileData) {
+      console.error('❌ Tile not found');
+      setError('Tile not found.');
+      setLoading(false);
+      return;
+    }
+
+    console.log('✅ Tile:', tileData.name);
+
+    const sellerId = tileData.sellerId || tileData.seller_id;
+    const showroomId = tileData.showroomId || tileData.showroom_id;
+
+    // ═══════════════════════════════════════════════════════════
+    // ✅ OPTIMIZATION: SHOW TILE IMMEDIATELY - DON'T WAIT FOR TRACKING!
+    // ═══════════════════════════════════════════════════════════
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
+
+    // Save to recent scans
+    saveRecentScan({
+      id: tileId,
+      tileName: tileData.name,
+      tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
+      scannedAt: new Date().toISOString(),
+      tileId: tileId
+    });
+
+    // Show success message
+    setSuccess(`✅ ${tileData.name} scanned!`);
+    setShowScanner(false);
+    
+    // Display tile data
+    setScannedTileData({
+      id: tileId,
+      name: tileData.name,
+      image: tileData.imageUrl || tileData.image_url,
+      code: tileData.tileCode || tileData.tile_code,
+      size: tileData.size,
+      price: tileData.price,
+      stock: tileData.stock,
+      inStock: tileData.inStock
+    });
+
+    setLoading(false);
+
+    console.log('✅ Tile displayed - User can see it now!');
+
+    // ═══════════════════════════════════════════════════════════
+    // ✅ OPTIMIZATION: ASYNC TRACKING (FIRE & FORGET - NO AWAIT!)
+    // ═══════════════════════════════════════════════════════════
+    
+    console.log('📊 Starting background tracking...');
+    
+    // Track in background - DON'T WAIT!
+    Promise.all([
+      // Main tracking
+      trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
+        console.warn('⚠️ Main tracking failed:', err);
+      }),
+      
+      // Legacy tracking
+      trackQRScan(tileId, {
+        sellerId: sellerId,
+        showroomId: showroomId,
+        scannedBy: currentUser?.user_id ?? 'anonymous',
+        userRole: currentUser?.role ?? 'visitor',
+        scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
+      }).catch(err => {
+        console.warn('⚠️ Legacy tracking failed:', err);
+      }),
+      
+      // Worker activity
+      currentUser?.role === 'worker' && currentUser?.user_id
+        ? trackWorkerActivity(currentUser.user_id, 'scan', { 
+            tileId, 
+            tileName: tileData.name, 
+            sellerId 
+          }).catch(err => {
+            console.warn('⚠️ Worker tracking failed:', err);
+          })
+        : Promise.resolve()
+    ]).then(() => {
+      console.log('✅ All background tracking completed!');
+      
+      // Broadcast event
+      const event = new CustomEvent('tile-scanned', { 
+        detail: { 
+          tileId, 
+          sellerId,
+          tileName: tileData.name,
+          timestamp: new Date().toISOString()
+        } 
+      });
+      window.dispatchEvent(event);
+      console.log('✅ Event broadcasted!');
+    });
+
+    console.log('🎯 ===== SCAN COMPLETED - USER SEES TILE =====');
+
+  } catch (err: any) {
+    console.error('❌ Scan error:', err);
+    setError('Failed to process scan.');
+    setLoading(false);
+  }
+};
   const handleLogout = async () => {
     const confirmMessage = isMobile 
       ? 'Logout?' 
