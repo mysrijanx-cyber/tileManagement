@@ -81,7 +81,18 @@ export const ScanPage: React.FC = () => {
       console.warn('Could not save recent scan:', err);
     }
   };
-
+const getUserDisplayName = () => {
+  // First priority: Use full name if available
+  if (currentUser?.full_name) {
+    return isMobile ? currentUser.full_name.split(' ')[0] : currentUser.full_name;
+  }
+  
+  // Fallback based on role
+  if (currentUser?.role === 'seller') return 'Seller';
+  if (currentUser?.role === 'worker') return 'Worker';
+  if (currentUser?.role === 'admin') return 'Admin';
+  return 'User'; // Ultimate fallback
+};
   // const handleScanSuccess = async (data: any) => {
 
 
@@ -399,9 +410,13 @@ const handleScanSuccess = async (data: any) => {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-white font-bold text-base sm:text-xl truncate">Tile Scanner</h1>
-              <p className="text-blue-200 text-xs sm:text-sm truncate">
+              {/* <p className="text-blue-200 text-xs sm:text-sm truncate">
                 {isMobile ? currentUser?.full_name?.split(' ')[0] || 'Worker' : `Welcome, ${currentUser?.full_name || 'Worker'}`}
-              </p>
+              </p> */}
+
+              <p className="text-blue-200 text-xs sm:text-sm truncate">
+  {isMobile ? getUserDisplayName() : `Welcome, ${getUserDisplayName()}`}
+</p>
             </div>
           </div>
 
@@ -582,72 +597,14 @@ const handleScanSuccess = async (data: any) => {
 
         {/* Recent Scans */}
         {recentScans.length > 0 && (
-          <section className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
-                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                <span>Recent Scans</span>
-              </h3>
-              <button
-                onClick={() => {
-                  if (window.confirm('Clear all recent scans?')) {
-                    setRecentScans([]);
-                    localStorage.removeItem('worker_recent_scans');
-                  }
-                }}
-                className="text-gray-400 hover:text-white text-xs sm:text-sm flex items-center gap-1 touch-manipulation p-2 -mr-2 rounded-lg hover:bg-white/5"
-                aria-label="Clear recent scans"
-              >
-                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Clear</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {recentScans.map((scan) => (
-                <button
-                  key={scan.id}
-                  onClick={() => openRecentScan(scan.tileId)}
-                  className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 active:bg-white/15 transition-colors group text-left touch-manipulation"
-                  aria-label={`View ${scan.tileName}`}
-                >
-                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                    <img
-                      src={scan.tileImage}
-                      alt={scan.tileName}
-                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder-tile.png';
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate group-hover:text-blue-200 text-sm sm:text-base transition-colors">
-                        {scan.tileName}
-                      </p>
-                      <p className="text-gray-400 text-xs sm:text-sm">
-                        {new Date(scan.scannedAt).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-blue-400 text-xs sm:text-sm flex items-center gap-1">
-                    <QrCode className="w-3 h-3" />
-                    Tap to view again
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
+          <></>
         )}
 
         {/* Instructions */}
         <section className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-xl border border-white/10 p-4 sm:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-            <span>Worker Instructions</span>
+           
+     
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm">
             <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10">

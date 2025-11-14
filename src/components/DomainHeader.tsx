@@ -126,10 +126,10 @@ export const DomainHeader: React.FC = () => {
                     {currentUser.role === 'admin' && (
                       <button
                         onClick={() => console.log('Notifications clicked')}
-                        className="p-1.5 sm:p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors relative"
+                        className=""
                         title="Notifications"
                       >
-                        <Bell className="w-3 h-3 sm:w-4 sm:h-4" />
+                        {/* <Bell className="w-3 h-3 sm:w-4 sm:h-4" /> */}
                         {/* Notification Badge */}
                         <span className="absolute -top-0.5 sm:-top-1 -right-0.5 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                           !
@@ -143,7 +143,7 @@ export const DomainHeader: React.FC = () => {
                       className="p-1.5 sm:p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Settings"
                     >
-                      <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                      {/* <Settings className="w-3 h-3 sm:w-4 sm:h-4" /> */}
                     </button>
 
                     {/* Logout Button */}
@@ -160,10 +160,10 @@ export const DomainHeader: React.FC = () => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-100 text-gray-700 rounded-lg">
-                  <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                <div className="">
+                  {/* <User className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Guest User</span>
-                  <span className="text-xs sm:text-sm font-medium sm:hidden">Guest</span>
+                  <span className="text-xs sm:text-sm font-medium sm:hidden">Guest</span> */}
                 </div>
               </div>
             )}

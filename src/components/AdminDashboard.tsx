@@ -1440,15 +1440,15 @@ const handleToggleSellerStatus = async (seller: any, newStatus: 'active' | 'inac
           <span className="hidden md:inline">Rejected</span>
           <span>({rejectedRequests.length})</span>
         </button>
-        <button
+        {/* <button
           onClick={() => setActiveTab('analytics')}
           className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
             activeTab === 'analytics' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
-        >
-          <TrendingUp className="w-4 h-4" />
-          <span className="hidden lg:inline">Analytics</span>
-        </button>
+        > */}
+          {/* <TrendingUp className="w-4 h-4" /> */}
+          {/* <span className="hidden lg:inline">Analytics</span> */}
+        {/* </button> */}
         <button
           onClick={() => setActiveTab('tiles-analytics')}
           className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${

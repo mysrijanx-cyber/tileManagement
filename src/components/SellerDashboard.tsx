@@ -1201,6 +1201,9 @@ export const SellerDashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+
+
 {/* ✅ VALIDATION ERROR - PROMINENT DISPLAY */}
 {error && (isAddingTile || editingTile) && (
   <div className="mb-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg animate-shake">

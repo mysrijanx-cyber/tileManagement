@@ -222,7 +222,7 @@ if (user.role === 'worker') {
             <div className="text-3xl sm:text-4xl flex-shrink-0">🏠</div>
             <div className="flex-1 min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-1 sm:mb-2">
-                Tile Showroom 3D - Virtual Experience
+                SrijanX Tile - Virtual Experience
               </h3>
               <p className="text-sm sm:text-base text-blue-700 mb-2 sm:mb-3">
                 Explore our immersive 3D tile visualization platform. 
@@ -375,7 +375,7 @@ if (user.role === 'worker') {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-gray-600">
             <p className="text-sm sm:text-base font-medium">
-              &copy; 2024 Tile Showroom 3D. All rights reserved.
+              &copy; 2025 SrijanX Tile. All rights reserved.
             </p>
             <p className="text-xs sm:text-sm mt-1 sm:mt-2 text-gray-500">
               Powered by advanced 3D visualization technology

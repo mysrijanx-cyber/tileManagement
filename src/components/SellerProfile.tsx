@@ -616,7 +616,7 @@ export const SellerProfile: React.FC = () => {
                 </>
               )}
             </button> */}
-        // ✅ FIXED: Show validation status clearly
+    
 <button
   type="submit"
   disabled={submitting || !isPasswordStrong() || passwordForm.newPassword !== passwordForm.confirmPassword}
@@ -643,7 +643,7 @@ export const SellerProfile: React.FC = () => {
 </button>
 
 {/* ✅ ADD: Show why button is disabled */}
-{!submitting && (
+{/* {!submitting && (
   <div className="mt-2 text-center">
     {!isPasswordStrong() && (
       <p className="text-xs sm:text-sm text-orange-600 font-medium">
@@ -661,7 +661,28 @@ export const SellerProfile: React.FC = () => {
       </p>
     )}
   </div>
+)} */}
+{/* ✅ FIXED: Show why button is disabled - Only when password is entered */}
+{!submitting && (
+  <div className="mt-2 text-center">
+    {passwordForm.newPassword && !isPasswordStrong() && (
+      <p className="text-xs sm:text-sm text-orange-600 font-medium">
+        ⚠️ Please meet all password requirements above
+      </p>
+    )}
+    {passwordForm.newPassword && passwordForm.confirmPassword && isPasswordStrong() && passwordForm.newPassword !== passwordForm.confirmPassword && (
+      <p className="text-xs sm:text-sm text-red-600 font-medium">
+        ❌ New password and confirmation must match
+      </p>
+    )}
+    {passwordForm.newPassword && passwordForm.confirmPassword && isPasswordStrong() && passwordForm.newPassword === passwordForm.confirmPassword && (
+      <p className="text-xs sm:text-sm text-green-600 font-medium">
+        ✅ Password meets all requirements - ready to update
+      </p>
+    )}
+  </div>
 )}
+
         
           </div>
 
