@@ -22,7 +22,8 @@ import {
   getAllSellersWithAnalytics,
   getApprovedSellers,
   getPendingRequests,
-  getRejectedRequests
+  getRejectedRequests,
+  
 } from '../lib/firebaseutils';
 import { AdminNotifications } from './AdminNotification';
 import { SellerAnalytics } from './SellerAnalytics';
@@ -140,9 +141,8 @@ const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
   // const [top5Tiles, setTop5Tiles] = useState<TileData[]>([]);
 
   // ✅ AFTER
-const [tilesData] = useState<TileData[]>([]); // Remove setter if not used
-const [top5Tiles] = useState<TileData[]>([]);
-
+const [tilesData, setTilesData] = useState<TileData[]>([]);
+const [top5Tiles, setTop5Tiles] = useState<TileData[]>([]);
   // ✅ DASHBOARD STATS
   const [stats, setStats] = useState<DashboardStats>({
     totalSellers: 0,
@@ -238,7 +238,7 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
         getAllSellersWithAnalytics(),
         getApprovedSellers(),
         getPendingRequests(),
-        getRejectedRequests()
+        getRejectedRequests(),
       ]);
       
       setSellers(sellersData);
@@ -791,6 +791,13 @@ const handleToggleSellerStatus = async (seller: any, newStatus: 'active' | 'inac
           details: emailError 
         };
       }
+      // ✅ ADD THIS - Phone validation
+if (newSeller.phone && newSeller.phone.trim()) {
+  const phoneValidation = validatePhone(newSeller.phone.trim());
+  if (!phoneValidation.isValid) {
+    throw new Error(phoneValidation.message);
+  }
+}
 
       if (selectedRequest) {
         try {
