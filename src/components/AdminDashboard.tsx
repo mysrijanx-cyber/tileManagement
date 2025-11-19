@@ -162,6 +162,7 @@ const [top5Tiles, setTop5Tiles] = useState<TileData[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [createdSeller, setCreatedSeller] = useState<CreatedSellerInfo | null>(null);
+  const [tilesLoading, setTilesLoading] = useState(false);
 
   // const [loadingAnalytics, setLoadingAnalytics] = useState(false);
   // const [sellerAnalytics, setSellerAnalytics] = useState<any>(null);
@@ -211,51 +212,247 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
   // ✅ LOAD DATA ON MOUNT (UNCHANGED)
   // ═══════════════════════════════════════════════════════════════
 
-  useEffect(() => {
-    loadData();
-    checkEmailService();
-  }, []);
+  // useEffect(() => {
+  //   loadData();
+  //   checkEmailService();
+  // }, []);
 
-  useEffect(() => {
-    applyFiltersAndSearch();
-  }, [sellers, searchQuery, filterStatus]);
+  // useEffect(() => {
+  //   applyFiltersAndSearch();
+  // }, [sellers, searchQuery, filterStatus]);
 
-  const loadData = async () => {
-    setLoading(true);
+// ✅ EXISTING useEffect (line ~120)
+useEffect(() => {
+  loadData();
+  checkEmailService();
+}, []);
+
+useEffect(() => {
+  applyFiltersAndSearch();
+}, [sellers, searchQuery, filterStatus]);
+
+// ✅ ADD THIS NEW useEffect - Tiles data loading
+// useEffect(() => {
+//   let mounted = true;
+  
+//   const loadTilesData = async () => {
+//     if (activeTab !== 'tiles-analytics') return;
+//       setTilesLoading(true);
+//     try {
+//       const [tiles, top5] = await Promise.all([
+//         fetchTilesData(),
+//         fetchTop5Tiles()
+//       ]);
+      
+//       if (mounted) {
+//         setTilesData(tiles);
+//         setTop5Tiles(top5);
+//       }
+//     } catch (error) {
+//       console.error('Error loading tiles data:', error);
+//       if (mounted) {
+//         setTilesData([]);
+//         setTop5Tiles([]);
+//       }
+//     }
+//   };
+  
+//   loadTilesData();
+  
+//   return () => { mounted = false; };
+// }, [activeTab]);
+
+useEffect(() => {
+  let mounted = true;
+  
+  const loadTilesData = async () => {
+    if (activeTab !== 'tiles-analytics') return;
+    
+    setTilesLoading(true); // ✅ Use separate loading state
+    
     try {
-      const [
-        sellersData,
-        analyticsData,
-        dashboardStats,
-        sellersWithAnalytics,
-        approvedData,
-        pendingData,
-        rejectedData
-      ] = await Promise.all([
-        getSellersWithFullData(),
-        getAllAnalytics(),
-        getAdminDashboardStats(),
-        getAllSellersWithAnalytics(),
-        getApprovedSellers(),
-        getPendingRequests(),
-        getRejectedRequests(),
+      const [tiles, top5] = await Promise.all([
+        fetchTilesData(),
+        fetchTop5Tiles()
       ]);
       
-      setSellers(sellersData);
-      setAnalytics(analyticsData);
-      setStats(dashboardStats);
-      setSellersAnalyticsList(sellersWithAnalytics);
-      setApprovedSellers(approvedData);
-      setPendingRequests(pendingData);
-      setRejectedRequests(rejectedData);
-      
+      if (mounted) {
+        setTilesData(tiles);
+        setTop5Tiles(top5);
+      }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading tiles data:', error);
+      if (mounted) {
+        setTilesData([]);
+        setTop5Tiles([]);
+      }
     } finally {
-      setLoading(false);
+      if (mounted) {
+        setTilesLoading(false); // ✅ Stop loading
+      }
     }
   };
+  
+  loadTilesData();
+  
+  return () => { mounted = false; };
+}, [activeTab]);
 
+
+//   // const loadData = async () => {
+//   //   setLoading(true);
+//   //   try {
+//   //     const [
+//   //       sellersData,
+//   //       analyticsData,
+//   //       dashboardStats,
+//   //       sellersWithAnalytics,
+//   //       approvedData,
+//   //       pendingData,
+//   //       rejectedData
+//   //     ] = await Promise.all([
+//   //       getSellersWithFullData(),
+//   //       getAllAnalytics(),
+//   //       getAdminDashboardStats(),
+//   //       getAllSellersWithAnalytics(),
+//   //       getApprovedSellers(),
+//   //       getPendingRequests(),
+//   //       getRejectedRequests(),
+//   //     ]);
+      
+//   //     setSellers(sellersData);
+//   //     setAnalytics(analyticsData);
+//   //     setStats(dashboardStats);
+//   //     setSellersAnalyticsList(sellersWithAnalytics);
+//   //     setApprovedSellers(approvedData);
+//   //     setPendingRequests(pendingData);
+//   //     setRejectedRequests(rejectedData);
+      
+//   //   } catch (error) {
+//   //     console.error('Error loading data:', error);
+//   //   } finally {
+//   //     setLoading(false);
+//   //   }
+//   // };
+// // ✅ ADD THIS - Line ~60 (after imports, before component)
+
+// // ✅ UPDATE loadData (line ~140)
+// const loadData = async () => {
+//   setLoading(true);
+//   try {
+//     const [
+//       sellersData,
+//       analyticsData,
+//       dashboardStats,
+//       sellersWithAnalytics,
+//       approvedData,
+//       pendingData,
+//       rejectedData
+//     ] = await Promise.all([
+//       getSellersWithFullData(),
+//       getAllAnalytics(),
+//       getAdminDashboardStats(),
+//       getAllSellersWithAnalytics(),
+//       getApprovedSellers(),
+//       getPendingRequests(),
+//       getRejectedRequests(),
+//     ]);
+    
+//     // ✅ Check if component still mounted before setState
+//     setSellers(sellersData);
+//     setAnalytics(analyticsData);
+//     setStats(dashboardStats);
+//     setSellersAnalyticsList(sellersWithAnalytics);
+//     setApprovedSellers(approvedData);
+//     setPendingRequests(pendingData);
+//     setRejectedRequests(rejectedData);
+    
+//   } catch (error) {
+//     console.error('Error loading data:', error);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+// ✅ UPDATE loadData function (line ~140)
+const loadData = async () => {
+  setLoading(true);
+  try {
+    const [
+      sellersData,
+      analyticsData,
+      dashboardStats,
+      sellersWithAnalytics,
+      approvedData,
+      pendingData,
+      rejectedData
+    ] = await Promise.all([
+      getSellersWithFullData(),
+      getAllAnalytics(),
+      getAdminDashboardStats(),
+      getAllSellersWithAnalytics(),
+      getApprovedSellers(),
+      getPendingRequests(),
+      getRejectedRequests(),
+    ]);
+    
+    // ✅ NO CHANGE - setState calls same hain
+    // React automatically handles unmounted component setState
+    // (Sirf warning deta hai, crash nahi karta)
+    setSellers(sellersData);
+    setAnalytics(analyticsData);
+    setStats(dashboardStats);
+    setSellersAnalyticsList(sellersWithAnalytics);
+    setApprovedSellers(approvedData);
+    setPendingRequests(pendingData);
+    setRejectedRequests(rejectedData);
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ✅ useEffect wala part SAME rahega (already correct hai)
+useEffect(() => {
+  let mounted = true;
+  
+  const initialize = async () => {
+    try {
+      await loadData();
+      if (mounted) {
+        await checkEmailService();
+      }
+    } catch (error) {
+      console.error('Error initializing dashboard:', error);
+    }
+  };
+  
+  initialize();
+  
+  return () => {
+    mounted = false;
+  };
+}, []);
+
+
+
+const validatePhone = (phone: string): { isValid: boolean; message: string } => {
+  if (!phone || phone.trim() === '') {
+    return { isValid: true, message: 'Phone is optional' };
+  }
+  
+  const phoneRegex = /^[+]?[\d\s\-()]{10,}$/;
+  if (!phoneRegex.test(phone)) {
+    return { 
+      isValid: false, 
+      message: 'Invalid phone format. Use: +1234567890 or (123) 456-7890' 
+    };
+  }
+  
+  return { isValid: true, message: 'Valid phone number' };
+};
   const fetchPendingRequests = async (): Promise<SellerRequest[]> => {
     try {
       const q = query(
@@ -325,116 +522,349 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
       return [];
     }
   };
+// ❌ MAINE DIY OPTIMIZED VERSION MEIN seller_id FIELD MISS HO SAKTI HAI
+// ✅ CORRECTED VERSION:
 
-  const fetchTilesData = async (): Promise<TileData[]> => {
-    try {
-      const tilesQuery = query(collection(db, 'tiles'), orderBy('created_at', 'desc'));
-      const tilesSnapshot = await getDocs(tilesQuery);
+const fetchTilesData = async (): Promise<TileData[]> => {
+  try {
+    const tilesQuery = query(collection(db, 'tiles'), orderBy('created_at', 'desc'));
+    const tilesSnapshot = await getDocs(tilesQuery);
+    
+    const sellerIds = new Set<string>();
+    const tileIds: string[] = [];
+    
+    tilesSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.seller_id) sellerIds.add(data.seller_id);
+      if (data.sellerId) sellerIds.add(data.sellerId); // ✅ DONO check karo
+      tileIds.push(doc.id);
+    });
+    
+    const sellersMap = new Map<string, any>();
+    
+    if (sellerIds.size > 0) {
+      const sellerIdsArray = Array.from(sellerIds);
       
-      const tiles: TileData[] = [];
-      
-      for (const tileDoc of tilesSnapshot.docs) {
-        const tileData = tileDoc.data();
+      for (let i = 0; i < sellerIdsArray.length; i += 10) {
+        const batch = sellerIdsArray.slice(i, i + 10);
+        const sellersQuery = query(
+          collection(db, 'sellers'),
+          where('__name__', 'in', batch)
+        );
+        const sellersSnapshot = await getDocs(sellersQuery);
         
-        let sellerName = 'Unknown Seller';
-        if (tileData.seller_id) {
-          try {
-            const sellerDoc = await getDoc(doc(db, 'sellers', tileData.seller_id));
-            if (sellerDoc.exists()) {
-              sellerName = sellerDoc.data().business_name || sellerDoc.data().owner_name || 'Unknown';
-            }
-          } catch (e) {
-            console.warn('Could not fetch seller for tile:', tileDoc.id);
-          }
-        }
-        
-        let scanCount = 0;
-        let lastScanned = '';
-        try {
-          const analyticsDoc = await getDoc(doc(db, 'tileAnalytics', tileDoc.id));
-          if (analyticsDoc.exists()) {
-            const analyticsData = analyticsDoc.data();
-            scanCount = analyticsData.scan_count || 0;
-            lastScanned = analyticsData.last_scanned || '';
-          }
-        } catch (e) {
-          console.warn('Could not fetch analytics for tile:', tileDoc.id);
-        }
-        
-        tiles.push({
-          id: tileDoc.id,
-          tile_code: tileData.tile_code || tileData.code || 'N/A',
-          tile_name: tileData.tile_name || tileData.name || 'Untitled',
-          image_url: tileData.image_url || tileData.images?.[0] || '',
-          seller_id: tileData.seller_id || '',
-          seller_name: sellerName,
-          scan_count: scanCount,
-          last_scanned: lastScanned,
-          created_at: tileData.created_at || ''
+        sellersSnapshot.docs.forEach(doc => {
+          sellersMap.set(doc.id, doc.data());
         });
       }
-      
-      return tiles;
-    } catch (error) {
-      console.error('❌ Error fetching tiles data:', error);
-      return [];
     }
-  };
-
-  const fetchTop5Tiles = async (): Promise<TileData[]> => {
-    try {
+    
+    const analyticsMap = new Map<string, any>();
+    
+    for (let i = 0; i < tileIds.length; i += 10) {
+      const batch = tileIds.slice(i, i + 10);
       const analyticsQuery = query(
         collection(db, 'tileAnalytics'),
-        orderBy('scan_count', 'desc'),
-        limit(5)
+        where('__name__', 'in', batch)
       );
-      
       const analyticsSnapshot = await getDocs(analyticsQuery);
-      const top5: TileData[] = [];
       
-      for (const analyticsDoc of analyticsSnapshot.docs) {
-        const analyticsData = analyticsDoc.data();
-        const tileId = analyticsDoc.id;
-        
-        try {
-          const tileDoc = await getDoc(doc(db, 'tiles', tileId));
-          if (tileDoc.exists()) {
-            const tileData = tileDoc.data();
-            
-            let sellerName = 'Unknown Seller';
-            if (tileData.seller_id) {
-              const sellerDoc = await getDoc(doc(db, 'sellers', tileData.seller_id));
-              if (sellerDoc.exists()) {
-                sellerName = sellerDoc.data().business_name || 'Unknown';
-              }
-            }
-            
-            top5.push({
-              id: tileId,
-              tile_code: tileData.tile_code || tileData.code || 'N/A',
-              tile_name: tileData.tile_name || tileData.name || 'Untitled',
-              image_url: tileData.image_url || tileData.images?.[0] || '',
-              seller_id: tileData.seller_id || '',
-              seller_name: sellerName,
-              scan_count: analyticsData.scan_count || 0,
-              last_scanned: analyticsData.last_scanned || '',
-              created_at: tileData.created_at || ''
-            });
-          }
-        } catch (e) {
-          console.warn('Could not fetch tile details for:', tileId);
-        }
-      }
-      
-      return top5;
-    } catch (error) {
-      console.error('❌ Error fetching top 5 tiles:', error);
-      return [];
+      analyticsSnapshot.docs.forEach(doc => {
+        analyticsMap.set(doc.id, doc.data());
+      });
     }
-  };
+    
+    const tiles: TileData[] = tilesSnapshot.docs.map(tileDoc => {
+      const tileData = tileDoc.data();
+      const sellerId = tileData.seller_id || tileData.sellerId; // ✅ DONO handle karo
+      const sellerData = sellersMap.get(sellerId);
+      const analyticsData = analyticsMap.get(tileDoc.id);
+      
+      return {
+        id: tileDoc.id,
+        tile_code: tileData.tile_code || tileData.code || 'N/A',
+        tile_name: tileData.tile_name || tileData.name || 'Untitled',
+        image_url: tileData.image_url || tileData.images?.[0] || '',
+        seller_id: sellerId || '',
+        seller_name: sellerData?.business_name || sellerData?.owner_name || 'Unknown Seller', // ✅ Exact same fallback
+        scan_count: analyticsData?.scan_count || 0,
+        last_scanned: analyticsData?.last_scanned || '',
+        created_at: tileData.created_at || ''
+      };
+    });
+    
+    return tiles;
+  } catch (error) {
+    console.error('❌ Error fetching tiles data:', error);
+    return [];
+  }
+};
+  // const fetchTilesData = async (): Promise<TileData[]> => {
+  //   try {
+  //     const tilesQuery = query(collection(db, 'tiles'), orderBy('created_at', 'desc'));
+  //     const tilesSnapshot = await getDocs(tilesQuery);
+      
+  //     const tiles: TileData[] = [];
+      
+  //     for (const tileDoc of tilesSnapshot.docs) {
+  //       const tileData = tileDoc.data();
+        
+  //       let sellerName = 'Unknown Seller';
+  //       if (tileData.seller_id) {
+  //         try {
+  //           const sellerDoc = await getDoc(doc(db, 'sellers', tileData.seller_id));
+  //           if (sellerDoc.exists()) {
+  //             sellerName = sellerDoc.data().business_name || sellerDoc.data().owner_name || 'Unknown';
+  //           }
+  //         } catch (e) {
+  //           console.warn('Could not fetch seller for tile:', tileDoc.id);
+  //         }
+  //       }
+        
+  //       let scanCount = 0;
+  //       let lastScanned = '';
+  //       try {
+  //         const analyticsDoc = await getDoc(doc(db, 'tileAnalytics', tileDoc.id));
+  //         if (analyticsDoc.exists()) {
+  //           const analyticsData = analyticsDoc.data();
+  //           scanCount = analyticsData.scan_count || 0;
+  //           lastScanned = analyticsData.last_scanned || '';
+  //         }
+  //       } catch (e) {
+  //         console.warn('Could not fetch analytics for tile:', tileDoc.id);
+  //       }
+        
+  //       tiles.push({
+  //         id: tileDoc.id,
+  //         tile_code: tileData.tile_code || tileData.code || 'N/A',
+  //         tile_name: tileData.tile_name || tileData.name || 'Untitled',
+  //         image_url: tileData.image_url || tileData.images?.[0] || '',
+  //         seller_id: tileData.seller_id || '',
+  //         seller_name: sellerName,
+  //         scan_count: scanCount,
+  //         last_scanned: lastScanned,
+  //         created_at: tileData.created_at || ''
+  //       });
+  //     }
+      
+  //     return tiles;
+  //   } catch (error) {
+  //     console.error('❌ Error fetching tiles data:', error);
+  //     return [];
+  //   }
+  // };
+  // ✅ REPLACE EXISTING fetchTilesData (line ~900)
+
+  
+
+
+  // const fetchTop5Tiles = async (): Promise<TileData[]> => {
+  //   try {
+  //     const analyticsQuery = query(
+  //       collection(db, 'tileAnalytics'),
+  //       orderBy('scan_count', 'desc'),
+  //       limit(5)
+  //     );
+      
+  //     const analyticsSnapshot = await getDocs(analyticsQuery);
+  //     const top5: TileData[] = [];
+      
+  //     for (const analyticsDoc of analyticsSnapshot.docs) {
+  //       const analyticsData = analyticsDoc.data();
+  //       const tileId = analyticsDoc.id;
+        
+  //       try {
+  //         const tileDoc = await getDoc(doc(db, 'tiles', tileId));
+  //         if (tileDoc.exists()) {
+  //           const tileData = tileDoc.data();
+            
+  //           let sellerName = 'Unknown Seller';
+  //           if (tileData.seller_id) {
+  //             const sellerDoc = await getDoc(doc(db, 'sellers', tileData.seller_id));
+  //             if (sellerDoc.exists()) {
+  //               sellerName = sellerDoc.data().business_name || 'Unknown';
+  //             }
+  //           }
+            
+  //           top5.push({
+  //             id: tileId,
+  //             tile_code: tileData.tile_code || tileData.code || 'N/A',
+  //             tile_name: tileData.tile_name || tileData.name || 'Untitled',
+  //             image_url: tileData.image_url || tileData.images?.[0] || '',
+  //             seller_id: tileData.seller_id || '',
+  //             seller_name: sellerName,
+  //             scan_count: analyticsData.scan_count || 0,
+  //             last_scanned: analyticsData.last_scanned || '',
+  //             created_at: tileData.created_at || ''
+  //           });
+  //         }
+  //       } catch (e) {
+  //         console.warn('Could not fetch tile details for:', tileId);
+  //       }
+  //     }
+      
+  //     return top5;
+  //   } catch (error) {
+  //     console.error('❌ Error fetching top 5 tiles:', error);
+  //     return [];
+  //   }
+  // };
 // ═══════════════════════════════════════════════════════════════
 // ✅ NEW: TOGGLE SELLER STATUS HANDLER
 // ═══════════════════════════════════════════════════════════════
+
+// ✅ REPLACE EXISTING fetchTop5Tiles (line ~950)
+// const fetchTop5Tiles = async (): Promise<TileData[]> => {
+//   try {
+//     const analyticsQuery = query(
+//       collection(db, 'tileAnalytics'),
+//       orderBy('scan_count', 'desc'),
+//       limit(5)
+//     );
+    
+//     const analyticsSnapshot = await getDocs(analyticsQuery);
+    
+//     if (analyticsSnapshot.empty) {
+//       return [];
+//     }
+    
+//     const tileIds = analyticsSnapshot.docs.map(doc => doc.id);
+    
+//     // ✅ Batch fetch tiles (instead of individual getDoc calls)
+//     const tilesQuery = query(
+//       collection(db, 'tiles'),
+//       where('__name__', 'in', tileIds)
+//     );
+//     const tilesSnapshot = await getDocs(tilesQuery);
+    
+//     // ✅ Batch fetch sellers
+//     const sellerIds = new Set<string>();
+//     tilesSnapshot.docs.forEach(doc => {
+//       const data = doc.data();
+//       if (data.seller_id) sellerIds.add(data.seller_id);
+//     });
+    
+//     const sellersMap = new Map<string, any>();
+//     if (sellerIds.size > 0) {
+//       const sellersQuery = query(
+//         collection(db, 'sellers'),
+//         where('__name__', 'in', Array.from(sellerIds))
+//       );
+//       const sellersSnapshot = await getDocs(sellersQuery);
+      
+//       sellersSnapshot.docs.forEach(doc => {
+//         sellersMap.set(doc.id, doc.data());
+//       });
+//     }
+    
+//     // ✅ Map analytics data to tiles
+//     const top5: TileData[] = [];
+    
+//     analyticsSnapshot.docs.forEach(analyticsDoc => {
+//       const analyticsData = analyticsDoc.data();
+//       const tileId = analyticsDoc.id;
+      
+//       const tileDoc = tilesSnapshot.docs.find(doc => doc.id === tileId);
+//       if (!tileDoc) return;
+      
+//       const tileData = tileDoc.data();
+//       const sellerData = sellersMap.get(tileData.seller_id);
+      
+//       top5.push({
+//         id: tileId,
+//         tile_code: tileData.tile_code || tileData.code || 'N/A',
+//         tile_name: tileData.tile_name || tileData.name || 'Untitled',
+//         image_url: tileData.image_url || tileData.images?.[0] || '',
+//         seller_id: tileData.seller_id || '',
+//         seller_name: sellerData?.business_name || 'Unknown',
+//         scan_count: analyticsData.scan_count || 0,
+//         last_scanned: analyticsData.last_scanned || '',
+//         created_at: tileData.created_at || ''
+//       });
+//     });
+    
+//     return top5;
+//   } catch (error) {
+//     console.error('❌ Error fetching top 5 tiles:', error);
+//     return [];
+//   }
+// };
+
+
+const fetchTop5Tiles = async (): Promise<TileData[]> => {
+  try {
+    const analyticsQuery = query(
+      collection(db, 'tileAnalytics'),
+      orderBy('scan_count', 'desc'),
+      limit(5)
+    );
+    
+    const analyticsSnapshot = await getDocs(analyticsQuery);
+    
+    if (analyticsSnapshot.empty) {
+      return [];
+    }
+    
+    const tileIds = analyticsSnapshot.docs.map(doc => doc.id);
+    
+    const tilesQuery = query(
+      collection(db, 'tiles'),
+      where('__name__', 'in', tileIds)
+    );
+    const tilesSnapshot = await getDocs(tilesQuery);
+    
+    const sellerIds = new Set<string>();
+    tilesSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.seller_id) sellerIds.add(data.seller_id);
+      if (data.sellerId) sellerIds.add(data.sellerId); // ✅ DONO
+    });
+    
+    const sellersMap = new Map<string, any>();
+    if (sellerIds.size > 0) {
+      const sellersQuery = query(
+        collection(db, 'sellers'),
+        where('__name__', 'in', Array.from(sellerIds))
+      );
+      const sellersSnapshot = await getDocs(sellersQuery);
+      
+      sellersSnapshot.docs.forEach(doc => {
+        sellersMap.set(doc.id, doc.data());
+      });
+    }
+    
+    const top5: TileData[] = [];
+    
+    analyticsSnapshot.docs.forEach(analyticsDoc => {
+      const analyticsData = analyticsDoc.data();
+      const tileId = analyticsDoc.id;
+      
+      const tileDoc = tilesSnapshot.docs.find(doc => doc.id === tileId);
+      if (!tileDoc) return;
+      
+      const tileData = tileDoc.data();
+      const sellerId = tileData.seller_id || tileData.sellerId; // ✅ DONO
+      const sellerData = sellersMap.get(sellerId);
+      
+      top5.push({
+        id: tileId,
+        tile_code: tileData.tile_code || tileData.code || 'N/A',
+        tile_name: tileData.tile_name || tileData.name || 'Untitled',
+        image_url: tileData.image_url || tileData.images?.[0] || '',
+        seller_id: sellerId || '',
+        seller_name: sellerData?.business_name || sellerData?.owner_name || 'Unknown Seller', // ✅ Exact same
+        scan_count: analyticsData.scan_count || 0,
+        last_scanned: analyticsData.last_scanned || '',
+        created_at: tileData.created_at || ''
+      });
+    });
+    
+    return top5;
+  } catch (error) {
+    console.error('❌ Error fetching top 5 tiles:', error);
+    return [];
+  }
+};
 
 const handleToggleSellerStatus = async (seller: any, newStatus: 'active' | 'inactive') => {
   try {
@@ -2035,231 +2465,7 @@ if (newSeller.phone && newSeller.phone.trim()) {
 {/* ✅ TILES ANALYTICS TAB - RESPONSIVE */}
 {/* ═══════════════════════════════════════════════════════════════ */}
 
-{activeTab === 'tiles-analytics' && (
-  <div className="space-y-4 sm:space-y-6">
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 sm:p-6">
-      <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2">📱 Tiles Analytics & Performance</h3>
-      <p className="text-blue-700 text-xs sm:text-sm">
-        View all tiles uploaded by sellers, scan counts, and performance metrics.
-      </p>
-    </div>
 
-    {/* Top 5 Most Scanned Tiles - Responsive Grid */}
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="p-3 sm:p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-b">
-        <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
-          <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
-          🏆 Top 5 Most Scanned Tiles
-        </h4>
-      </div>
-      
-      <div className="p-3 sm:p-4">
-        {top5Tiles.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <TrendingDown className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No tile scan data available</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
-            {top5Tiles.map((tile, index) => (
-              <div 
-                key={tile.id} 
-                className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-3 sm:p-4 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xl sm:text-2xl font-bold text-yellow-600">#{index + 1}</span>
-                  <Award className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                    index === 0 ? 'text-yellow-500' : 
-                    index === 1 ? 'text-gray-400' : 
-                    'text-orange-400'
-                  }`} />
-                </div>
-                
-                {tile.image_url && (
-                  <img 
-                    src={tile.image_url} 
-                    alt={tile.tile_name}
-                    className="w-full h-24 sm:h-32 object-cover rounded-lg mb-3"
-                  />
-                )}
-                
-                <h5 className="font-semibold text-gray-800 mb-1 truncate text-sm" title={tile.tile_name}>
-                  {tile.tile_name}
-                </h5>
-                <p className="text-xs text-gray-600 mb-2 truncate" title={tile.tile_code}>
-                  Code: {tile.tile_code}
-                </p>
-                <p className="text-xs text-gray-600 mb-3 truncate" title={tile.seller_name}>
-                  Seller: {tile.seller_name}
-                </p>
-                
-                <div className="bg-white rounded-lg p-2 text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-purple-600">{tile.scan_count}</p>
-                  <p className="text-xs text-gray-600">Scans</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* All Tiles - Mobile Cards / Desktop Table */}
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="p-3 sm:p-4 bg-gray-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h4 className="font-semibold text-gray-800 text-sm sm:text-base">All Tiles ({tilesData.length})</h4>
-        <button
-          onClick={loadData}
-          className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm w-full sm:w-auto"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
-      </div>
-      
-      {/* Mobile Card View */}
-      <div className="block lg:hidden p-3 space-y-3">
-        {tilesData.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <QrCode className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No tiles found</p>
-          </div>
-        ) : (
-          tilesData.map((tile) => (
-            <div key={tile.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-              <div className="flex gap-3 mb-3">
-                {tile.image_url ? (
-                  <img 
-                    src={tile.image_url} 
-                    alt={tile.tile_name}
-                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200 flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
-                  </div>
-                )}
-                
-                <div className="flex-1 min-w-0">
-                  <h5 className="font-semibold text-gray-800 text-sm mb-1 truncate">{tile.tile_name}</h5>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-1 truncate">
-                    {tile.tile_code}
-                  </code>
-                  <p className="text-xs text-gray-600 truncate">{tile.seller_name}</p>
-                </div>
-                
-                <div className="flex flex-col items-end justify-between">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    tile.scan_count > 100 ? 'bg-green-100 text-green-800' :
-                    tile.scan_count > 50 ? 'bg-blue-100 text-blue-800' :
-                    tile.scan_count > 0 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {tile.scan_count}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex justify-between text-xs text-gray-600 pt-2 border-t">
-                <span>Last Scanned: {tile.last_scanned 
-                  ? new Date(tile.last_scanned).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  : 'Never'}
-                </span>
-                <span>Created: {tile.created_at 
-                  ? new Date(tile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  : 'N/A'}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Image</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Tile Code</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Tile Name</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Seller</th>
-              <th className="text-center p-4 font-semibold text-gray-700 text-sm">Scans</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Last Scanned</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tilesData.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  <QrCode className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p>No tiles found</p>
-                </td>
-              </tr>
-            ) : (
-              tilesData.map((tile) => (
-                <tr key={tile.id} className="border-t hover:bg-gray-50 transition-colors">
-                  <td className="p-4">
-                    {tile.image_url ? (
-                      <img 
-                        src={tile.image_url} 
-                        alt={tile.tile_name}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <ImageIcon className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                      {tile.tile_code}
-                    </code>
-                  </td>
-                  <td className="p-4">
-                    <span className="font-medium text-gray-800 text-sm">{tile.tile_name}</span>
-                  </td>
-                  <td className="p-4 text-gray-700 text-sm">{tile.seller_name}</td>
-                  <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
-                      tile.scan_count > 100 ? 'bg-green-100 text-green-800' :
-                      tile.scan_count > 50 ? 'bg-blue-100 text-blue-800' :
-                      tile.scan_count > 0 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {tile.scan_count}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-600 text-sm">
-                    {tile.last_scanned 
-                      ? new Date(tile.last_scanned).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Never'}
-                  </td>
-                  <td className="p-4 text-gray-600 text-sm">
-                    {tile.created_at 
-                      ? new Date(tile.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })
-                      : 'N/A'}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-)}
 
 {/* ═══════════════════════════════════════════════════════════════ */}
 {/* ✅ SELLER ANALYTICS TAB - RESPONSIVE */}
