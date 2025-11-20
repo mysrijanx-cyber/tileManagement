@@ -64,6 +64,38 @@ interface NewSellerForm {
   phone: string;
   website: string;
 }
+// ✅ ADD THESE AFTER LINE ~35 (existing interfaces ke baad)
+interface ValidationErrors {
+  email: string | null;
+  password: string | null;
+  fullName: string | null;
+  businessName: string | null;
+  phone: string | null;
+  website: string | null;
+}
+
+interface PasswordStrength {
+  valid: boolean;
+  strength: 'Weak' | 'Medium' | 'Strong' | 'Auto';
+  checks: {
+    length: boolean;
+    uppercase: boolean;
+    lowercase: boolean;
+    number: boolean;
+    special: boolean;
+  };
+}
+interface PasswordStrength {
+  valid: boolean;
+  strength: 'Weak' | 'Medium' | 'Strong' | 'Auto';
+  checks: {
+    length: boolean;
+    uppercase: boolean;
+    lowercase: boolean;
+    number: boolean;
+    special: boolean;
+  };
+}
 
 interface SellerRequest {
   id: string;
@@ -129,6 +161,20 @@ export const AdminDashboard: React.FC = () => {
   const [sellers, setSellers] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // ✅ REPLACE existing errors state with typed version
+const [errors, setErrors] = useState<ValidationErrors>({
+  email: null,
+  password: null,
+  fullName: null,
+  businessName: null,
+  phone: null,
+  website: null
+});
+// ✅ ADD THESE NEW STATES FOR EMAIL CHECK
+const [checkingEmail, setCheckingEmail] = useState<boolean>(false);
+const [emailExists, setEmailExists] = useState<boolean>(false);
+const [emailCheckMessage, setEmailCheckMessage] = useState<string>('');
+const [copied, setCopied] = useState<boolean>(false);
   // ✅ ADD THIS STATE (existing states ke baad)
 const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
   // ✅ RESPONSIVE MOBILE MENU STATE
@@ -208,20 +254,6 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [approvedSellers, setApprovedSellers] = useState<any[]>([]);
 
-  // ═══════════════════════════════════════════════════════════════
-  // ✅ LOAD DATA ON MOUNT (UNCHANGED)
-  // ═══════════════════════════════════════════════════════════════
-
-  // useEffect(() => {
-  //   loadData();
-  //   checkEmailService();
-  // }, []);
-
-  // useEffect(() => {
-  //   applyFiltersAndSearch();
-  // }, [sellers, searchQuery, filterStatus]);
-
-// ✅ EXISTING useEffect (line ~120)
 useEffect(() => {
   loadData();
   checkEmailService();
@@ -231,36 +263,6 @@ useEffect(() => {
   applyFiltersAndSearch();
 }, [sellers, searchQuery, filterStatus]);
 
-// ✅ ADD THIS NEW useEffect - Tiles data loading
-// useEffect(() => {
-//   let mounted = true;
-  
-//   const loadTilesData = async () => {
-//     if (activeTab !== 'tiles-analytics') return;
-//       setTilesLoading(true);
-//     try {
-//       const [tiles, top5] = await Promise.all([
-//         fetchTilesData(),
-//         fetchTop5Tiles()
-//       ]);
-      
-//       if (mounted) {
-//         setTilesData(tiles);
-//         setTop5Tiles(top5);
-//       }
-//     } catch (error) {
-//       console.error('Error loading tiles data:', error);
-//       if (mounted) {
-//         setTilesData([]);
-//         setTop5Tiles([]);
-//       }
-//     }
-//   };
-  
-//   loadTilesData();
-  
-//   return () => { mounted = false; };
-// }, [activeTab]);
 
 useEffect(() => {
   let mounted = true;
@@ -299,82 +301,6 @@ useEffect(() => {
 }, [activeTab]);
 
 
-//   // const loadData = async () => {
-//   //   setLoading(true);
-//   //   try {
-//   //     const [
-//   //       sellersData,
-//   //       analyticsData,
-//   //       dashboardStats,
-//   //       sellersWithAnalytics,
-//   //       approvedData,
-//   //       pendingData,
-//   //       rejectedData
-//   //     ] = await Promise.all([
-//   //       getSellersWithFullData(),
-//   //       getAllAnalytics(),
-//   //       getAdminDashboardStats(),
-//   //       getAllSellersWithAnalytics(),
-//   //       getApprovedSellers(),
-//   //       getPendingRequests(),
-//   //       getRejectedRequests(),
-//   //     ]);
-      
-//   //     setSellers(sellersData);
-//   //     setAnalytics(analyticsData);
-//   //     setStats(dashboardStats);
-//   //     setSellersAnalyticsList(sellersWithAnalytics);
-//   //     setApprovedSellers(approvedData);
-//   //     setPendingRequests(pendingData);
-//   //     setRejectedRequests(rejectedData);
-      
-//   //   } catch (error) {
-//   //     console.error('Error loading data:', error);
-//   //   } finally {
-//   //     setLoading(false);
-//   //   }
-//   // };
-// // ✅ ADD THIS - Line ~60 (after imports, before component)
-
-// // ✅ UPDATE loadData (line ~140)
-// const loadData = async () => {
-//   setLoading(true);
-//   try {
-//     const [
-//       sellersData,
-//       analyticsData,
-//       dashboardStats,
-//       sellersWithAnalytics,
-//       approvedData,
-//       pendingData,
-//       rejectedData
-//     ] = await Promise.all([
-//       getSellersWithFullData(),
-//       getAllAnalytics(),
-//       getAdminDashboardStats(),
-//       getAllSellersWithAnalytics(),
-//       getApprovedSellers(),
-//       getPendingRequests(),
-//       getRejectedRequests(),
-//     ]);
-    
-//     // ✅ Check if component still mounted before setState
-//     setSellers(sellersData);
-//     setAnalytics(analyticsData);
-//     setStats(dashboardStats);
-//     setSellersAnalyticsList(sellersWithAnalytics);
-//     setApprovedSellers(approvedData);
-//     setPendingRequests(pendingData);
-//     setRejectedRequests(rejectedData);
-    
-//   } catch (error) {
-//     console.error('Error loading data:', error);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-
-// ✅ UPDATE loadData function (line ~140)
 const loadData = async () => {
   setLoading(true);
   try {
@@ -396,9 +322,7 @@ const loadData = async () => {
       getRejectedRequests(),
     ]);
     
-    // ✅ NO CHANGE - setState calls same hain
-    // React automatically handles unmounted component setState
-    // (Sirf warning deta hai, crash nahi karta)
+
     setSellers(sellersData);
     setAnalytics(analyticsData);
     setStats(dashboardStats);
@@ -437,22 +361,198 @@ useEffect(() => {
 }, []);
 
 
+// ✅ EMAIL VALIDATION
+const validateEmail = (email: string): boolean => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+// ✅ CHECK EMAIL EXISTENCE IN DATABASE
+const checkEmailExists = async (email: string): Promise<void> => {
+  // Skip check if email empty or invalid format
+  if (!email || !validateEmail(email)) {
+    setEmailExists(false);
+    setEmailCheckMessage('');
+    return;
+  }
 
+  // Skip check if email too short
+  if (email.length < 5) {
+    setEmailExists(false);
+    setEmailCheckMessage('');
+    return;
+  }
+
+  setCheckingEmail(true);
+  setEmailCheckMessage('🔍 Checking availability...');
+
+  try {
+    const emailToCheck = email.toLowerCase().trim();
+
+    // Check in sellers collection
+    const sellersQuery = query(
+      collection(db, 'sellers'),
+      where('email', '==', emailToCheck)
+    );
+    const sellersSnapshot = await getDocs(sellersQuery);
+
+    if (sellersSnapshot.size > 0) {
+      setEmailExists(true);
+      setEmailCheckMessage('❌ Email already registered as seller');
+      setErrors({ ...errors, email: 'This email is already in use' });
+      return;
+    }
+
+    // Check in users collection (if exists)
+    try {
+      const usersQuery = query(
+        collection(db, 'users'),
+        where('email', '==', emailToCheck)
+      );
+      const usersSnapshot = await getDocs(usersQuery);
+
+      if (usersSnapshot.size > 0) {
+        setEmailExists(true);
+        setEmailCheckMessage('❌ Email already registered');
+        setErrors({ ...errors, email: 'This email is already in use' });
+        return;
+      }
+    } catch (userCheckError) {
+      // Users collection might not exist, skip
+      console.log('Users collection check skipped');
+    }
+
+    // Email available
+    setEmailExists(false);
+    setEmailCheckMessage('✅ No account exists with this email - Good to go')
+    setErrors({ ...errors, email: null });
+
+  } catch (error) {
+    console.error('Error checking email:', error);
+    setEmailCheckMessage('⚠️ Could not verify email');
+    setEmailExists(false);
+  } finally {
+    setCheckingEmail(false);
+  }
+};
+// ✅ DEBOUNCED EMAIL EXISTENCE CHECK
+useEffect(() => {
+  // Skip if pre-filled from request
+  if (selectedRequest) {
+    setEmailCheckMessage('');
+    setEmailExists(false);
+    return;
+  }
+
+  // Skip if email empty
+  if (!newSeller.email) {
+    setEmailExists(false);
+    setEmailCheckMessage('');
+    return;
+  }
+
+  // Skip if invalid format
+  if (!validateEmail(newSeller.email)) {
+    setEmailExists(false);
+    setEmailCheckMessage('');
+    return;
+  }
+
+  // Debounce: wait 500ms after user stops typing
+  const timer = setTimeout(() => {
+    checkEmailExists(newSeller.email);
+  }, 500);
+
+  // Cleanup: cancel timer on new keystroke
+  return () => clearTimeout(timer);
+}, [newSeller.email, selectedRequest]);
+
+// ✅ PASSWORD VALIDATION WITH STRENGTH
+const validatePassword = (password: string): PasswordStrength => {
+  if (!password) return { 
+    valid: true, 
+    strength: 'Auto', 
+    checks: { length: false, uppercase: false, lowercase: false, number: false, special: false } 
+  };
+  
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*]/.test(password)
+  };
+  
+  const passedChecks = Object.values(checks).filter(Boolean).length;
+  
+  return {
+    valid: passedChecks >= 4,
+    strength: passedChecks < 3 ? 'Weak' : passedChecks < 4 ? 'Medium' : 'Strong',
+    checks
+  };
+};
+
+// ✅ PHONE VALIDATION
+// ✅ Alternative: Return object with details
 const validatePhone = (phone: string): { isValid: boolean; message: string } => {
   if (!phone || phone.trim() === '') {
-    return { isValid: true, message: 'Phone is optional' };
+    return { isValid: true, message: '' };
   }
   
-  const phoneRegex = /^[+]?[\d\s\-()]{10,}$/;
-  if (!phoneRegex.test(phone)) {
+  const regex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{4,}$/;
+  
+  if (!regex.test(phone)) {
     return { 
       isValid: false, 
       message: 'Invalid phone format. Use: +1234567890 or (123) 456-7890' 
     };
   }
   
-  return { isValid: true, message: 'Valid phone number' };
+  return { isValid: true, message: '' };
 };
+
+// ✅ URL VALIDATION
+const validateURL = (url: string): boolean => {
+  if (!url || url.trim() === '') return true; // Optional field
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// ✅ PASSWORD GENERATOR
+const generatePassword = (): string => {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*';
+  const all = uppercase + lowercase + numbers + special;
+  
+  let password = '';
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+  
+  for (let i = 0; i < 8; i++) {
+    password += all[Math.floor(Math.random() * all.length)];
+  }
+  
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+};
+
+// ✅ COPY TO CLIPBOARD
+const copyPassword = async (): Promise<void> => {
+  try {
+    await navigator.clipboard.writeText(newSeller.password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  } catch (error) {
+    console.error('Failed to copy password:', error);
+  }
+};
+
   const fetchPendingRequests = async (): Promise<SellerRequest[]> => {
     try {
       const q = query(
@@ -599,197 +699,6 @@ const fetchTilesData = async (): Promise<TileData[]> => {
     return [];
   }
 };
-  // const fetchTilesData = async (): Promise<TileData[]> => {
-  //   try {
-  //     const tilesQuery = query(collection(db, 'tiles'), orderBy('created_at', 'desc'));
-  //     const tilesSnapshot = await getDocs(tilesQuery);
-      
-  //     const tiles: TileData[] = [];
-      
-  //     for (const tileDoc of tilesSnapshot.docs) {
-  //       const tileData = tileDoc.data();
-        
-  //       let sellerName = 'Unknown Seller';
-  //       if (tileData.seller_id) {
-  //         try {
-  //           const sellerDoc = await getDoc(doc(db, 'sellers', tileData.seller_id));
-  //           if (sellerDoc.exists()) {
-  //             sellerName = sellerDoc.data().business_name || sellerDoc.data().owner_name || 'Unknown';
-  //           }
-  //         } catch (e) {
-  //           console.warn('Could not fetch seller for tile:', tileDoc.id);
-  //         }
-  //       }
-        
-  //       let scanCount = 0;
-  //       let lastScanned = '';
-  //       try {
-  //         const analyticsDoc = await getDoc(doc(db, 'tileAnalytics', tileDoc.id));
-  //         if (analyticsDoc.exists()) {
-  //           const analyticsData = analyticsDoc.data();
-  //           scanCount = analyticsData.scan_count || 0;
-  //           lastScanned = analyticsData.last_scanned || '';
-  //         }
-  //       } catch (e) {
-  //         console.warn('Could not fetch analytics for tile:', tileDoc.id);
-  //       }
-        
-  //       tiles.push({
-  //         id: tileDoc.id,
-  //         tile_code: tileData.tile_code || tileData.code || 'N/A',
-  //         tile_name: tileData.tile_name || tileData.name || 'Untitled',
-  //         image_url: tileData.image_url || tileData.images?.[0] || '',
-  //         seller_id: tileData.seller_id || '',
-  //         seller_name: sellerName,
-  //         scan_count: scanCount,
-  //         last_scanned: lastScanned,
-  //         created_at: tileData.created_at || ''
-  //       });
-  //     }
-      
-  //     return tiles;
-  //   } catch (error) {
-  //     console.error('❌ Error fetching tiles data:', error);
-  //     return [];
-  //   }
-  // };
-  // ✅ REPLACE EXISTING fetchTilesData (line ~900)
-
-  
-
-
-  // const fetchTop5Tiles = async (): Promise<TileData[]> => {
-  //   try {
-  //     const analyticsQuery = query(
-  //       collection(db, 'tileAnalytics'),
-  //       orderBy('scan_count', 'desc'),
-  //       limit(5)
-  //     );
-      
-  //     const analyticsSnapshot = await getDocs(analyticsQuery);
-  //     const top5: TileData[] = [];
-      
-  //     for (const analyticsDoc of analyticsSnapshot.docs) {
-  //       const analyticsData = analyticsDoc.data();
-  //       const tileId = analyticsDoc.id;
-        
-  //       try {
-  //         const tileDoc = await getDoc(doc(db, 'tiles', tileId));
-  //         if (tileDoc.exists()) {
-  //           const tileData = tileDoc.data();
-            
-  //           let sellerName = 'Unknown Seller';
-  //           if (tileData.seller_id) {
-  //             const sellerDoc = await getDoc(doc(db, 'sellers', tileData.seller_id));
-  //             if (sellerDoc.exists()) {
-  //               sellerName = sellerDoc.data().business_name || 'Unknown';
-  //             }
-  //           }
-            
-  //           top5.push({
-  //             id: tileId,
-  //             tile_code: tileData.tile_code || tileData.code || 'N/A',
-  //             tile_name: tileData.tile_name || tileData.name || 'Untitled',
-  //             image_url: tileData.image_url || tileData.images?.[0] || '',
-  //             seller_id: tileData.seller_id || '',
-  //             seller_name: sellerName,
-  //             scan_count: analyticsData.scan_count || 0,
-  //             last_scanned: analyticsData.last_scanned || '',
-  //             created_at: tileData.created_at || ''
-  //           });
-  //         }
-  //       } catch (e) {
-  //         console.warn('Could not fetch tile details for:', tileId);
-  //       }
-  //     }
-      
-  //     return top5;
-  //   } catch (error) {
-  //     console.error('❌ Error fetching top 5 tiles:', error);
-  //     return [];
-  //   }
-  // };
-// ═══════════════════════════════════════════════════════════════
-// ✅ NEW: TOGGLE SELLER STATUS HANDLER
-// ═══════════════════════════════════════════════════════════════
-
-// ✅ REPLACE EXISTING fetchTop5Tiles (line ~950)
-// const fetchTop5Tiles = async (): Promise<TileData[]> => {
-//   try {
-//     const analyticsQuery = query(
-//       collection(db, 'tileAnalytics'),
-//       orderBy('scan_count', 'desc'),
-//       limit(5)
-//     );
-    
-//     const analyticsSnapshot = await getDocs(analyticsQuery);
-    
-//     if (analyticsSnapshot.empty) {
-//       return [];
-//     }
-    
-//     const tileIds = analyticsSnapshot.docs.map(doc => doc.id);
-    
-//     // ✅ Batch fetch tiles (instead of individual getDoc calls)
-//     const tilesQuery = query(
-//       collection(db, 'tiles'),
-//       where('__name__', 'in', tileIds)
-//     );
-//     const tilesSnapshot = await getDocs(tilesQuery);
-    
-//     // ✅ Batch fetch sellers
-//     const sellerIds = new Set<string>();
-//     tilesSnapshot.docs.forEach(doc => {
-//       const data = doc.data();
-//       if (data.seller_id) sellerIds.add(data.seller_id);
-//     });
-    
-//     const sellersMap = new Map<string, any>();
-//     if (sellerIds.size > 0) {
-//       const sellersQuery = query(
-//         collection(db, 'sellers'),
-//         where('__name__', 'in', Array.from(sellerIds))
-//       );
-//       const sellersSnapshot = await getDocs(sellersQuery);
-      
-//       sellersSnapshot.docs.forEach(doc => {
-//         sellersMap.set(doc.id, doc.data());
-//       });
-//     }
-    
-//     // ✅ Map analytics data to tiles
-//     const top5: TileData[] = [];
-    
-//     analyticsSnapshot.docs.forEach(analyticsDoc => {
-//       const analyticsData = analyticsDoc.data();
-//       const tileId = analyticsDoc.id;
-      
-//       const tileDoc = tilesSnapshot.docs.find(doc => doc.id === tileId);
-//       if (!tileDoc) return;
-      
-//       const tileData = tileDoc.data();
-//       const sellerData = sellersMap.get(tileData.seller_id);
-      
-//       top5.push({
-//         id: tileId,
-//         tile_code: tileData.tile_code || tileData.code || 'N/A',
-//         tile_name: tileData.tile_name || tileData.name || 'Untitled',
-//         image_url: tileData.image_url || tileData.images?.[0] || '',
-//         seller_id: tileData.seller_id || '',
-//         seller_name: sellerData?.business_name || 'Unknown',
-//         scan_count: analyticsData.scan_count || 0,
-//         last_scanned: analyticsData.last_scanned || '',
-//         created_at: tileData.created_at || ''
-//       });
-//     });
-    
-//     return top5;
-//   } catch (error) {
-//     console.error('❌ Error fetching top 5 tiles:', error);
-//     return [];
-//   }
-// };
-
 
 const fetchTop5Tiles = async (): Promise<TileData[]> => {
   try {
@@ -1122,13 +1031,36 @@ const handleToggleSellerStatus = async (seller: any, newStatus: 'active' | 'inac
         throw new Error(`Please fill in required fields: ${missingFields.join(', ')}`);
       }
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(requiredFields.email)) {
-        throw new Error('Please enter a valid email address');
-      }
+      // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // if (!emailRegex.test(requiredFields.email)) {
+      //   throw new Error('Please enter a valid email address');
+      // }
 
-      const password = newSeller.password.trim() || generateSecurePassword();
-      console.log('🔐 Password generated');
+      // const password = newSeller.password.trim() || generateSecurePassword();
+      // console.log('🔐 Password generated');
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+if (!emailRegex.test(requiredFields.email)) {
+  throw new Error('Please enter a valid email address');
+}
+
+// ✅ ADD PHONE VALIDATION
+if (newSeller.phone && newSeller.phone.trim()) {
+  if (!validatePhone(newSeller.phone.trim())) {
+    throw new Error('Invalid phone number format. Use: +1234567890 or (123) 456-7890');
+  }
+}
+
+// ✅ ADD WEBSITE VALIDATION
+if (newSeller.website && newSeller.website.trim()) {
+  if (!validateURL(newSeller.website.trim())) {
+    throw new Error('Invalid website URL. Must include https://');
+  }
+}
+
+const password = newSeller.password.trim() || generateSecurePassword();
+console.log('🔐 Password generated');
+
 
       console.log('👤 Creating Firebase authentication account...');
       
@@ -1221,11 +1153,17 @@ const handleToggleSellerStatus = async (seller: any, newStatus: 'active' | 'inac
           details: emailError 
         };
       }
-      // ✅ ADD THIS - Phone validation
+// ✅ Phone validation - Simple boolean check
 if (newSeller.phone && newSeller.phone.trim()) {
-  const phoneValidation = validatePhone(newSeller.phone.trim());
-  if (!phoneValidation.isValid) {
-    throw new Error(phoneValidation.message);
+  if (!validatePhone(newSeller.phone.trim())) {
+    throw new Error('Invalid phone number format. Use: +1234567890 or (123) 456-7890');
+  }
+}
+
+// ✅ Website validation
+if (newSeller.website && newSeller.website.trim()) {
+  if (!validateURL(newSeller.website.trim())) {
+    throw new Error('Invalid website URL. Must include https://');
   }
 }
 
@@ -1301,6 +1239,16 @@ if (newSeller.phone && newSeller.phone.trim()) {
         phone: '',
         website: ''
       });
+      // ✅ ADD THIS - Reset errors state
+setErrors({
+  email: null,
+  password: null,
+  fullName: null,
+  businessName: null,
+  phone: null,
+  website: null
+});
+
       
       setSelectedRequest(null);
       await loadData();
@@ -2465,7 +2413,231 @@ if (newSeller.phone && newSeller.phone.trim()) {
 {/* ✅ TILES ANALYTICS TAB - RESPONSIVE */}
 {/* ═══════════════════════════════════════════════════════════════ */}
 
+{activeTab === 'tiles-analytics' && (
+  <div className="space-y-4 sm:space-y-6">
+    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 sm:p-6">
+      <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2">📱 Tiles Analytics & Performance</h3>
+      <p className="text-blue-700 text-xs sm:text-sm">
+        View all tiles uploaded by sellers, scan counts, and performance metrics.
+      </p>
+    </div>
 
+    {/* Top 5 Most Scanned Tiles - Responsive Grid */}
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="p-3 sm:p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-b">
+        <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+          <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
+          🏆 Top 5 Most Scanned Tiles
+        </h4>
+      </div>
+      
+      <div className="p-3 sm:p-4">
+        {top5Tiles.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <TrendingDown className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm">No tile scan data available</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+            {top5Tiles.map((tile, index) => (
+              <div 
+                key={tile.id} 
+                className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-3 sm:p-4 hover:shadow-lg transition-shadow"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xl sm:text-2xl font-bold text-yellow-600">#{index + 1}</span>
+                  <Award className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                    index === 0 ? 'text-yellow-500' : 
+                    index === 1 ? 'text-gray-400' : 
+                    'text-orange-400'
+                  }`} />
+                </div>
+                
+                {tile.image_url && (
+                  <img 
+                    src={tile.image_url} 
+                    alt={tile.tile_name}
+                    className="w-full h-24 sm:h-32 object-cover rounded-lg mb-3"
+                  />
+                )}
+                
+                <h5 className="font-semibold text-gray-800 mb-1 truncate text-sm" title={tile.tile_name}>
+                  {tile.tile_name}
+                </h5>
+                <p className="text-xs text-gray-600 mb-2 truncate" title={tile.tile_code}>
+                  Code: {tile.tile_code}
+                </p>
+                <p className="text-xs text-gray-600 mb-3 truncate" title={tile.seller_name}>
+                  Seller: {tile.seller_name}
+                </p>
+                
+                <div className="bg-white rounded-lg p-2 text-center">
+                  <p className="text-xl sm:text-2xl font-bold text-purple-600">{tile.scan_count}</p>
+                  <p className="text-xs text-gray-600">Scans</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* All Tiles - Mobile Cards / Desktop Table */}
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="p-3 sm:p-4 bg-gray-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h4 className="font-semibold text-gray-800 text-sm sm:text-base">All Tiles ({tilesData.length})</h4>
+        <button
+          onClick={loadData}
+          className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm w-full sm:w-auto"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
+      </div>
+      
+      {/* Mobile Card View */}
+      <div className="block lg:hidden p-3 space-y-3">
+        {tilesData.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <QrCode className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm">No tiles found</p>
+          </div>
+        ) : (
+          tilesData.map((tile) => (
+            <div key={tile.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+              <div className="flex gap-3 mb-3">
+                {tile.image_url ? (
+                  <img 
+                    src={tile.image_url} 
+                    alt={tile.tile_name}
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
+                
+                <div className="flex-1 min-w-0">
+                  <h5 className="font-semibold text-gray-800 text-sm mb-1 truncate">{tile.tile_name}</h5>
+                  <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-1 truncate">
+                    {tile.tile_code}
+                  </code>
+                  <p className="text-xs text-gray-600 truncate">{tile.seller_name}</p>
+                </div>
+                
+                <div className="flex flex-col items-end justify-between">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    tile.scan_count > 100 ? 'bg-green-100 text-green-800' :
+                    tile.scan_count > 50 ? 'bg-blue-100 text-blue-800' :
+                    tile.scan_count > 0 ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {tile.scan_count}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between text-xs text-gray-600 pt-2 border-t">
+                <span>Last Scanned: {tile.last_scanned 
+                  ? new Date(tile.last_scanned).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  : 'Never'}
+                </span>
+                <span>Created: {tile.created_at 
+                  ? new Date(tile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  : 'N/A'}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-100 border-b">
+            <tr>
+              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Image</th>
+              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Tile Code</th>
+              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Tile Name</th>
+              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Seller</th>
+              <th className="text-center p-4 font-semibold text-gray-700 text-sm">Scans</th>
+              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Last Scanned</th>
+              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tilesData.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <QrCode className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                  <p>No tiles found</p>
+                </td>
+              </tr>
+            ) : (
+              tilesData.map((tile) => (
+                <tr key={tile.id} className="border-t hover:bg-gray-50 transition-colors">
+                  <td className="p-4">
+                    {tile.image_url ? (
+                      <img 
+                        src={tile.image_url} 
+                        alt={tile.tile_name}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                      {tile.tile_code}
+                    </code>
+                  </td>
+                  <td className="p-4">
+                    <span className="font-medium text-gray-800 text-sm">{tile.tile_name}</span>
+                  </td>
+                  <td className="p-4 text-gray-700 text-sm">{tile.seller_name}</td>
+                  <td className="p-4 text-center">
+                    <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
+                      tile.scan_count > 100 ? 'bg-green-100 text-green-800' :
+                      tile.scan_count > 50 ? 'bg-blue-100 text-blue-800' :
+                      tile.scan_count > 0 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {tile.scan_count}
+                    </span>
+                  </td>
+                  <td className="p-4 text-gray-600 text-sm">
+                    {tile.last_scanned 
+                      ? new Date(tile.last_scanned).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'Never'}
+                  </td>
+                  <td className="p-4 text-gray-600 text-sm">
+                    {tile.created_at 
+                      ? new Date(tile.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })
+                      : 'N/A'}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
 
 {/* ═══════════════════════════════════════════════════════════════ */}
 {/* ✅ SELLER ANALYTICS TAB - RESPONSIVE */}
@@ -3432,7 +3604,7 @@ if (newSeller.phone && newSeller.phone.trim()) {
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
         <h3 className="font-semibold text-purple-800 mb-2 text-sm sm:text-base">Create New Seller Account</h3>
         <p className="text-purple-700 text-xs sm:text-sm">
-          Only administrators can create new seller accounts.
+          Fill in the details below. All fields marked with * are required.
         </p>
       </div>
     )}
@@ -3444,136 +3616,387 @@ if (newSeller.phone && newSeller.phone.trim()) {
           <h4 className="font-medium text-yellow-800 text-sm sm:text-base">Email Service Not Configured</h4>
         </div>
         <p className="text-yellow-700 text-xs sm:text-sm">
-          Account creation will work, but credentials will need to be shared manually.
+          Credentials will need to be shared manually after account creation.
         </p>
       </div>
     )}
     
-    {/* Responsive Form */}
     <form onSubmit={handleCreateSeller} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Email */}
+        
+        {/* ✅ EMAIL FIELD */}
+      {/* ✅ EMAIL FIELD WITH EXISTENCE CHECK */}
+<div>
+  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+    Email Address *
+  </label>
+  <div className="relative">
+    <input
+      type="email"
+      placeholder="seller@business.com"
+      value={newSeller.email}
+      onChange={(e) => {
+        const val = e.target.value;
+        setNewSeller({ ...newSeller, email: val });
+        
+        // Reset check states on change
+        setEmailCheckMessage('');
+        setEmailExists(false);
+        
+        // Basic format validation
+        if (val && !validateEmail(val)) {
+          setErrors({ ...errors, email: 'Invalid email format' });
+        } else if (!val) {
+          setErrors({ ...errors, email: null });
+        }
+      }}
+      className={`w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 border rounded-lg focus:ring-2 transition-colors text-sm sm:text-base ${
+        checkingEmail 
+          ? 'border-blue-500 focus:ring-blue-500' 
+          : emailExists 
+          ? 'border-red-500 focus:ring-red-500' 
+          : emailCheckMessage && !emailExists && !errors.email
+          ? 'border-green-500 focus:ring-green-500'
+          : errors.email 
+          ? 'border-red-500 focus:ring-red-500' 
+          : 'border-gray-300 focus:ring-purple-500'
+      } ${selectedRequest ? 'bg-green-50' : ''}`}
+      required
+      readOnly={!!selectedRequest}
+    />
+    
+    {/* ✅ STATUS INDICATOR ICON */}
+    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+      {checkingEmail && (
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+      )}
+      {!checkingEmail && emailCheckMessage && !emailExists && !errors.email && (
+        <span className="text-green-600 text-lg font-bold">✓</span>
+      )}
+      {!checkingEmail && emailExists && (
+        <span className="text-red-600 text-lg font-bold">✕</span>
+      )}
+    </div>
+  </div>
+  
+  {/* ✅ FORMAT ERROR (takes priority) */}
+  {errors.email && !checkingEmail && !emailCheckMessage && (
+    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+      <span>⚠️</span> {errors.email}
+    </p>
+  )}
+  
+  {/* ✅ EXISTENCE CHECK MESSAGE */}
+  {emailCheckMessage && (
+    <p className={`text-xs mt-1 flex items-center gap-1 font-medium ${
+      checkingEmail ? 'text-blue-600' :
+      emailExists ? 'text-red-600' : 
+      'text-green-600'
+    }`}>
+      {emailCheckMessage}
+    </p>
+  )}
+</div>
+
+        {/* ✅ PASSWORD FIELD */}
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-          <input
-            type="email"
-            placeholder="seller@business.com"
-            value={newSeller.email}
-            onChange={(e) => setNewSeller({ ...newSeller, email: e.target.value })}
-            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${selectedRequest ? 'bg-green-50' : ''}`}
-            required
-            readOnly={!!selectedRequest}
-          />
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Auto-generated secure password"
+              value={newSeller.password}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNewSeller({ ...newSeller, password: val });
+                
+                if (val) {
+                  const result = validatePassword(val);
+                  if (!result.valid) {
+                    setErrors({ ...errors, password: `Password strength: ${result.strength}` });
+                  } else {
+                    setErrors({ ...errors, password: null });
+                  }
+                } else {
+                  setErrors({ ...errors, password: null });
+                }
+              }}
+              className={`w-full px-3 sm:px-4 py-2 sm:py-3 pr-28 border rounded-lg focus:ring-2 transition-colors text-sm sm:text-base ${
+                errors.password 
+                  ? 'border-yellow-500 focus:ring-yellow-500' 
+                  : 'border-gray-300 focus:ring-purple-500'
+              } ${selectedRequest ? 'bg-green-50' : ''}`}
+              readOnly={!!selectedRequest}
+            />
+            
+            {!selectedRequest && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newPassword = generatePassword();
+                    setNewSeller({ ...newSeller, password: newPassword });
+                    setErrors({ ...errors, password: null });
+                  }}
+                  className="px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded text-xs font-medium transition-colors"
+                  title="Generate Password"
+                >
+                  🔑 Auto
+                </button>
+                
+                {newSeller.password && (
+                  <button
+                    type="button"
+                    onClick={copyPassword}
+                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs font-medium transition-colors"
+                    title="Copy Password"
+                  >
+                    {copied ? '✓' : '📋'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {errors.password && (
+            <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1">
+              <span>🔐</span> {errors.password}
+            </p>
+          )}
+          
+          {newSeller.password && (
+            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <p className={validatePassword(newSeller.password).checks.length ? 'text-green-600' : 'text-gray-400'}>
+                {validatePassword(newSeller.password).checks.length ? '✓' : '○'} 8+ characters
+              </p>
+              <p className={validatePassword(newSeller.password).checks.uppercase ? 'text-green-600' : 'text-gray-400'}>
+                {validatePassword(newSeller.password).checks.uppercase ? '✓' : '○'} Uppercase
+              </p>
+              <p className={validatePassword(newSeller.password).checks.lowercase ? 'text-green-600' : 'text-gray-400'}>
+                {validatePassword(newSeller.password).checks.lowercase ? '✓' : '○'} Lowercase
+              </p>
+              <p className={validatePassword(newSeller.password).checks.number ? 'text-green-600' : 'text-gray-400'}>
+                {validatePassword(newSeller.password).checks.number ? '✓' : '○'} Number
+              </p>
+              <p className={validatePassword(newSeller.password).checks.special ? 'text-green-600' : 'text-gray-400'}>
+                {validatePassword(newSeller.password).checks.special ? '✓' : '○'} Special (!@#$)
+              </p>
+            </div>
+          )}
+          
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+            Leave empty for auto-generated password
+          </p>
         </div>
 
-        {/* Password */}
+        {/* ✅ FULL NAME */}
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input
-            type="text"
-            placeholder="Auto-generated secure password"
-            value={newSeller.password}
-            onChange={(e) => setNewSeller({ ...newSeller, password: e.target.value })}
-            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${selectedRequest ? 'bg-green-50' : ''}`}
-            readOnly={!!selectedRequest}
-          />
-          <p className="text-[10px] sm:text-xs text-gray-500 mt-1">Leave empty for auto-generated password</p>
-        </div>
-
-        {/* Full Name */}
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            Full Name *
+          </label>
           <input
             type="text"
             placeholder="Owner Full Name"
             value={newSeller.fullName}
-            onChange={(e) => setNewSeller({ ...newSeller, fullName: e.target.value })}
-            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${selectedRequest ? 'bg-green-50' : ''}`}
+            onChange={(e) => {
+              const val = e.target.value;
+              setNewSeller({ ...newSeller, fullName: val });
+              
+              if (val && val.trim().length < 3) {
+                setErrors({ ...errors, fullName: 'Name must be at least 3 characters' });
+              } else {
+                setErrors({ ...errors, fullName: null });
+              }
+            }}
+            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 transition-colors text-sm sm:text-base ${
+              errors.fullName 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-purple-500'
+            } ${selectedRequest ? 'bg-green-50' : ''}`}
             required
             readOnly={!!selectedRequest}
           />
+          {errors.fullName && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.fullName}
+            </p>
+          )}
         </div>
 
-        {/* Business Name */}
+        {/* ✅ BUSINESS NAME */}
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            Business Name *
+          </label>
           <input
             type="text"
             placeholder="Business Name"
             value={newSeller.businessName}
-            onChange={(e) => setNewSeller({ ...newSeller, businessName: e.target.value })}
-            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${selectedRequest ? 'bg-green-50' : ''}`}
+            onChange={(e) => {
+              const val = e.target.value;
+              setNewSeller({ ...newSeller, businessName: val });
+              
+              if (val && val.trim().length < 2) {
+                setErrors({ ...errors, businessName: 'Business name too short' });
+              } else {
+                setErrors({ ...errors, businessName: null });
+              }
+            }}
+            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 transition-colors text-sm sm:text-base ${
+              errors.businessName 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-purple-500'
+            } ${selectedRequest ? 'bg-green-50' : ''}`}
             required
             readOnly={!!selectedRequest}
           />
+          {errors.businessName && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.businessName}
+            </p>
+          )}
         </div>
 
-        {/* Business Address */}
+        {/* ✅ BUSINESS ADDRESS */}
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Business Address</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            Business Address
+          </label>
           <input
             type="text"
             placeholder="Complete Business Address"
             value={newSeller.businessAddress}
             onChange={(e) => setNewSeller({ ...newSeller, businessAddress: e.target.value })}
-            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${selectedRequest ? 'bg-green-50' : ''}`}
+            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-colors text-sm sm:text-base ${
+              selectedRequest ? 'bg-green-50' : ''
+            }`}
             readOnly={!!selectedRequest}
           />
         </div>
 
-        {/* Phone */}
+        {/* ✅ PHONE */}
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            Phone Number
+          </label>
           <input
             type="tel"
             placeholder="+91 9876543210"
             value={newSeller.phone}
-            onChange={(e) => setNewSeller({ ...newSeller, phone: e.target.value })}
-            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${selectedRequest ? 'bg-green-50' : ''}`}
+            onChange={(e) => {
+              const val = e.target.value;
+              setNewSeller({ ...newSeller, phone: val });
+              
+            if (val) {
+    const validation = validatePhone(val);  // Now returns object
+    if (!validation.isValid) {
+      setErrors({ ...errors, phone: validation.message });
+    } else {
+      setErrors({ ...errors, phone: null });
+    }
+  } else {
+    setErrors({ ...errors, phone: null });
+  }}}
+            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 transition-colors text-sm sm:text-base ${
+              errors.phone 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-purple-500'
+            } ${selectedRequest ? 'bg-green-50' : ''}`}
             readOnly={!!selectedRequest}
           />
+          {errors.phone && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.phone}
+            </p>
+          )}
         </div>
 
-        {/* Website */}
+        {/* ✅ WEBSITE */}
         <div className="md:col-span-2">
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Website (Optional)</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            Website (Optional)
+          </label>
           <input
             type="url"
             placeholder="https://business-website.com"
             value={newSeller.website}
-            onChange={(e) => setNewSeller({ ...newSeller, website: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+            onChange={(e) => {
+              const val = e.target.value;
+              setNewSeller({ ...newSeller, website: val });
+              
+              if (val && !validateURL(val)) {
+                setErrors({ ...errors, website: 'Invalid URL format (must include https://)' });
+              } else {
+                setErrors({ ...errors, website: null });
+              }
+            }}
+            className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 transition-colors text-sm sm:text-base ${
+              errors.website 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-purple-500'
+            }`}
           />
+          {errors.website && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.website}
+            </p>
+          )}
         </div>
       </div>
       
-      {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={creating}
-        className={`w-full py-3 sm:py-4 rounded-lg font-medium text-sm sm:text-lg transition-colors ${
-          selectedRequest 
-            ? 'bg-green-600 hover:bg-green-700 text-white' 
-            : 'bg-purple-600 hover:bg-purple-700 text-white'
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-      >
-        {creating ? (
-          <div className="flex items-center justify-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
-            Creating Account...
-          </div>
-        ) : selectedRequest ? (
-          '✅ Create Seller Account (Pre-filled)'
-        ) : (
-          'Create Seller Account'
-        )}
-      </button>
-
-      {/* Info Footer */}
-      <div className="text-center text-xs sm:text-sm text-gray-600 space-y-1">
-        <p>📧 Email delivery: {emailServiceStatus?.configured ? '✅ Automatic' : '⚠️ Manual required'}</p>
-        <p>🔐 Password: Auto-generated secure credentials</p>
-      </div>
+      {/* ✅ SUBMIT BUTTON */}
+<button
+  type="submit"
+  disabled={
+    creating || 
+    checkingEmail || 
+    emailExists || 
+    Object.values(errors).some(err => err !== null)
+  }
+  className={`w-full py-3 sm:py-4 rounded-lg font-medium text-sm sm:text-lg transition-all ${
+    selectedRequest 
+      ? 'bg-green-600 hover:bg-green-700 text-white' 
+      : 'bg-purple-600 hover:bg-purple-700 text-white'
+  } disabled:opacity-50 disabled:cursor-not-allowed`}
+>
+  {creating ? (
+    <div className="flex items-center justify-center gap-2">
+      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+      Creating Account...
+    </div>
+  ) : checkingEmail ? (
+    <div className="flex items-center justify-center gap-2">
+      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+      Checking Email...
+    </div>
+  ) : emailExists ? (
+    '❌ Email Already Exists - Change Email'
+  ) : selectedRequest ? (
+    '✅ Create Seller Account (Pre-filled)'
+  ) : (
+    'Create Seller Account'
+  )}
+</button>
+      {/* ✅ INFO FOOTER */}
+   {/* ✅ INFO FOOTER WITH EMAIL CHECK STATUS */}
+<div className="text-center text-xs sm:text-sm text-gray-600 space-y-1">
+  <p>📧 Email delivery: {emailServiceStatus?.configured ? '✅ Automatic' : '⚠️ Manual required'}</p>
+  <p>🔐 Password: {newSeller.password ? 'Custom password set' : 'Auto-generated on submit'}</p>
+  
+  {checkingEmail && (
+    <p className="text-blue-600 font-medium">🔍 Verifying email availability...</p>
+  )}
+  
+  {emailExists && !checkingEmail && (
+    <p className="text-red-600 font-medium">❌ This email is already registered. Please use a different email.</p>
+  )}
+  
+  {Object.values(errors).some(err => err !== null) && !checkingEmail && !emailExists && (
+    <p className="text-red-600 font-medium">⚠️ Please fix validation errors before submitting</p>
+  )}
+</div>
     </form>
   </div>
 )}
