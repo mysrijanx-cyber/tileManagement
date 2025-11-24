@@ -1760,16 +1760,6 @@ setErrors({
             onApproveRequest={handleApproveFromNotification}
             onRejectRequest={handleRejectRequestFromNotification}
           />
-          
-          <div className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${
-            emailServiceStatus?.configured 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            <span className="hidden sm:inline">📧 </span>
-            {emailServiceStatus?.configured ? 'Email Ready' : 'Email Config Needed'}
-          </div>
-
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1825,25 +1815,7 @@ setErrors({
           <span className="hidden md:inline">Rejected</span>
           <span>({rejectedRequests.length})</span>
         </button>
-        {/* <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
-            activeTab === 'analytics' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        > */}
-          {/* <TrendingUp className="w-4 h-4" /> */}
-          {/* <span className="hidden lg:inline">Analytics</span> */}
-        {/* </button> */}
-        <button
-          onClick={() => setActiveTab('tiles-analytics')}
-          className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
-            activeTab === 'tiles-analytics' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <QrCode className="w-4 h-4" />
-          <span className="hidden md:inline">Tiles</span>
-          <span className="lg:hidden">({tilesData.length})</span>
-        </button>
+  
         <button
           onClick={() => setActiveTab('seller-analytics')}
           className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
@@ -1876,15 +1848,7 @@ setErrors({
           <Key className="w-4 h-4" />
           <span className="hidden lg:inline">Access</span>
         </button>
-        <button
-          onClick={() => setActiveTab('email-config')}
-          className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
-            activeTab === 'email-config' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <Mail className="w-4 h-4" />
-          <span className="hidden lg:inline">Email</span>
-        </button>
+   
       </div>
 
       {/* Mobile Menu Dropdown */}
@@ -1896,11 +1860,10 @@ setErrors({
             { id: 'pending-requests', label: 'Pending Requests', icon: Clock, count: pendingRequests.length },
             { id: 'rejected-requests', label: 'Rejected Requests', icon: AlertCircle, count: rejectedRequests.length },
             { id: 'analytics', label: 'Analytics', icon: TrendingUp, count: null },
-            { id: 'tiles-analytics', label: 'Tiles', icon: QrCode, count: tilesData.length },
             { id: 'seller-analytics', label: 'Seller Analytics', icon: Package, count: null },
             { id: 'create-seller', label: 'Create Seller', icon: Users, count: null },
             { id: 'account-access', label: 'Account Access', icon: Key, count: null },
-            { id: 'email-config', label: 'Email Config', icon: Mail, count: null },
+          
           ].map((tab: any) => {
             const Icon = tab.icon;
             return (
@@ -2409,235 +2372,7 @@ setErrors({
   </div>
 )}
 
-{/* ═══════════════════════════════════════════════════════════════ */}
-{/* ✅ TILES ANALYTICS TAB - RESPONSIVE */}
-{/* ═══════════════════════════════════════════════════════════════ */}
 
-{activeTab === 'tiles-analytics' && (
-  <div className="space-y-4 sm:space-y-6">
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 sm:p-6">
-      <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2">📱 Tiles Analytics & Performance</h3>
-      <p className="text-blue-700 text-xs sm:text-sm">
-        View all tiles uploaded by sellers, scan counts, and performance metrics.
-      </p>
-    </div>
-
-    {/* Top 5 Most Scanned Tiles - Responsive Grid */}
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="p-3 sm:p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-b">
-        <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
-          <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
-          🏆 Top 5 Most Scanned Tiles
-        </h4>
-      </div>
-      
-      <div className="p-3 sm:p-4">
-        {top5Tiles.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <TrendingDown className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No tile scan data available</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
-            {top5Tiles.map((tile, index) => (
-              <div 
-                key={tile.id} 
-                className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-3 sm:p-4 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xl sm:text-2xl font-bold text-yellow-600">#{index + 1}</span>
-                  <Award className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                    index === 0 ? 'text-yellow-500' : 
-                    index === 1 ? 'text-gray-400' : 
-                    'text-orange-400'
-                  }`} />
-                </div>
-                
-                {tile.image_url && (
-                  <img 
-                    src={tile.image_url} 
-                    alt={tile.tile_name}
-                    className="w-full h-24 sm:h-32 object-cover rounded-lg mb-3"
-                  />
-                )}
-                
-                <h5 className="font-semibold text-gray-800 mb-1 truncate text-sm" title={tile.tile_name}>
-                  {tile.tile_name}
-                </h5>
-                <p className="text-xs text-gray-600 mb-2 truncate" title={tile.tile_code}>
-                  Code: {tile.tile_code}
-                </p>
-                <p className="text-xs text-gray-600 mb-3 truncate" title={tile.seller_name}>
-                  Seller: {tile.seller_name}
-                </p>
-                
-                <div className="bg-white rounded-lg p-2 text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-purple-600">{tile.scan_count}</p>
-                  <p className="text-xs text-gray-600">Scans</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* All Tiles - Mobile Cards / Desktop Table */}
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="p-3 sm:p-4 bg-gray-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h4 className="font-semibold text-gray-800 text-sm sm:text-base">All Tiles ({tilesData.length})</h4>
-        <button
-          onClick={loadData}
-          className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm w-full sm:w-auto"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
-      </div>
-      
-      {/* Mobile Card View */}
-      <div className="block lg:hidden p-3 space-y-3">
-        {tilesData.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <QrCode className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No tiles found</p>
-          </div>
-        ) : (
-          tilesData.map((tile) => (
-            <div key={tile.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-              <div className="flex gap-3 mb-3">
-                {tile.image_url ? (
-                  <img 
-                    src={tile.image_url} 
-                    alt={tile.tile_name}
-                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200 flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
-                  </div>
-                )}
-                
-                <div className="flex-1 min-w-0">
-                  <h5 className="font-semibold text-gray-800 text-sm mb-1 truncate">{tile.tile_name}</h5>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-1 truncate">
-                    {tile.tile_code}
-                  </code>
-                  <p className="text-xs text-gray-600 truncate">{tile.seller_name}</p>
-                </div>
-                
-                <div className="flex flex-col items-end justify-between">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    tile.scan_count > 100 ? 'bg-green-100 text-green-800' :
-                    tile.scan_count > 50 ? 'bg-blue-100 text-blue-800' :
-                    tile.scan_count > 0 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {tile.scan_count}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex justify-between text-xs text-gray-600 pt-2 border-t">
-                <span>Last Scanned: {tile.last_scanned 
-                  ? new Date(tile.last_scanned).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  : 'Never'}
-                </span>
-                <span>Created: {tile.created_at 
-                  ? new Date(tile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  : 'N/A'}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Image</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Tile Code</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Tile Name</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Seller</th>
-              <th className="text-center p-4 font-semibold text-gray-700 text-sm">Scans</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Last Scanned</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tilesData.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  <QrCode className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p>No tiles found</p>
-                </td>
-              </tr>
-            ) : (
-              tilesData.map((tile) => (
-                <tr key={tile.id} className="border-t hover:bg-gray-50 transition-colors">
-                  <td className="p-4">
-                    {tile.image_url ? (
-                      <img 
-                        src={tile.image_url} 
-                        alt={tile.tile_name}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <ImageIcon className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                      {tile.tile_code}
-                    </code>
-                  </td>
-                  <td className="p-4">
-                    <span className="font-medium text-gray-800 text-sm">{tile.tile_name}</span>
-                  </td>
-                  <td className="p-4 text-gray-700 text-sm">{tile.seller_name}</td>
-                  <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
-                      tile.scan_count > 100 ? 'bg-green-100 text-green-800' :
-                      tile.scan_count > 50 ? 'bg-blue-100 text-blue-800' :
-                      tile.scan_count > 0 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {tile.scan_count}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-600 text-sm">
-                    {tile.last_scanned 
-                      ? new Date(tile.last_scanned).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Never'}
-                  </td>
-                  <td className="p-4 text-gray-600 text-sm">
-                    {tile.created_at 
-                      ? new Date(tile.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })
-                      : 'N/A'}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-)}
 
 {/* ═══════════════════════════════════════════════════════════════ */}
 {/* ✅ SELLER ANALYTICS TAB - RESPONSIVE */}

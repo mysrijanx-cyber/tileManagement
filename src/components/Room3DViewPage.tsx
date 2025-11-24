@@ -10,8 +10,18 @@ import {
 import { Enhanced3DViewer } from '../components/Enhanced3DViewer';
 import { ImageUpload } from '../components/ImageUpload';
 import { QRScanner } from '../components/QRScanner';
-import { getTileById, trackQRScan } from '../lib/firebaseutils';
+import { getTileById, trackQRScan, saveCustomerInquiry } from '../lib/firebaseutils';  
 import { Tile } from '../types';
+import { auth, db } from '../lib/firebase';
+import { CustomerInquiryForm } from '../components/CustomerInquiryForm';
+import { 
+  getDoc, 
+  doc, 
+  collection, 
+  query, 
+  where, 
+  getDocs 
+} from 'firebase/firestore';
 
 interface TileSize {
   width: number;
@@ -35,6 +45,9 @@ export const Room3DViewPage: React.FC = () => {
   const [tile, setTile] = useState<Tile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSurface, setActiveSurface] = useState<'floor' | 'wall' | 'both'>('both');
+  const [showInquiryForm, setShowInquiryForm] = useState(false);
+const [inquiryFormData, setInquiryFormData] = useState<any>(null);
+const [inquirySubmitted, setInquirySubmitted] = useState(false);
   
   // ✅ Wall tile input method: 'upload' or 'qr'
   const [wallTileInputMethod, setWallTileInputMethod] = useState<'upload' | 'qr'>('qr');
@@ -74,6 +87,16 @@ export const Room3DViewPage: React.FC = () => {
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
+       console.log('🔄 New scan detected - Resetting form state');
+  
+  setShowInquiryForm(false);
+  setInquirySubmitted(false);
+  setInquiryFormData(null);
+  setError(null);
+  setSuccess(null);
+  
+  if (tileId) {
+    loadTileData();}
     };
     
     checkMobile();
@@ -97,37 +120,191 @@ export const Room3DViewPage: React.FC = () => {
     }
   }, [success, error]);
 
-  const loadTileData = async () => {
-    if (!tileId) return;
+  // const loadTileData = async () => {
+  //   if (!tileId) return;
 
-    try {
-      setLoading(true);
-      const tileData = await getTileById(tileId);
+  //   try {
+  //     setLoading(true);
+  //     const tileData = await getTileById(tileId);
       
-      if (!tileData) {
-        setError('Tile not found');
-        setTimeout(() => navigate('/'), 2000);
-        return;
-      }
+  //     if (!tileData) {
+  //       setError('Tile not found');
+  //       setTimeout(() => navigate('/'), 2000);
+  //       return;
+  //     }
 
-      setTile(tileData);
+  //     setTile(tileData);
 
-      // Set floor tile by default
-      setFloorTile({
-        texture: tileData.textureUrl || tileData.imageUrl,
-        size: parseTileSize(tileData.size, 'floor')
-      });
+  //     // Set floor tile by default
+  //     setFloorTile({
+  //       texture: tileData.textureUrl || tileData.imageUrl,
+  //       size: parseTileSize(tileData.size, 'floor')
+  //     });
 
-    } catch (err) {
-      console.error('Error loading tile:', err);
-      setError('Failed to load tile data');
-      setTimeout(() => navigate('/'), 2000);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   } catch (err) {
+  //     console.error('Error loading tile:', err);
+  //     setError('Failed to load tile data');
+  //     setTimeout(() => navigate('/'), 2000);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // ✅ Load wall tile from QR scan with session tracking
+  
+const loadTileData = async () => {
+  if (!tileId) {
+    setError('Tile ID is missing');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(null);
+    
+    console.log('🔍 Loading tile data:', tileId);
+    
+    const tileData = await getTileById(tileId);
+    
+    if (!tileData) {
+      setError('Tile not found');
+      setTimeout(() => navigate('/'), 3000);
+      return;
+    }
+    
+    setTile(tileData);
+    console.log('✅ Tile loaded:', tileData.name);
+
+    // ═══════════════════════════════════════════════════════════
+    // ✅ NEW: CHECK IF WORKER IS SCANNING
+    // ═══════════════════════════════════════════════════════════
+    
+    const currentUser = auth.currentUser;
+    
+    if (currentUser) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          // If worker is scanning, show inquiry form FIRST
+          if (userData.role === 'worker') {
+            console.log('👷 Worker detected - showing customer inquiry form');
+            setInquirySubmitted(false);
+            // Get seller info
+            const sellerId = userData.seller_id;
+            let sellerBusinessName = 'Showroom';
+            
+            if (sellerId) {
+              try {
+                const sellerQuery = query(
+                  collection(db, 'sellers'),
+                  where('user_id', '==', sellerId)
+                );
+                const sellerSnapshot = await getDocs(sellerQuery);
+                
+                if (!sellerSnapshot.empty) {
+                  const sellerData = sellerSnapshot.docs[0].data();
+                  sellerBusinessName = sellerData.business_name || 'Showroom';
+                }
+              } catch (sellerErr) {
+                console.warn('⚠️ Could not fetch seller name:', sellerErr);
+              }
+            }
+            
+            // Prepare form data
+            setInquiryFormData({
+              tileId: tileData.id,
+              tileName: tileData.name,
+              tileCode: tileData.tileCode || tileData.tile_code,
+              tileImageUrl: tileData.imageUrl || tileData.image_url,
+              tileSize: tileData.size,
+              tilePrice: tileData.price,
+              workerId: currentUser.uid,
+              workerEmail: currentUser.email || userData.email,
+              sellerId: sellerId,
+              sellerBusinessName: sellerBusinessName
+            });
+            
+            // Show form
+            setShowInquiryForm(true);
+            setLoading(false);
+            return; // Don't proceed to 3D view yet
+          }
+        }
+      } catch (userErr) {
+        console.warn('⚠️ Could not check user role:', userErr);
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════
+    // EXISTING CODE: Set floor tile for regular users/customers
+    // ═══════════════════════════════════════════════════════════
+    
+    setFloorTile({
+      texture: tileData.textureUrl || tileData.imageUrl,
+      size: parseTileSize(tileData.size, 'floor')
+    });
+
+  } catch (err) {
+    console.error('❌ Error loading tile:', err);
+    setError('Failed to load tile data');
+    setTimeout(() => navigate('/'), 2000);
+  } finally {
+    setLoading(false);
+  }
+};
+  
+  
+   const handleInquirySubmit = async (formData: any) => {
+    try {
+      console.log('💾 Submitting customer inquiry...');
+      
+      setError(null);
+      
+      // Save to Firestore
+      const result = await saveCustomerInquiry(formData);
+      
+      if (result.success) {
+        console.log('✅ Inquiry saved:', result.inquiryId);
+        
+        // Close form
+        setShowInquiryForm(false);
+        setInquirySubmitted(true);
+        
+        // Show success message
+        setSuccess('✅ Customer details saved! Loading 3D view...');
+        
+        // Proceed to 3D view
+        if (tile) {
+          setFloorTile({
+            texture: tile.textureUrl || tile.imageUrl,
+            size: parseTileSize(tile.size, 'floor')
+          });
+        }
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]);
+        }
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+        
+      } else {
+        throw new Error(result.error || 'Failed to save customer details');
+      }
+      
+    } catch (err: any) {
+      console.error('❌ Inquiry submission failed:', err);
+      // Re-throw so CustomerInquiryForm can show the error
+      throw err;
+    }
+  };
   const loadWallTileFromQR = async (wallTileId: string) => {
     try {
       setScannerLoading(true);
@@ -273,6 +450,17 @@ export const Room3DViewPage: React.FC = () => {
           </button>
         </div>
       </header>
+
+{showInquiryForm && inquiryFormData && (
+  <CustomerInquiryForm
+    {...inquiryFormData}
+    onSubmit={handleInquirySubmit}
+    onCancel={() => {
+      setShowInquiryForm(false);
+      navigate(-1); // Go back if cancelled
+    }}
+  />
+)}
 
       {/* Success/Error Messages */}
       {success && (

@@ -14,6 +14,7 @@ import {
   Loader,
   Search,
   Filter,
+    Users,
   RefreshCw,
   ChevronUp,
   ChevronDown,
@@ -35,6 +36,7 @@ import { generateTileQRCode } from "../utils/qrCodeUtils";
 import { SellerProfile } from "./SellerProfile";
 import { WorkerManagement } from "./WorkerManagement";
 import { SellerStockAnalytics } from "./SellerStockAnalytics";
+import { CustomerInquiriesManager } from './CustomerInquiriesManager';
 
 import {
   uploadTile,
@@ -51,17 +53,31 @@ import { uploadToCloudinary } from "../utils/cloudinaryUtils";
 export const SellerDashboard: React.FC = () => {
   const { currentUser, isAuthenticated } = useAppStore();
   const [isAddingTile, setIsAddingTile] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    | "tiles"
-    | "bulk"
-    | "excel"
-    | "analytics"
-    | "qrcodes"
-    | "profile"
-    | "worker"
-    | "scan"
-    | "stock-analytics"
-  >("tiles");
+  // const [activeTab, setActiveTab] = useState<
+  //   | "tiles"
+  //   | "bulk"
+  //   | "excel"
+  //   | "analytics"
+  //   | "qrcodes"
+  //   | "profile"
+  //   | "worker"
+  //   | "scan"
+  //   | "stock-analytics"
+  // >("tiles"); 
+
+const [activeTab, setActiveTab] = useState<
+  | "tiles"
+  | "bulk"
+  | "excel"
+  | "analytics"
+  | "qrcodes"
+  | "profile"
+  | "worker"
+  | "scan"
+  | "stock-analytics"
+  | "customer-inquiries"  // ← ADD THIS
+>("tiles");
+
   const [editingTile, setEditingTile] = useState<Tile | null>(null);
   const [sellerProfile, setSellerProfile] = useState<any>(null);
   const [tiles, setTiles] = useState<Tile[]>([]);
@@ -115,7 +131,6 @@ export const SellerDashboard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error, success]);
-
   // const loadData = async () => {
   //   try {
   //     setLoading(true);
@@ -713,6 +728,22 @@ export const SellerDashboard: React.FC = () => {
             <User className="w-4 h-4" />
             Worker
           </button>
+
+<button
+  onClick={() => handleTabChange("customer-inquiries")}
+  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+    activeTab === "customer-inquiries"
+      ? "bg-green-600 text-white"
+      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+  }`}
+>
+  <Users className="w-4 h-4" />
+  Customers
+</button>
+
+
+
+
           <button
             onClick={() => window.open("/scan", "_blank")}
             className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-purple-600 text-white hover:bg-purple-700 text-sm"
@@ -775,17 +806,7 @@ export const SellerDashboard: React.FC = () => {
             <QrCode className="w-4 h-4" />
             QR Codes
           </button>
-          <button
-            onClick={() => handleTabChange("analytics")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-              activeTab === "analytics"
-                ? "bg-green-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            Analytics
-          </button>
+        
         </div>
 
         {/* Navigation Tabs - Mobile Dropdown */}
@@ -802,6 +823,17 @@ export const SellerDashboard: React.FC = () => {
               <Edit className="w-4 h-4" />
               Tiles
             </button>
+            <button
+  onClick={() => handleTabChange("customer-inquiries")}
+  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+    activeTab === "customer-inquiries"
+      ? "bg-green-600 text-white"
+      : "bg-white text-gray-700 hover:bg-gray-100"
+  }`}
+>
+  <Users className="w-4 h-4" />
+  Customers
+</button>
             <button
               onClick={() => handleTabChange("worker")}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
@@ -875,17 +907,7 @@ export const SellerDashboard: React.FC = () => {
               <QrCode className="w-4 h-4" />
               QR
             </button>
-            <button
-              onClick={() => handleTabChange("analytics")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                activeTab === "analytics"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </button>
+          
           </div>
         )}
       </div>
@@ -1485,20 +1507,7 @@ export const SellerDashboard: React.FC = () => {
           {/* Desktop Table View */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full border-collapse bg-white rounded-lg border border-gray-200">
-              {/* <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Image</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Name</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Code</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Category</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Size</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Price</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Stock</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Status</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">QR</th>
-                  <th className="text-left p-3 font-semibold text-gray-700 text-sm">Actions</th>
-                </tr>
-              </thead> */}
+           
 
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -1774,40 +1783,7 @@ export const SellerDashboard: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Info Grid */}
-                      {/* <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                        <div>
-                          <span className="text-gray-500">Category:</span>
-                          <div className="mt-0.5">
-                            <span className={`
-                              px-2 py-0.5 rounded-full text-xs font-medium
-                              ${tile.category === 'floor' ? 'bg-blue-100 text-blue-800' :
-                                tile.category === 'wall' ? 'bg-purple-100 text-purple-800' :
-                                'bg-gray-100 text-gray-800'
-                              }
-                            `}>
-                              {tile.category === 'both' ? 'Both' : tile.category}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Size:</span>
-                          <div className="font-medium text-gray-900">{tile.size}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Price:</span>
-                          <div className="font-semibold text-gray-900">₹{tile.price.toLocaleString()}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Stock:</span>
-                          <div className="font-medium text-gray-900">
-                            {tile.stock || 0}
-                            {(tile.stock || 0) < 10 && tile.inStock && (
-                              <span className="text-orange-600 ml-1">(Low)</span>
-                            )}
-                          </div>
-                        </div>
-                      </div> */}
+                   
 
                       {/* Info Grid */}
                       <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
@@ -1952,6 +1928,7 @@ export const SellerDashboard: React.FC = () => {
         {activeTab === "excel" && <ExcelUpload onUploadComplete={loadData} />}
         {activeTab === "stock-analytics" && <SellerStockAnalytics />}
         {activeTab === "bulk" && <BulkUpload onUploadComplete={loadData} />}
+        {activeTab === 'customer-inquiries' && <CustomerInquiriesManager />}
         {activeTab === "qrcodes" && (
           <QRCodeManager
             tiles={tiles}

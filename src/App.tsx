@@ -19,6 +19,7 @@ import { ScanPage } from './components/ScanPage';
 import { getCurrentDomainConfig, applyDomainTheme } from './utils/domainUtils';
 import { WorkerErrorBoundary } from './components/WorkerErrorBoundary';
 import {SellerAutoLogin} from './components/SellerAutoLogin';
+import { Toaster } from 'react-hot-toast';
 
 // ✅ Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -259,7 +260,42 @@ if (user.role === 'worker') {
   if (isLoading) {
     return renderLoading();
   }
-
+<Toaster 
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          // Default options
+          className: '',
+          duration: 5000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            fontSize: '14px',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            maxWidth: '500px',
+          },
+          // Individual toast type styles
+          success: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 6000,
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <Routes>

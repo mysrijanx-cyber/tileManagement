@@ -1,418 +1,8 @@
 
-// import React, { useState } from 'react';
-// import { Store, Send, CheckCircle, AlertCircle, Mail, Phone, MapPin, User } from 'lucide-react';
-// import { collection, addDoc } from 'firebase/firestore';
-// import { db } from '../lib/firebase';
-// import { validateEmail } from '../lib/firebaseutils';
-
-// interface FormData {
-//   businessName: string;
-//   ownerName: string;
-//   email: string;
-//   phone: string;
-//   businessAddress: string;
-//   additionalInfo: string;
-// }
-
-// export const SellerRequestForm: React.FC = () => {
-//   const [formData, setFormData] = useState<FormData>({
-//     businessName: '',
-//     ownerName: '',
-//     email: '',
-//     phone: '',
-//     businessAddress: '',
-//     additionalInfo: ''
-//   });
-  
-//   const [submitting, setSubmitting] = useState(false);
-//   const [submitted, setSubmitted] = useState(false);
-//   const [error, setError] = useState('');
-//   const [emailError, setEmailError] = useState('');
-//   const [phoneError, setPhoneError] = useState('');
-//   const [nameError, setNameError] = useState('');
-
-//   // ✅ EMAIL VALIDATION
-//   const validateBusinessEmail = (email: string): { isValid: boolean; error?: string } => {
-//     if (!email.trim()) {
-//       return { isValid: false, error: 'Email is required' };
-//     }
-    
-//     if (!validateEmail(email)) {
-//       return { isValid: false, error: 'Please enter a valid email address' };
-//     }
-    
-//     return { isValid: true };
-//   };
-
-//   // ✅ PHONE VALIDATION
-//   const validatePhone = (phone: string): { isValid: boolean; error?: string } => {
-//     const cleaned = phone.replace(/\D/g, '');
-    
-//     if (!cleaned) {
-//       return { isValid: false, error: 'Phone number is required' };
-//     }
-    
-//     if (cleaned.length !== 10) {
-//       return { isValid: false, error: 'Phone must be exactly 10 digits' };
-//     }
-    
-//     if (!/^[6-9]/.test(cleaned)) {
-//       return { isValid: false, error: 'Phone must start with 6, 7, 8, or 9' };
-//     }
-    
-//     return { isValid: true };
-//   };
-
-//   // ✅ OWNER NAME VALIDATION
-//   const validateOwnerName = (name: string): { isValid: boolean; error?: string } => {
-//     if (!name.trim()) {
-//       return { isValid: false, error: 'Owner name is required' };
-//     }
-    
-//     if (name.trim().length < 2) {
-//       return { isValid: false, error: 'Name must be at least 2 characters' };
-//     }
-    
-//     if (/\d/.test(name)) {
-//       return { isValid: false, error: 'Name cannot contain numbers' };
-//     }
-    
-//     if (!/^[a-zA-Z\s]+$/.test(name)) {
-//       return { isValid: false, error: 'Name can only contain letters and spaces' };
-//     }
-    
-//     return { isValid: true };
-//   };
-
-//   // ✅ INPUT CHANGE HANDLER
-//   const handleInputChange = (field: keyof FormData, value: string) => {
-//     setFormData(prev => ({ ...prev, [field]: value }));
-    
-//     if (error) setError('');
-    
-//     if (field === 'email') {
-//       if (emailError) setEmailError('');
-//       if (value) {
-//         const validation = validateBusinessEmail(value);
-//         if (!validation.isValid) {
-//           setEmailError(validation.error || 'Invalid email');
-//         }
-//       }
-//     }
-    
-//     if (field === 'phone') {
-//       if (phoneError) setPhoneError('');
-//       if (value) {
-//         const validation = validatePhone(value);
-//         if (!validation.isValid) {
-//           setPhoneError(validation.error || 'Invalid phone');
-//         }
-//       }
-//     }
-    
-//     if (field === 'ownerName') {
-//       if (nameError) setNameError('');
-//       if (value) {
-//         const validation = validateOwnerName(value);
-//         if (!validation.isValid) {
-//           setNameError(validation.error || 'Invalid name');
-//         }
-//       }
-//     }
-//   };
-
-//   // ✅ FORM VALIDATION
-//   const validateForm = (): boolean => {
-//     if (!formData.businessName.trim()) {
-//       setError('Business name is required');
-//       return false;
-//     }
-    
-//     const nameValidation = validateOwnerName(formData.ownerName);
-//     if (!nameValidation.isValid) {
-//       setNameError(nameValidation.error || 'Invalid name');
-//       return false;
-//     }
-    
-//     const emailValidation = validateBusinessEmail(formData.email);
-//     if (!emailValidation.isValid) {
-//       setEmailError(emailValidation.error || 'Invalid email');
-//       return false;
-//     }
-    
-//     const phoneValidation = validatePhone(formData.phone);
-//     if (!phoneValidation.isValid) {
-//       setPhoneError(phoneValidation.error || 'Invalid phone');
-//       return false;
-//     }
-    
-//     if (!formData.businessAddress.trim()) {
-//       setError('Business address is required');
-//       return false;
-//     }
-    
-//     return true;
-//   };
-
-//   // ✅ FORM SUBMIT
-//  const handleSubmit = async (e: React.FormEvent) => {
-//   e.preventDefault();
-  
-//   if (!validateForm()) return;
-  
-//   setSubmitting(true);
-//   setError('');
-
-//   try {
-//     console.log('📝 Submitting seller request:', formData);
-
-//     // ❌ YE LINES DELETE KARO:
-//     // const lastSubmit = localStorage.getItem('lastSellerRequest');
-//     // const now = Date.now();
-//     // if (lastSubmit && (now - parseInt(lastSubmit)) < 300000) {
-//     //   const remainingTime = Math.ceil((300000 - (now - parseInt(lastSubmit))) / 60000);
-//     //   setError(`Please wait ${remainingTime} minute(s) before submitting another request`);
-//     //   setSubmitting(false);
-//     //   return;
-//     // }
-
-//     // ✅ DIRECT SUBMISSION
-//     const docRef = await addDoc(collection(db, 'sellerRequests'), {
-//       businessName: formData.businessName.trim(),
-//       ownerName: formData.ownerName.trim(),
-//       email: formData.email.toLowerCase().trim(),
-//       phone: formData.phone.replace(/\D/g, ''),
-//       businessAddress: formData.businessAddress.trim(),
-//       additionalInfo: formData.additionalInfo.trim() || null,
-//       status: 'pending',
-//       requestedAt: new Date().toISOString(),
-//       adminNotes: null,
-//       reviewedAt: null,
-//       reviewedBy: null,
-//       emailDeliveryStatus: null,
-//       accountCreated: false
-//     });
-
-//     // ❌ YE BHI DELETE KARO:
-//     // localStorage.setItem('lastSellerRequest', now.toString());
-
-//     console.log('✅ Request submitted with ID:', docRef.id);
-//     setSubmitted(true);
-    
-//   } catch (error: any) {
-//     console.error('❌ Error submitting request:', error);
-    
-//     if (error.code === 'permission-denied') {
-//       setError('Submission failed due to security settings. Please contact support.');
-//     } else {
-//       setError('Failed to submit request. Please try again.');
-//     }
-//   } finally {
-//     setSubmitting(false);
-//   }
-// };
-
-//   if (submitted) {
-//     return (
-//       <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4 sm:p-6 md:p-8 text-center mx-auto max-w-full">
-//         <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-green-600 mx-auto mb-3 sm:mb-4" />
-//         <h3 className="text-xl sm:text-2xl md:text-2xl font-bold text-green-800 mb-2 px-2">Request Submitted Successfully!</h3>
-//         <p className="text-sm sm:text-base text-green-700 mb-4 px-2">
-//           Thank you <strong className="break-words">{formData.ownerName}</strong> for your interest in joining our platform.
-//         </p>
-//         <div className="bg-white rounded-lg p-3 sm:p-4 text-left max-w-md mx-auto">
-//           <h4 className="font-semibold text-gray-800 mb-2 text-sm sm:text-base">📋 What happens next?</h4>
-//           <ul className="text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-1.5">
-//             <li>• Our team will review your application</li>
-//             <li>• Verification process: 2-3 business days</li>
-//             <li className="break-all">• You'll receive email updates at: <strong>{formData.email}</strong></li>
-//             <li>• If approved, you'll get login credentials immediately</li>
-//           </ul>
-//         </div>
-//         <p className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
-//           Reference ID: REQ-{Date.now().toString().slice(-6)}
-//         </p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-w-full">
-//       {/* Header */}
-//       <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white p-4 sm:p-5 md:p-6">
-//         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-//           <Store className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex-shrink-0" />
-//           <div className="w-full sm:w-auto">
-//             <h2 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">Become a Seller Partner</h2>
-//             <p className="text-xs sm:text-sm md:text-base text-blue-100 mt-1">Join our platform and showcase your tiles to more customers</p>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Form */}
-//       <form onSubmit={handleSubmit} className="p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
-//         {/* Error Messages */}
-//         {error && (
-//           <div className="p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start sm:items-center gap-2">
-//             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-//             <span className="text-red-700 text-xs sm:text-sm">{error}</span>
-//           </div>
-//         )}
-
-//         {/* Form Fields */}
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-//           {/* Business Name */}
-//           <div>
-//             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
-//               <Store className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-//               Business Name *
-//             </label>
-//             <input
-//               type="text"
-//               value={formData.businessName}
-//               onChange={(e) => handleInputChange('businessName', e.target.value)}
-//               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-//               placeholder="e.g. ABC Tiles & Ceramics"
-//               required
-//             />
-//           </div>
-
-//           {/* Owner Name */}
-//           <div>
-//             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
-//               <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-//               Owner Name *
-//             </label>
-//             <input
-//               type="text"
-//               value={formData.ownerName}
-//               onChange={(e) => handleInputChange('ownerName', e.target.value)}
-//               className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
-//                 nameError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-//               }`}
-//               placeholder="e.g. John Doe"
-//               required
-//             />
-//             {nameError && (
-//               <p className="text-red-600 text-xs mt-1">{nameError}</p>
-//             )}
-//           </div>
-
-//           {/* Email */}
-//           <div>
-//             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
-//               <Mail className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-//               Business Email * 
-//               <span className="block sm:inline text-xs text-gray-500 mt-0.5 sm:mt-0 sm:ml-1">(Login credentials will be sent here)</span>
-//             </label>
-//             <input
-//               type="email"
-//               value={formData.email}
-//               onChange={(e) => handleInputChange('email', e.target.value)}
-//               className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
-//                 emailError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-//               }`}
-//               placeholder="business@yourcompany.com"
-//               required
-//             />
-//             {emailError && (
-//               <p className="text-red-600 text-xs mt-1">{emailError}</p>
-//             )}
-//           </div>
-
-//           {/* Phone */}
-//           <div>
-//             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
-//               <Phone className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-//               Phone Number *
-//             </label>
-//             <input
-//               type="tel"
-//               value={formData.phone}
-//               onChange={(e) => handleInputChange('phone', e.target.value)}
-//               className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
-//                 phoneError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-//               }`}
-//               placeholder="9876543210"
-//               maxLength={10}
-//               required
-//             />
-//             {phoneError && (
-//               <p className="text-red-600 text-xs mt-1">{phoneError}</p>
-//             )}
-//           </div>
-//         </div>
-        
-//         {/* Address */}
-//         <div>
-//           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
-//             <MapPin className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-//             Business Address *
-//           </label>
-//           <textarea
-//             value={formData.businessAddress}
-//             onChange={(e) => handleInputChange('businessAddress', e.target.value)}
-//             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-//             rows={3}
-//             placeholder="Complete business address with city, state, pincode"
-//             required
-//           />
-//         </div>
-        
-//         {/* Additional Info */}
-//         <div>
-//           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
-//             Tell us about your tile business (optional)
-//           </label>
-//           <textarea
-//             value={formData.additionalInfo}
-//             onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-//             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-//             rows={3}
-//             placeholder="Years in business, specialties, customer base, etc."
-//           />
-//         </div>
-
-//         {/* Submit Button */}
-//         <button
-//           type="submit"
-//           disabled={submitting || !!emailError || !!phoneError || !!nameError}
-//           className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-3 sm:py-3.5 md:py-4 rounded-lg hover:from-blue-700 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium text-base sm:text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
-//         >
-//           {submitting ? (
-//             <>
-//               <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
-//               <span className="text-sm sm:text-base md:text-lg">Submitting Request...</span>
-//             </>
-//           ) : (
-//             <>
-//               <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-//               <span className="text-sm sm:text-base md:text-lg">Submit Seller Request</span>
-//             </>
-//           )}
-//         </button>
-
-//         {/* Help Text */}
-//         <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-xs sm:text-sm text-gray-600">
-//           <p className="font-medium text-gray-800 mb-2 text-sm sm:text-base">✨ Why join our platform?</p>
-//           <ul className="space-y-1 sm:space-y-1.5">
-//             <li>• Reach customers with 3D tile visualization</li>
-//             <li>• Analytics to track tile performance</li>
-//             <li>• Easy inventory management</li>
-//             <li>• QR code integration for physical stores</li>
-//             <li>• Professional seller dashboard</li>
-//           </ul>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Send, CheckCircle, AlertCircle, Mail, Phone, MapPin, User, Loader2 } from 'lucide-react';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { validateEmail } from '../lib/firebaseutils';
 
 interface FormData {
   businessName: string;
@@ -424,9 +14,7 @@ interface FormData {
 }
 
 export const SellerRequestForm: React.FC = () => {
-  // ✅ ADD MOUNTED REF FOR CLEANUP
-  const isMounted = useRef(true);
-
+  // ✅ FORM DATA
   const [formData, setFormData] = useState<FormData>({
     businessName: '',
     ownerName: '',
@@ -436,37 +24,25 @@ export const SellerRequestForm: React.FC = () => {
     additionalInfo: ''
   });
   
+  // ✅ SUBMISSION STATES
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  
+  // ✅ VALIDATION ERRORS
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [nameError, setNameError] = useState('');
 
-  // ✅ EMAIL EXISTENCE CHECK STATES
+  // ✅ EMAIL CHECK STATES (ADMIN PATTERN)
   const [checkingEmail, setCheckingEmail] = useState<boolean>(false);
   const [emailExists, setEmailExists] = useState<boolean>(false);
   const [emailCheckMessage, setEmailCheckMessage] = useState<string>('');
 
-  // ✅ CLEANUP ON UNMOUNT
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  // ✅ EMAIL VALIDATION
-  const validateBusinessEmail = (email: string): { isValid: boolean; error?: string } => {
-    if (!email.trim()) {
-      return { isValid: false, error: 'Email is required' };
-    }
-    
-    if (!validateEmail(email)) {
-      return { isValid: false, error: 'Please enter a valid email address' };
-    }
-    
-    return { isValid: true };
+  // ✅ EMAIL VALIDATION (ADMIN PATTERN)
+  const validateEmail = (email: string): boolean => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   // ✅ PHONE VALIDATION
@@ -488,7 +64,7 @@ export const SellerRequestForm: React.FC = () => {
     return { isValid: true };
   };
 
-  // ✅ OWNER NAME VALIDATION
+  // ✅ NAME VALIDATION
   const validateOwnerName = (name: string): { isValid: boolean; error?: string } => {
     if (!name.trim()) {
       return { isValid: false, error: 'Owner name is required' };
@@ -509,127 +85,136 @@ export const SellerRequestForm: React.FC = () => {
     return { isValid: true };
   };
 
-  // ✅ CHECK EMAIL EXISTENCE - MEMOIZED WITH useCallback
-  const checkEmailExists = useCallback(async (email: string): Promise<void> => {
+  // ✅ CHECK EMAIL IN DATABASE (ADMIN PATTERN - WORKING)
+  const checkEmailExists = async (email: string): Promise<void> => {
+    console.log('🔍 [EMAIL CHECK] Starting for:', email);
+
     if (!email || !validateEmail(email)) {
-      if (isMounted.current) {
-        setEmailExists(false);
-        setEmailCheckMessage('');
-      }
+      console.log('⏭️ [EMAIL CHECK] Skipped - invalid format');
+      setEmailExists(false);
+      setEmailCheckMessage('');
       return;
     }
 
     if (email.length < 5) {
-      if (isMounted.current) {
-        setEmailExists(false);
-        setEmailCheckMessage('');
-      }
+      console.log('⏭️ [EMAIL CHECK] Skipped - too short');
+      setEmailExists(false);
+      setEmailCheckMessage('');
       return;
     }
 
-    if (isMounted.current) {
-      setCheckingEmail(true);
-      setEmailCheckMessage('🔍 Checking database...');
-    }
+    setCheckingEmail(true);
+    setEmailCheckMessage('🔍 Checking database...');
+    console.log('⏳ [EMAIL CHECK] Checking database...');
 
     try {
       const emailToCheck = email.toLowerCase().trim();
+      console.log('📧 [EMAIL CHECK] Normalized:', emailToCheck);
 
-      // Check in sellers collection
+      // CHECK 1: Sellers collection
+      console.log('1️⃣ Checking sellers...');
       const sellersQuery = query(
         collection(db, 'sellers'),
         where('email', '==', emailToCheck)
       );
       const sellersSnapshot = await getDocs(sellersQuery);
-
-      if (!isMounted.current) return;
+      console.log('✅ Sellers check done. Found:', sellersSnapshot.size);
 
       if (sellersSnapshot.size > 0) {
+        console.log('❌ Email EXISTS in sellers');
         setEmailExists(true);
-        setEmailCheckMessage('❌ Email already registered in database');
-        setEmailError('This email is already registered as a seller');
+        setEmailCheckMessage('❌ Email found in database - Already registered as seller');
+        setEmailError('This email is already in use');
+        setCheckingEmail(false);
         return;
       }
 
-      // Check in users collection
+      // CHECK 2: Users collection
+      console.log('2️⃣ Checking users...');
       try {
         const usersQuery = query(
           collection(db, 'users'),
           where('email', '==', emailToCheck)
         );
         const usersSnapshot = await getDocs(usersQuery);
-
-        if (!isMounted.current) return;
+        console.log('✅ Users check done. Found:', usersSnapshot.size);
 
         if (usersSnapshot.size > 0) {
+          console.log('❌ Email EXISTS in users');
           setEmailExists(true);
-          setEmailCheckMessage('❌ Email already registered');
+          setEmailCheckMessage('❌ Email found in database - Already registered');
           setEmailError('This email is already in use');
+          setCheckingEmail(false);
           return;
         }
-      } catch (userCheckError) {
-        console.log('Users collection check skipped');
+      } catch (userError) {
+        console.log('⚠️ Users check skipped');
       }
 
-      // ✅ CHECK IN SELLER REQUESTS (pending, approved, rejected)
+      // CHECK 3: Seller Requests
+      console.log('3️⃣ Checking seller requests...');
       try {
         const requestsQuery = query(
           collection(db, 'sellerRequests'),
           where('email', '==', emailToCheck)
         );
         const requestsSnapshot = await getDocs(requestsQuery);
-
-        if (!isMounted.current) return;
+        console.log('✅ Requests check done. Found:', requestsSnapshot.size);
 
         if (requestsSnapshot.size > 0) {
           const existingRequest = requestsSnapshot.docs[0].data();
           const status = existingRequest.status;
+          console.log('📋 Existing request status:', status);
 
           if (status === 'pending') {
+            console.log('⏳ Email has PENDING request');
             setEmailExists(true);
             setEmailCheckMessage('⏳ Request already submitted with this email');
-            setEmailError('A request with this email is already pending review');
+            setEmailError('A request with this email is pending');
+            setCheckingEmail(false);
             return;
           } else if (status === 'approved') {
+            console.log('✅ Email APPROVED');
             setEmailExists(true);
-            setEmailCheckMessage('✅ Email already approved');
-            setEmailError('This email has already been approved for seller account');
+            setEmailCheckMessage('✅ Email already approved - Account exists');
+            setEmailError('This email already has an account');
+            setCheckingEmail(false);
             return;
           } else if (status === 'rejected') {
-            // ✅ INFORM ABOUT REJECTED REQUEST
+            console.log('❌ Previous request REJECTED - can reapply');
             setEmailExists(false);
-            setEmailCheckMessage('⚠️ Previous request was rejected - You can reapply');
+            setEmailCheckMessage('⚠️ Previous request rejected - You can reapply');
             setEmailError('');
+            setCheckingEmail(false);
             return;
           }
         }
-      } catch (requestCheckError) {
-        console.log('Requests collection check skipped');
+      } catch (requestError) {
+        console.log('⚠️ Requests check skipped');
       }
 
-      // Email available
-      if (isMounted.current) {
-        setEmailExists(false);
-        setEmailCheckMessage('✅ Email not registered - You can submit request');
-        setEmailError('');
-      }
+      // EMAIL AVAILABLE
+      console.log('✅ Email AVAILABLE');
+      setEmailExists(false);
+      setEmailCheckMessage('✅ Email not registered - You can submit request');
+      setEmailError('');
 
     } catch (error) {
-      console.error('Error checking email:', error);
-      if (isMounted.current) {
-        setEmailCheckMessage('⚠️ Could not verify email - Please try again');
-        setEmailExists(false);
-      }
+      console.error('❌ [EMAIL CHECK] Error:', error);
+      setEmailCheckMessage('⚠️ Could not verify email - Please try again');
+      setEmailExists(false);
     } finally {
-      if (isMounted.current) {
-        setCheckingEmail(false);
-      }
+      setCheckingEmail(false);
+      console.log('🏁 [EMAIL CHECK] Completed');
     }
-  }, []); // ✅ No dependencies needed - uses latest state via setState
+  };
 
-  // ✅ DEBOUNCED EMAIL CHECK
+  // ✅ DEBOUNCED EMAIL CHECK (ADMIN PATTERN)
   useEffect(() => {
+    console.log('🔄 [EFFECT] Email changed:', formData.email);
+
     if (!formData.email) {
+      console.log('⏭️ [EFFECT] Email empty - reset');
       setEmailExists(false);
       setEmailCheckMessage('');
       setEmailError('');
@@ -637,17 +222,23 @@ export const SellerRequestForm: React.FC = () => {
     }
 
     if (!validateEmail(formData.email)) {
+      console.log('⏭️ [EFFECT] Invalid format - skip');
       setEmailExists(false);
       setEmailCheckMessage('');
       return;
     }
 
+    console.log('⏰ [EFFECT] Setting 500ms timer...');
     const timer = setTimeout(() => {
+      console.log('⏰ [EFFECT] Timer fired! Checking email...');
       checkEmailExists(formData.email);
     }, 500);
 
-    return () => clearTimeout(timer);
-  }, [formData.email, checkEmailExists]); // ✅ Added checkEmailExists to dependencies
+    return () => {
+      console.log('🧹 [EFFECT] Cleanup timer');
+      clearTimeout(timer);
+    };
+  }, [formData.email]);
 
   // ✅ INPUT CHANGE HANDLER
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -658,14 +249,7 @@ export const SellerRequestForm: React.FC = () => {
     if (field === 'email') {
       setEmailCheckMessage('');
       setEmailExists(false);
-      
       if (emailError) setEmailError('');
-      if (value) {
-        const validation = validateBusinessEmail(value);
-        if (!validation.isValid) {
-          setEmailError(validation.error || 'Invalid email');
-        }
-      }
     }
     
     if (field === 'phone') {
@@ -702,14 +286,13 @@ export const SellerRequestForm: React.FC = () => {
       return false;
     }
     
-    const emailValidation = validateBusinessEmail(formData.email);
-    if (!emailValidation.isValid) {
-      setEmailError(emailValidation.error || 'Invalid email');
+    if (!validateEmail(formData.email)) {
+      setEmailError('Please enter a valid email');
       return false;
     }
 
     if (emailExists) {
-      setError('Cannot submit - Email already registered in database');
+      setError('Cannot submit - Email already registered');
       return false;
     }
     
@@ -731,27 +314,30 @@ export const SellerRequestForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 [SUBMIT] Form submit triggered');
+
     if (emailExists) {
-      alert(
-        '❌ Cannot Submit Request!\n\n' +
-        'This email is already registered or has a pending request.\n\n' +
-        'Please use a different email address or contact support if this is an error.'
-      );
+      console.log('❌ [SUBMIT] Blocked - email exists');
+      alert('❌ Cannot Submit!\n\nThis email is already registered or has a pending request.');
       return;
     }
 
     if (checkingEmail) {
+      console.log('⏳ [SUBMIT] Blocked - still checking email');
       alert('⏳ Please wait...\n\nEmail verification in progress.');
       return;
     }
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log('❌ [SUBMIT] Validation failed');
+      return;
+    }
     
     setSubmitting(true);
     setError('');
 
     try {
-      console.log('📝 Submitting seller request:', formData);
+      console.log('📤 [SUBMIT] Submitting to Firestore...');
 
       const docRef = await addDoc(collection(db, 'sellerRequests'), {
         businessName: formData.businessName.trim(),
@@ -769,34 +355,30 @@ export const SellerRequestForm: React.FC = () => {
         accountCreated: false
       });
 
-      console.log('✅ Request submitted with ID:', docRef.id);
-      
-      if (isMounted.current) {
-        setSubmitted(true);
-      }
+      console.log('✅ [SUBMIT] Success! ID:', docRef.id);
+      setSubmitted(true);
       
     } catch (error: any) {
-      console.error('❌ Error submitting request:', error);
+      console.error('❌ [SUBMIT] Error:', error);
       
-      if (isMounted.current) {
-        if (error.code === 'permission-denied') {
-          setError('Submission failed due to security settings. Please contact support.');
-        } else {
-          setError('Failed to submit request. Please try again.');
-        }
+      if (error.code === 'permission-denied') {
+        setError('Permission denied. Please contact support.');
+      } else {
+        setError('Failed to submit. Please try again.');
       }
     } finally {
-      if (isMounted.current) {
-        setSubmitting(false);
-      }
+      setSubmitting(false);
     }
   };
 
+  // ✅ SUCCESS SCREEN
   if (submitted) {
     return (
       <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4 sm:p-6 md:p-8 text-center mx-auto max-w-full">
         <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-green-600 mx-auto mb-3 sm:mb-4" />
-        <h3 className="text-xl sm:text-2xl md:text-2xl font-bold text-green-800 mb-2 px-2">Request Submitted Successfully!</h3>
+        <h3 className="text-xl sm:text-2xl md:text-2xl font-bold text-green-800 mb-2 px-2">
+          Request Submitted Successfully!
+        </h3>
         <p className="text-sm sm:text-base text-green-700 mb-4 px-2">
           Thank you <strong className="break-words">{formData.ownerName}</strong> for your interest in joining our platform.
         </p>
@@ -816,6 +398,7 @@ export const SellerRequestForm: React.FC = () => {
     );
   }
 
+  // ✅ FORM UI
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-w-full">
       {/* Header */}
@@ -823,15 +406,19 @@ export const SellerRequestForm: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
           <Store className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex-shrink-0" />
           <div className="w-full sm:w-auto">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">Become a Seller Partner</h2>
-            <p className="text-xs sm:text-sm md:text-base text-blue-100 mt-1">Join our platform and showcase your tiles to more customers</p>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
+              Become a Seller Partner
+            </h2>
+            <p className="text-xs sm:text-sm md:text-base text-blue-100 mt-1">
+              Join our platform and showcase your tiles to more customers
+            </p>
           </div>
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
-        {/* Error Messages */}
+        {/* Global Error */}
         {error && (
           <div className="p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start sm:items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5 sm:mt-0" />
@@ -839,7 +426,6 @@ export const SellerRequestForm: React.FC = () => {
           </div>
         )}
 
-        {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {/* Business Name */}
           <div>
@@ -878,12 +464,14 @@ export const SellerRequestForm: React.FC = () => {
             )}
           </div>
 
-          {/* ✅ EMAIL WITH EXISTENCE CHECK */}
+          {/* ✅ EMAIL WITH CHECK (ADMIN PATTERN) */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-1.5">
               <Mail className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
               Business Email * 
-              <span className="block sm:inline text-xs text-gray-500 mt-0.5 sm:mt-0 sm:ml-1">(Login credentials will be sent here)</span>
+              <span className="block sm:inline text-xs text-gray-500 mt-0.5 sm:mt-0 sm:ml-1">
+                (Login credentials will be sent here)
+              </span>
             </label>
             <div className="relative">
               <input
@@ -924,18 +512,16 @@ export const SellerRequestForm: React.FC = () => {
               <p className="text-red-600 text-xs mt-1">⚠️ {emailError}</p>
             )}
             
-            {/* Existence Check Message */}
+            {/* Check Message */}
             {emailCheckMessage && (
               <div className={`mt-2 p-2 rounded-lg text-xs ${
                 checkingEmail ? 'bg-blue-50 border border-blue-200' :
-                emailExists ? 'bg-red-50 border border-red-200' :
-                emailCheckMessage.includes('rejected') ? 'bg-yellow-50 border border-yellow-200' :
+                emailExists ? 'bg-red-50 border border-red-200' : 
                 'bg-green-50 border border-green-200'
               }`}>
                 <p className={`font-medium ${
                   checkingEmail ? 'text-blue-700' :
-                  emailExists ? 'text-red-700' :
-                  emailCheckMessage.includes('rejected') ? 'text-yellow-700' :
+                  emailExists ? 'text-red-700' : 
                   'text-green-700'
                 }`}>
                   {emailCheckMessage}
@@ -1017,7 +603,7 @@ export const SellerRequestForm: React.FC = () => {
         >
           {submitting ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
               <span className="text-sm sm:text-base md:text-lg">Submitting Request...</span>
             </>
           ) : checkingEmail ? (
@@ -1036,23 +622,23 @@ export const SellerRequestForm: React.FC = () => {
         </button>
 
         {/* Status Footer */}
-        {checkingEmail && (
-          <div className="text-center text-xs sm:text-sm text-blue-600 font-medium">
-            🔍 Verifying email availability in database...
-          </div>
-        )}
-        
-        {emailExists && !checkingEmail && (
-          <div className="text-center text-xs sm:text-sm text-red-600 font-medium">
-            ❌ This email is already registered. Request cannot be submitted.
-          </div>
-        )}
-        
-        {!emailExists && emailCheckMessage && !checkingEmail && !emailError && (
-          <div className="text-center text-xs sm:text-sm text-green-600 font-medium">
-            ✅ Email verified - Not registered in database. You can proceed.
-          </div>
-        )}
+        <div className="text-center text-xs sm:text-sm font-medium">
+          {checkingEmail && (
+            <p className="text-blue-600">🔍 Verifying email availability in database...</p>
+          )}
+          
+          {emailExists && !checkingEmail && (
+            <p className="text-red-600">
+              ❌ This email is already registered. Request cannot be submitted.
+            </p>
+          )}
+          
+          {!emailExists && emailCheckMessage && !checkingEmail && !emailError && (
+            <p className="text-green-600">
+              ✅ Email verified - Not registered in database. You can proceed.
+            </p>
+          )}
+        </div>
 
         {/* Help Text */}
         <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-xs sm:text-sm text-gray-600">

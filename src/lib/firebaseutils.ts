@@ -30,7 +30,9 @@ import {
   addDoc,
   orderBy,
   limit, 
-  writeBatch
+  writeBatch,
+   onSnapshot,     // ← YEH ADD KARO
+  Unsubscribe
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile, TileSeller } from '../types';
@@ -3617,7 +3619,258 @@ export const submitSellerRequest = async (requestData: any): Promise<string> => 
     throw error;
   }
 };
+// ═══════════════════════════════════════════════════════════════
+// ✅ REAL-TIME LISTENERS FOR CUSTOMER INQUIRIES
+// Add after existing inquiry functions
+// ═══════════════════════════════════════════════════════════════
 
+/**
+ * 🔥 REAL-TIME: Subscribe to seller's customer inquiries
+ * This enables live updates without refresh
+ * 
+ * @param sellerId - Seller's user ID
+ * @param onUpdate - Callback function with updated inquiries
+ * @param onError - Optional error callback
+ * @returns Unsubscribe function to cleanup listener
+ * 
+ * @example
+ * const unsubscribe = subscribeToSellerInquiries(
+ *   sellerId,
+ *   (inquiries) => setInquiries(inquiries),
+ *   (error) => console.error(error)
+ * );
+ * // Cleanup on unmount
+ * return () => unsubscribe();
+ */
+export const subscribeToSellerInquiries = (
+  sellerId: string,
+  onUpdate: (inquiries: any[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
+  
+  try {
+    console.log('🔌 Setting up real-time listener for inquiries:', sellerId);
+
+    if (!sellerId?.trim()) {
+      console.error('❌ Invalid seller ID');
+      return () => {}; // Return empty unsubscribe
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CREATE FIRESTORE REAL-TIME QUERY
+    // ═══════════════════════════════════════════════════════════
+    
+    const q = query(
+      collection(db, 'customerInquiries'),
+      where('seller_id', '==', sellerId),
+      orderBy('timestamp', 'desc')
+    );
+
+    // ═══════════════════════════════════════════════════════════
+    // ATTACH SNAPSHOT LISTENER
+    // ═══════════════════════════════════════════════════════════
+    
+    const unsubscribe = onSnapshot(
+      q,
+      {
+        includeMetadataChanges: false, // Only server updates, not local cache
+      },
+      (snapshot) => {
+        // ✅ SUCCESS CALLBACK - Runs on every change
+        
+        const inquiries = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log('🔄 Real-time update received:', inquiries.length, 'inquiries');
+        
+        // Call the update callback
+        onUpdate(inquiries);
+      },
+      (error) => {
+        // ❌ ERROR CALLBACK
+        
+        console.error('❌ Firestore listener error:', error);
+        
+        // Log error for debugging
+        try {
+          addDoc(collection(db, 'errorLogs'), {
+            function: 'subscribeToSellerInquiries',
+            seller_id: sellerId,
+            error_message: error.message,
+            error_code: error.code || 'unknown',
+            timestamp: new Date().toISOString()
+          });
+        } catch (logErr) {
+          console.warn('⚠️ Could not log error:', logErr);
+        }
+        
+        // Call error callback if provided
+        if (onError) {
+          onError(error);
+        }
+      }
+    );
+
+    console.log('✅ Real-time listener attached successfully');
+    
+    return unsubscribe;
+
+  } catch (error: any) {
+    console.error('❌ Failed to setup inquiry listener:', error);
+    
+    if (onError) {
+      onError(error);
+    }
+    
+    // Return empty unsubscribe function
+    return () => {};
+  }
+};
+
+/**
+ * 🔥 REAL-TIME: Subscribe to inquiry statistics
+ * Updates dashboard stats in real-time
+ * 
+ * @param sellerId - Seller's user ID
+ * @param onUpdate - Callback function with updated stats
+ * @param onError - Optional error callback
+ * @returns Unsubscribe function to cleanup listener
+ * 
+ * @example
+ * const unsubscribe = subscribeToInquiryStats(
+ *   sellerId,
+ *   (stats) => setStats(stats)
+ * );
+ */
+export const subscribeToInquiryStats = (
+  sellerId: string,
+  onUpdate: (stats: any) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
+  
+  try {
+    console.log('🔌 Setting up real-time stats listener:', sellerId);
+
+    if (!sellerId?.trim()) {
+      console.error('❌ Invalid seller ID');
+      return () => {};
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CREATE FIRESTORE QUERY
+    // ═══════════════════════════════════════════════════════════
+    
+    const q = query(
+      collection(db, 'customerInquiries'),
+      where('seller_id', '==', sellerId)
+    );
+
+    // ═══════════════════════════════════════════════════════════
+    // ATTACH SNAPSHOT LISTENER
+    // ═══════════════════════════════════════════════════════════
+    
+    const unsubscribe = onSnapshot(
+      q,
+      {
+        includeMetadataChanges: false,
+      },
+      (snapshot) => {
+        // ✅ CALCULATE STATS IN REAL-TIME
+        
+        const stats = {
+          total: snapshot.size,
+          new: 0,
+          contacted: 0,
+          converted: 0,
+          closed: 0,
+          thisMonth: 0,
+          thisWeek: 0,
+          today: 0
+        };
+
+        // Date calculations
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - 7);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        // Process each document
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          
+          // Count by status
+          if (data.status) {
+            const status = data.status as keyof typeof stats;
+            if (stats.hasOwnProperty(status)) {
+              stats[status]++;
+            }
+          }
+          
+          // Count by time periods
+          if (data.timestamp) {
+            const timestamp = data.timestamp?.toDate?.() || new Date(data.timestamp);
+            
+            if (timestamp >= monthStart) {
+              stats.thisMonth++;
+            }
+            
+            if (timestamp >= weekStart) {
+              stats.thisWeek++;
+            }
+            
+            if (timestamp >= todayStart) {
+              stats.today++;
+            }
+          }
+        });
+
+        console.log('📊 Stats updated in real-time:', stats);
+        
+        // Call the update callback
+        onUpdate(stats);
+      },
+      (error) => {
+        // ❌ ERROR CALLBACK
+        
+        console.error('❌ Stats listener error:', error);
+        
+        // Log error
+        try {
+          addDoc(collection(db, 'errorLogs'), {
+            function: 'subscribeToInquiryStats',
+            seller_id: sellerId,
+            error_message: error.message,
+            timestamp: new Date().toISOString()
+          });
+        } catch (logErr) {
+          console.warn('⚠️ Could not log error:', logErr);
+        }
+        
+        if (onError) {
+          onError(error);
+        }
+      }
+    );
+
+    console.log('✅ Real-time stats listener attached');
+    
+    return unsubscribe;
+
+  } catch (error: any) {
+    console.error('❌ Failed to setup stats listener:', error);
+    
+    if (onError) {
+      onError(error);
+    }
+    
+    return () => {};
+  }
+};
+
+console.log('✅ Real-time Customer Inquiry Listeners loaded - PRODUCTION v2.0');
 export const getAllSellerRequests = async (): Promise<any[]> => {
   if (!isFirebaseConfigured()) {
     return [];
@@ -6525,6 +6778,535 @@ export const getSellerStatusHistory = async (sellerId: string): Promise<any[]> =
  * @param userId - User ID attempting login
  * @returns Object with active status and reason if inactive
  */
+
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ CUSTOMER INQUIRY FUNCTIONS - ADD AT END OF FILE
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Save customer inquiry from QR scan
+ * PRODUCTION v1.0 - Complete with error handling
+ */
+export const saveCustomerInquiry = async (
+  inquiryData: Partial<CustomerInquiry>
+): Promise<{ success: boolean; inquiryId?: string; error?: string }> => {
+  
+  const startTime = Date.now();
+  
+  try {
+    console.log('💾 Saving customer inquiry...');
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 1: VALIDATE REQUIRED FIELDS
+    // ═══════════════════════════════════════════════════════════
+    
+    if (!inquiryData.customer_name?.trim()) {
+      throw new Error('Customer name is required');
+    }
+
+    if (!inquiryData.customer_email?.trim()) {
+      throw new Error('Customer email is required');
+    }
+
+    if (!validateEmail(inquiryData.customer_email.trim())) {
+      throw new Error('Invalid email format');
+    }
+
+    if (!inquiryData.customer_phone?.trim()) {
+      throw new Error('Customer phone is required');
+    }
+
+    if (!inquiryData.customer_address?.trim()) {
+      throw new Error('Customer address is required');
+    }
+
+    if (!inquiryData.seller_id) {
+      throw new Error('Seller ID is required');
+    }
+
+    if (!inquiryData.tile_id) {
+      throw new Error('Tile ID is required');
+    }
+
+    if (!inquiryData.scanned_by) {
+      throw new Error('Worker ID is required');
+    }
+
+    console.log('✅ Validation passed');
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 2: PREPARE INQUIRY DOCUMENT
+    // ═══════════════════════════════════════════════════════════
+    
+    const inquiry = {
+      ...inquiryData,
+      customer_name: inquiryData.customer_name.trim(),
+      customer_email: inquiryData.customer_email.trim().toLowerCase(),
+      customer_phone: inquiryData.customer_phone.trim(),
+      customer_address: inquiryData.customer_address.trim(),
+      timestamp: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: inquiryData.status || 'new',
+      source: inquiryData.source || 'qr_scan',
+      notes: inquiryData.notes || null,
+      follow_up_date: inquiryData.follow_up_date || null
+    };
+
+    console.log('📋 Inquiry prepared:', {
+      customer: inquiry.customer_name,
+      tile: inquiry.tile_name,
+      worker: inquiry.worker_email
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 3: SAVE TO FIRESTORE
+    // ═══════════════════════════════════════════════════════════
+    
+    const docRef = await addDoc(collection(db, 'customerInquiries'), inquiry);
+    
+    console.log('✅ Inquiry saved with ID:', docRef.id);
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 4: LOG SELLER ACTIVITY
+    // ═══════════════════════════════════════════════════════════
+    
+    try {
+      await addDoc(collection(db, 'sellerActivity'), {
+        seller_id: inquiryData.seller_id,
+        activity_type: 'customer_inquiry_created',
+        inquiry_id: docRef.id,
+        customer_name: inquiry.customer_name,
+        customer_email: inquiry.customer_email,
+        tile_id: inquiry.tile_id,
+        tile_name: inquiry.tile_name,
+        scanned_by: inquiry.scanned_by,
+        worker_email: inquiry.worker_email,
+        timestamp: new Date().toISOString(),
+        device_type: inquiry.device_type || 'unknown'
+      });
+      console.log('📊 Activity logged');
+    } catch (logError) {
+      console.warn('⚠️ Could not log activity (non-critical):', logError);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 5: LOG WORKER ACTIVITY
+    // ═══════════════════════════════════════════════════════════
+    
+    if (inquiryData.scanned_by) {
+      try {
+        await addDoc(collection(db, 'workerActivity'), {
+          worker_id: inquiryData.scanned_by,
+          seller_id: inquiryData.seller_id,
+          action: 'CUSTOMER_INQUIRY_CAPTURED',
+          details: {
+            inquiry_id: docRef.id,
+            customer_name: inquiry.customer_name,
+            tile_name: inquiry.tile_name,
+            device_type: inquiry.device_type
+          },
+          timestamp: new Date().toISOString()
+        });
+        console.log('👷 Worker activity logged');
+      } catch (workerLogError) {
+        console.warn('⚠️ Could not log worker activity (non-critical):', workerLogError);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 6: SUCCESS
+    // ═══════════════════════════════════════════════════════════
+    
+    const duration = Date.now() - startTime;
+    console.log(`🎉 Customer inquiry saved successfully in ${duration}ms`);
+
+    return {
+      success: true,
+      inquiryId: docRef.id
+    };
+
+  } catch (error: any) {
+    console.error('❌ Error saving inquiry:', error);
+
+    // Log error for debugging
+    try {
+      await addDoc(collection(db, 'errorLogs'), {
+        function: 'saveCustomerInquiry',
+        error_message: error.message,
+        error_code: error.code || 'unknown',
+        inquiry_data: {
+          customer_name: inquiryData.customer_name,
+          seller_id: inquiryData.seller_id,
+          tile_id: inquiryData.tile_id,
+          worker_id: inquiryData.scanned_by
+        },
+        timestamp: new Date().toISOString(),
+        stack_trace: error.stack?.substring(0, 500) || null
+      });
+    } catch (logErr) {
+      console.warn('⚠️ Could not log error:', logErr);
+    }
+
+    return {
+      success: false,
+      error: error.message || 'Failed to save customer inquiry'
+    };
+  }
+};
+
+/**
+ * Get customer inquiries for a seller with filters
+ * PRODUCTION v1.0
+ */
+export const getSellerCustomerInquiries = async (
+  sellerId: string,
+  options?: {
+    limit?: number;
+    status?: string;
+    searchTerm?: string;
+    startDate?: string;
+    endDate?: string;
+  }
+): Promise<any[]> => {
+  
+  try {
+    console.log('🔍 Fetching customer inquiries for seller:', sellerId);
+
+    if (!sellerId?.trim()) {
+      console.warn('⚠️ Invalid seller ID');
+      return [];
+    }
+
+    // Base query
+    let q = query(
+      collection(db, 'customerInquiries'),
+      where('seller_id', '==', sellerId),
+      orderBy('timestamp', 'desc')
+    );
+
+    // Apply status filter (Firestore level)
+    if (options?.status && options.status !== 'all') {
+      q = query(q, where('status', '==', options.status));
+    }
+
+    // Apply limit
+    if (options?.limit && options.limit > 0) {
+      q = query(q, limit(options.limit));
+    }
+
+    // Execute query
+    const snapshot = await getDocs(q);
+    
+    let inquiries = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    console.log('✅ Fetched inquiries from Firestore:', inquiries.length);
+
+    // ═══════════════════════════════════════════════════════════
+    // CLIENT-SIDE FILTERS (Firestore limitations)
+    // ═══════════════════════════════════════════════════════════
+    
+    // Search filter
+    if (options?.searchTerm && options.searchTerm.trim()) {
+      const search = options.searchTerm.toLowerCase().trim();
+      
+      inquiries = inquiries.filter((inq: any) => 
+        inq.customer_name?.toLowerCase().includes(search) ||
+        inq.customer_email?.toLowerCase().includes(search) ||
+        inq.customer_phone?.includes(search) ||
+        inq.tile_name?.toLowerCase().includes(search) ||
+        inq.tile_code?.toLowerCase().includes(search) ||
+        inq.worker_email?.toLowerCase().includes(search) ||
+        inq.customer_address?.toLowerCase().includes(search)
+      );
+      
+      console.log(`🔍 After search filter: ${inquiries.length} results`);
+    }
+
+    // Date range filter
+    if (options?.startDate || options?.endDate) {
+      inquiries = inquiries.filter((inq: any) => {
+        if (!inq.timestamp) return false;
+        
+        const inqDate = new Date(inq.timestamp);
+        
+        if (options.startDate) {
+          const start = new Date(options.startDate);
+          start.setHours(0, 0, 0, 0);
+          if (inqDate < start) return false;
+        }
+        
+        if (options.endDate) {
+          const end = new Date(options.endDate);
+          end.setHours(23, 59, 59, 999);
+          if (inqDate > end) return false;
+        }
+        
+        return true;
+      });
+      
+      console.log(`📅 After date filter: ${inquiries.length} results`);
+    }
+
+    console.log('✅ Final filtered inquiries:', inquiries.length);
+    return inquiries;
+
+  } catch (error: any) {
+    console.error('❌ Error fetching inquiries:', error);
+    
+    // Log error
+    try {
+      await addDoc(collection(db, 'errorLogs'), {
+        function: 'getSellerCustomerInquiries',
+        seller_id: sellerId,
+        error_message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    } catch (logErr) {
+      console.warn('⚠️ Could not log error:', logErr);
+    }
+    
+    return [];
+  }
+};
+
+/**
+ * Update inquiry status with optional notes
+ * PRODUCTION v1.0
+ */
+export const updateInquiryStatus = async (
+  inquiryId: string,
+  status: 'new' | 'contacted' | 'converted' | 'closed',
+  notes?: string
+): Promise<{ success: boolean; error?: string }> => {
+  
+  try {
+    console.log('🔄 Updating inquiry status:', { inquiryId, status });
+
+    if (!inquiryId?.trim()) {
+      throw new Error('Inquiry ID is required');
+    }
+
+    const updates: any = {
+      status,
+      updated_at: new Date().toISOString()
+    };
+
+    if (notes && notes.trim()) {
+      updates.notes = notes.trim();
+    }
+
+    // Update Firestore
+    await updateDoc(doc(db, 'customerInquiries', inquiryId), updates);
+    
+    console.log('✅ Status updated successfully');
+
+    // Log activity
+    try {
+      const inquiryDoc = await getDoc(doc(db, 'customerInquiries', inquiryId));
+      
+      if (inquiryDoc.exists()) {
+        const inquiryData = inquiryDoc.data();
+        
+        await addDoc(collection(db, 'sellerActivity'), {
+          seller_id: inquiryData.seller_id,
+          activity_type: 'inquiry_status_updated',
+          inquiry_id: inquiryId,
+          old_status: inquiryData.status,
+          new_status: status,
+          customer_name: inquiryData.customer_name,
+          notes: notes || null,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (logError) {
+      console.warn('⚠️ Could not log activity:', logError);
+    }
+
+    return { success: true };
+
+  } catch (error: any) {
+    console.error('❌ Error updating inquiry:', error);
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to update inquiry status'
+    };
+  }
+};
+
+/**
+ * Delete customer inquiry
+ * PRODUCTION v1.0
+ */
+export const deleteCustomerInquiry = async (
+  inquiryId: string
+): Promise<{ success: boolean; error?: string }> => {
+  
+  try {
+    console.log('🗑️ Deleting inquiry:', inquiryId);
+
+    if (!inquiryId?.trim()) {
+      throw new Error('Inquiry ID is required');
+    }
+
+    // Get inquiry data before deletion (for logging)
+    let inquiryData: any = null;
+    try {
+      const inquiryDoc = await getDoc(doc(db, 'customerInquiries', inquiryId));
+      if (inquiryDoc.exists()) {
+        inquiryData = inquiryDoc.data();
+      }
+    } catch (fetchError) {
+      console.warn('⚠️ Could not fetch inquiry before deletion');
+    }
+
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'customerInquiries', inquiryId));
+    
+    console.log('✅ Inquiry deleted successfully');
+
+    // Log deletion
+    if (inquiryData) {
+      try {
+        await addDoc(collection(db, 'sellerActivity'), {
+          seller_id: inquiryData.seller_id,
+          activity_type: 'inquiry_deleted',
+          inquiry_id: inquiryId,
+          customer_name: inquiryData.customer_name,
+          customer_email: inquiryData.customer_email,
+          tile_name: inquiryData.tile_name,
+          timestamp: new Date().toISOString()
+        });
+      } catch (logError) {
+        console.warn('⚠️ Could not log deletion:', logError);
+      }
+    }
+
+    return { success: true };
+
+  } catch (error: any) {
+    console.error('❌ Error deleting inquiry:', error);
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to delete inquiry'
+    };
+  }
+};
+
+/**
+ * Get inquiry statistics for seller dashboard
+ * PRODUCTION v1.0
+ */
+export const getInquiryStats = async (sellerId: string): Promise<{
+  total: number;
+  new: number;
+  contacted: number;
+  converted: number;
+  closed: number;
+  thisMonth: number;
+  thisWeek: number;
+  today: number;
+}> => {
+  
+  try {
+    console.log('📊 Calculating inquiry stats for seller:', sellerId);
+
+    if (!sellerId?.trim()) {
+      console.warn('⚠️ Invalid seller ID');
+      return {
+        total: 0,
+        new: 0,
+        contacted: 0,
+        converted: 0,
+        closed: 0,
+        thisMonth: 0,
+        thisWeek: 0,
+        today: 0
+      };
+    }
+
+    // Fetch all inquiries (no limit for stats)
+    const inquiries = await getSellerCustomerInquiries(sellerId);
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - 7);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const stats = {
+      total: inquiries.length,
+      new: inquiries.filter((i: any) => i.status === 'new').length,
+      contacted: inquiries.filter((i: any) => i.status === 'contacted').length,
+      converted: inquiries.filter((i: any) => i.status === 'converted').length,
+      closed: inquiries.filter((i: any) => i.status === 'closed').length,
+      thisMonth: inquiries.filter((i: any) => {
+        const date = new Date(i.timestamp);
+        return date >= monthStart;
+      }).length,
+      thisWeek: inquiries.filter((i: any) => {
+        const date = new Date(i.timestamp);
+        return date >= weekStart;
+      }).length,
+      today: inquiries.filter((i: any) => {
+        const date = new Date(i.timestamp);
+        return date >= todayStart;
+      }).length
+    };
+
+    console.log('✅ Stats calculated:', stats);
+    return stats;
+
+  } catch (error: any) {
+    console.error('❌ Error calculating stats:', error);
+    
+    return {
+      total: 0,
+      new: 0,
+      contacted: 0,
+      converted: 0,
+      closed: 0,
+      thisMonth: 0,
+      thisWeek: 0,
+      today: 0
+    };
+  }
+};
+
+/**
+ * Get inquiry by ID
+ * PRODUCTION v1.0
+ */
+export const getInquiryById = async (inquiryId: string): Promise<any | null> => {
+  try {
+    if (!inquiryId?.trim()) return null;
+
+    const inquiryDoc = await getDoc(doc(db, 'customerInquiries', inquiryId));
+    
+    if (inquiryDoc.exists()) {
+      return {
+        id: inquiryDoc.id,
+        ...inquiryDoc.data()
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error fetching inquiry:', error);
+    return null;
+  }
+};
+
+console.log('✅ Customer Inquiry Management functions loaded - PRODUCTION v1.0');
+
+
+
 export const checkSellerAccountActive = async (
   userId: string
 ): Promise<{ 

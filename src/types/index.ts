@@ -91,6 +91,35 @@ export interface ExcelTileData {
   tileMaterial?: string;
   
 }
+// ═══════════════════════════════════════════════════════════════
+// ✅ ADD THIS INTERFACE (Don't remove existing code)
+// ═══════════════════════════════════════════════════════════════
+
+export interface CustomerInquiry {
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_address: string;
+  tile_id: string;
+  tile_name: string;
+  tile_code?: string;
+  tile_image_url?: string;
+  tile_size?: string;
+  tile_price?: number;
+  scanned_by: string; // worker_id
+  worker_email: string;
+  seller_id: string;
+  seller_business_name: string;
+  timestamp: string;
+  status: 'new' | 'contacted' | 'converted' | 'closed';
+  notes?: string;
+  follow_up_date?: string;
+  source: 'qr_scan' | 'manual_entry';
+  device_type?: 'mobile' | 'tablet' | 'desktop';
+  created_at?: string;
+  updated_at?: string;
+}
 
 // ===== USER & PROFILE INTERFACES =====
 
