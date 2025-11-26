@@ -1,10 +1,11 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   QrCode, LogOut, Camera, AlertCircle, CheckCircle, 
-  Loader, Package, User, RefreshCw, X, Eye 
+  Loader, X, Eye, UserPlus
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { useAppStore } from '../stores/appStore';
@@ -15,9 +16,14 @@ import {
   getTileById, 
   trackQRScan, 
   trackWorkerActivity,
-  verifyWorkerTileAccess ,
-   getTileByCode
+  verifyWorkerTileAccess,
+  getTileByCode
 } from '../lib/firebaseutils';
+import { 
+  hasActiveSession, 
+  clearCustomerSession, 
+  getCustomerFromSession 
+} from '../utils/customerSession';
 
 // ═══════════════════════════════════════════════════════════════
 // INTERFACES
@@ -37,7 +43,7 @@ interface RecentScan {
 
 export const ScanPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, isAuthenticated } = useAppStore();
+  const { currentUser } = useAppStore();
   const { logout } = useAuth();
 
   // ═══════════════════════════════════════════════════════════
@@ -51,6 +57,7 @@ export const ScanPage: React.FC = () => {
   const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
   const [scannedTileData, setScannedTileData] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [activeSessionExists, setActiveSessionExists] = useState(false);
 
   useWorkerStatus();
 
@@ -68,6 +75,24 @@ export const ScanPage: React.FC = () => {
     window.addEventListener('resize', checkMobile);
     
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Check session status on mount & periodically
+  useEffect(() => {
+    const checkSession = () => {
+      const hasSession = hasActiveSession();
+      setActiveSessionExists(hasSession);
+      
+      if (hasSession) {
+        const session = getCustomerFromSession();
+        console.log('📊 Active session detected:', session?.name);
+      }
+    };
+
+    checkSession();
+    const interval = setInterval(checkSession, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Load recent scans on mount
@@ -124,424 +149,238 @@ export const ScanPage: React.FC = () => {
   };
 
   // ═══════════════════════════════════════════════════════════
-  // MAIN SCAN HANDLER (PRODUCTION v2.0 - WITH SECURITY)
+  // NEW CUSTOMER HANDLER
   // ═══════════════════════════════════════════════════════════
 
-  // const handleScanSuccess = async (data: any) => {
-  //   console.log('🎯 ===== SCAN HANDLER CALLED =====');
-  //   console.log('📥 Scan Data:', data);
+  const handleNewCustomer = () => {
+    const session = getCustomerFromSession();
     
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-  //     setSuccess(null);
+    if (!session) {
+      setError('No active customer session found.');
+      return;
+    }
 
-  //     // ─────────────────────────────────────────────────────────
-  //     // STEP 1: EXTRACT & VALIDATE TILE ID
-  //     // ─────────────────────────────────────────────────────────
+    const confirmed = window.confirm(
+      `⚠️ Start New Customer Session?\n\n` +
+      `Current Customer:\n` +
+      `${session.name}\n` +
+      `${session.phone}\n\n` +
+      `This will end the current session.\n` +
+      `Continue?`
+    );
+
+    if (!confirmed) {
+      console.log('❌ New customer cancelled by user');
+      return;
+    }
+
+    try {
+      console.log('🔄 Starting new customer session...');
       
-  //     let tileId: string;
+      clearCustomerSession();
+      setActiveSessionExists(false);
+      setScannedTileData(null);
       
-  //     if (data.tileId) {
-  //       tileId = data.tileId;
-  //     } else if (data.type === 'manual_entry' && data.tileCode) {
-  //       setError('Manual tile code lookup not implemented yet.');
-  //       setLoading(false);
-  //       return;
-  //     } else {
-  //       setError('Invalid QR code format.');
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     console.log('✅ Tile ID extracted:', tileId);
-
-  //     // ─────────────────────────────────────────────────────────
-  //     // STEP 2: WORKER AUTHORIZATION (CRITICAL SECURITY)
-  //     // ─────────────────────────────────────────────────────────
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
       
-  //     if (currentUser?.role === 'worker' && currentUser?.user_id) {
-  //       console.log('🔒 Worker detected - verifying access rights...');
-        
-  //       const verification = await verifyWorkerTileAccess(
-  //         tileId, 
-  //         currentUser.user_id
-  //       );
-        
-  //       if (!verification.allowed) {
-  //         console.error('🚫 ACCESS DENIED:', verification.error);
-          
-  //         // Close scanner immediately
-  //         setShowScanner(false);
-  //         setLoading(false);
-          
-  //         // Error haptic feedback (triple vibration)
-  //         if (navigator.vibrate) {
-  //           navigator.vibrate([200, 100, 200, 100, 200]);
-  //         }
-          
-  //         // Show security error message
-  //         setTimeout(() => {
-  //           setError(
-  //             `🚫 UNAUTHORIZED TILE\n\n` +
-  //             `${verification.error || 'This tile belongs to another seller.'}\n\n` +
-  //             `⚠️ You can only scan tiles from your assigned showroom.`
-  //           );
-  //         }, 100);
-          
-  //         // Auto-clear after 10 seconds
-  //         setTimeout(() => {
-  //           setError(null);
-  //         }, 10000);
-          
-  //         return; // ← BLOCK UNAUTHORIZED SCAN
-  //       }
-        
-  //       console.log('✅ Worker authorized for this tile');
-  //       console.log('📊 Seller:', verification.sellerId);
-  //     }
-
-  //     // ─────────────────────────────────────────────────────────
-  //     // STEP 3: FETCH TILE DATA (Authorization passed)
-  //     // ─────────────────────────────────────────────────────────
+      setSuccess('✅ Ready for new customer! Scan QR code to start.');
+      console.log('✅ New customer session ready');
       
-  //     console.log('📦 Fetching tile details...');
-  //     const tileData = await getTileById(tileId);
-      
-  //     if (!tileData) {
-  //       console.error('❌ Tile not found in database');
-  //       setShowScanner(false);
-  //       setLoading(false);
-  //       setTimeout(() => {
-  //         setError('Tile not found in database.');
-  //       }, 100);
-  //       return;
-  //     }
+    } catch (err) {
+      console.error('❌ Failed to clear session:', err);
+      setError('Failed to start new session. Please refresh the page.');
+    }
+  };
 
-  //     console.log('✅ Tile loaded:', tileData.name);
+  // ═══════════════════════════════════════════════════════════
+  // SCAN HANDLER
+  // ═══════════════════════════════════════════════════════════
 
-  //     const sellerId = tileData.sellerId || tileData.seller_id;
-
-  //     // ─────────────────────────────────────────────────────────
-  //     // STEP 4: SUCCESS FEEDBACK & UI UPDATE
-  //     // ─────────────────────────────────────────────────────────
-      
-  //     // Success haptic (single strong vibration)
-  //     if (navigator.vibrate) {
-  //       navigator.vibrate(200);
-  //     }
-
-  //     // Save to recent scans
-  //     saveRecentScan({
-  //       id: tileId,
-  //       tileName: tileData.name,
-  //       tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
-  //       scannedAt: new Date().toISOString(),
-  //       tileId: tileId
-  //     });
-
-  //     // Show success message
-  //     setSuccess(`✅ ${tileData.name} scanned successfully!`);
-  //     setShowScanner(false);
-      
-  //     // Display tile data
-  //     setScannedTileData({
-  //       id: tileId,
-  //       name: tileData.name,
-  //       image: tileData.imageUrl || tileData.image_url,
-  //       code: tileData.tileCode || tileData.tile_code,
-  //       size: tileData.size,
-  //       price: tileData.price,
-  //       stock: tileData.stock,
-  //       inStock: tileData.inStock
-  //     });
-
-  //     setLoading(false);
-
-  //     console.log('✅ Tile displayed to user');
-
-  //     // ─────────────────────────────────────────────────────────
-  //     // STEP 5: BACKGROUND ANALYTICS TRACKING (Fire & Forget)
-  //     // ─────────────────────────────────────────────────────────
-      
-  //     console.log('📊 Starting background analytics...');
-      
-  //     Promise.all([
-  //       // Main scan tracking
-  //       trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
-  //         console.warn('⚠️ Main tracking failed:', err);
-  //       }),
-        
-  //       // Legacy tracking
-  //       trackQRScan(tileId, {
-  //         sellerId: sellerId,
-  //         showroomId: tileData.showroomId,
-  //         scannedBy: currentUser?.user_id ?? 'anonymous',
-  //         userRole: currentUser?.role ?? 'visitor',
-  //         scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-  //       }).catch(err => {
-  //         console.warn('⚠️ Legacy tracking failed:', err);
-  //       }),
-        
-  //       // Worker activity tracking
-  //       currentUser?.role === 'worker' && currentUser?.user_id
-  //         ? trackWorkerActivity(currentUser.user_id, 'scan', { 
-  //             tileId, 
-  //             tileName: tileData.name, 
-  //             sellerId,
-  //             authorized: true
-  //           }).catch(err => {
-  //             console.warn('⚠️ Worker tracking failed:', err);
-  //           })
-  //         : Promise.resolve()
-  //     ]).then(() => {
-  //       console.log('✅ Background tracking completed');
-        
-  //       // Broadcast scan event
-  //       const event = new CustomEvent('tile-scanned', { 
-  //         detail: { 
-  //           tileId, 
-  //           sellerId,
-  //           tileName: tileData.name,
-  //           timestamp: new Date().toISOString(),
-  //           scannedBy: currentUser?.role
-  //         } 
-  //       });
-  //       window.dispatchEvent(event);
-        
-  //       console.log('✅ Scan event broadcasted');
-  //     });
-
-  //     console.log('🎉 ===== SCAN COMPLETED SUCCESSFULLY =====');
-
-  //   } catch (err: any) {
-  //     console.error('❌ Scan error:', err);
-  //     setShowScanner(false);
-  //     setLoading(false);
-  //     setTimeout(() => {
-  //       setError('Failed to process scan. Please try again.');
-  //     }, 100);
-  //   }
-  // };
-// ✅ FIND handleScanSuccess function (around line 105)
-// ✅ REPLACE THE ENTIRE FUNCTION WITH THIS:
-
-const handleScanSuccess = async (data: any) => {
-  console.log('🎯 ===== SCAN HANDLER CALLED =====');
-  console.log('📥 Scan Data:', data);
-  
-  try {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    let tileId: string;
-    let tileData: any;
-
-    // ─────────────────────────────────────────────────────────
-    // MODE 1: QR CODE SCAN (has tileId directly)
-    // ─────────────────────────────────────────────────────────
+  const handleScanSuccess = async (data: any) => {
+    console.log('🎯 ===== SCAN HANDLER CALLED =====');
+    console.log('📥 Scan Data:', data);
     
-    if (data.tileId) {
-      tileId = data.tileId;
-      console.log('✅ QR Scan Mode - Tile ID:', tileId);
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
 
-      // Worker authorization for QR scan
-      if (currentUser?.role === 'worker' && currentUser?.user_id) {
-        console.log('🔒 Worker detected - verifying QR access...');
+      let tileId: string;
+      let tileData: any;
+
+      // MODE 1: QR CODE SCAN
+      if (data.tileId) {
+        tileId = data.tileId;
+        console.log('✅ QR Scan Mode - Tile ID:', tileId);
+
+        if (currentUser?.role === 'worker' && currentUser?.user_id) {
+          console.log('🔒 Worker detected - verifying QR access...');
+          
+          const verification = await verifyWorkerTileAccess(tileId, currentUser.user_id);
+          
+          if (!verification.allowed) {
+            console.error('🚫 QR ACCESS DENIED:', verification.error);
+            
+            setShowScanner(false);
+            setLoading(false);
+            
+            if (navigator.vibrate) {
+              navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+            
+            setTimeout(() => {
+              setError(verification.error || 'Unauthorized tile access');
+            }, 100);
+            
+            setTimeout(() => setError(null), 10000);
+            return;
+          }
+          
+          console.log('✅ Worker authorized for QR scan');
+        }
+
+        console.log('📦 Fetching tile data...');
+        tileData = await getTileById(tileId);
         
-        const verification = await verifyWorkerTileAccess(tileId, currentUser.user_id);
-        
-        if (!verification.allowed) {
-          console.error('🚫 QR ACCESS DENIED:', verification.error);
+        if (!tileData) {
+          console.error('❌ Tile not found');
+          setShowScanner(false);
+          setLoading(false);
+          setTimeout(() => {
+            setError('Tile not found in database.');
+          }, 100);
+          return;
+        }
+
+        console.log('✅ Tile loaded via QR:', tileData.name);
+      }
+      // MODE 2: MANUAL ENTRY
+      else if (data.type === 'manual_entry' && data.tileCode) {
+        console.log('✅ Manual Entry Mode - Code:', data.tileCode);
+
+        const searchResult = await getTileByCode(
+          data.tileCode,
+          currentUser?.role === 'worker' ? currentUser?.user_id : undefined
+        );
+
+        if (!searchResult.success) {
+          console.error('❌ Manual search failed:', searchResult.error);
           
           setShowScanner(false);
           setLoading(false);
           
           if (navigator.vibrate) {
-            navigator.vibrate([200, 100, 200, 100, 200]);
+            navigator.vibrate([200, 100, 200]);
           }
           
           setTimeout(() => {
-            setError(verification.error || 'Unauthorized tile access');
+            setError(searchResult.error || 'Tile not found');
           }, 100);
           
-          setTimeout(() => setError(null), 10000);
+          setTimeout(() => setError(null), 8000);
           return;
         }
-        
-        console.log('✅ Worker authorized for QR scan');
-      }
 
-      // Fetch tile data
-      console.log('📦 Fetching tile data...');
-      tileData = await getTileById(tileId);
-      
-      if (!tileData) {
-        console.error('❌ Tile not found');
-        setShowScanner(false);
+        tileData = searchResult.tile;
+        tileId = tileData.id;
+
+        console.log('✅ Tile found via manual entry:', tileData.name);
+      }
+      // INVALID DATA
+      else {
+        console.error('❌ Invalid scan data format');
+        setError('Invalid scan data. Please try again.');
         setLoading(false);
-        setTimeout(() => {
-          setError('Tile not found in database.');
-        }, 100);
         return;
       }
 
-      console.log('✅ Tile loaded via QR:', tileData.name);
-    }
+      // SUCCESS PATH
+      const sellerId = tileData.sellerId || tileData.seller_id;
 
-    // ─────────────────────────────────────────────────────────
-    // MODE 2: MANUAL ENTRY (has tileCode) - ✅ FIXED!
-    // ─────────────────────────────────────────────────────────
-    
-    else if (data.type === 'manual_entry' && data.tileCode) {
-      console.log('✅ Manual Entry Mode - Code:', data.tileCode);
-
-      // ✅ Call getTileByCode with worker authorization
-      const searchResult = await getTileByCode(
-        data.tileCode,
-        currentUser?.role === 'worker' ? currentUser?.user_id : undefined
-      );
-
-      if (!searchResult.success) {
-        console.error('❌ Manual search failed:', searchResult.error);
-        
-        setShowScanner(false);
-        setLoading(false);
-        
-        if (navigator.vibrate) {
-          navigator.vibrate([200, 100, 200]);
-        }
-        
-        setTimeout(() => {
-          setError(searchResult.error || 'Tile not found');
-        }, 100);
-        
-        setTimeout(() => setError(null), 8000);
-        return;
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
       }
 
-      tileData = searchResult.tile;
-      tileId = tileData.id;
-
-      console.log('✅ Tile found via manual entry:', tileData.name);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // INVALID DATA
-    // ─────────────────────────────────────────────────────────
-    
-    else {
-      console.error('❌ Invalid scan data format');
-      setError('Invalid scan data. Please try again.');
-      setLoading(false);
-      return;
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // COMMON SUCCESS PATH (Both QR & Manual)
-    // ─────────────────────────────────────────────────────────
-
-    const sellerId = tileData.sellerId || tileData.seller_id;
-
-    // Success feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(200);
-    }
-
-    // Save to recent scans
-    saveRecentScan({
-      id: tileId,
-      tileName: tileData.name,
-      tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
-      scannedAt: new Date().toISOString(),
-      tileId: tileId
-    });
-
-    // Show success message
-    setSuccess(`✅ ${tileData.name} scanned successfully!`);
-    
-    // ✅ AUTO-CLOSE SCANNER
-    setShowScanner(false);
-    
-    // Display tile data
-    setScannedTileData({
-      id: tileId,
-      name: tileData.name,
-      image: tileData.imageUrl || tileData.image_url,
-      code: tileData.tileCode || tileData.tile_code,
-      size: tileData.size,
-      price: tileData.price,
-      stock: tileData.stock,
-      inStock: tileData.inStock
-    });
-
-    setLoading(false);
-
-    console.log('✅ Tile displayed to user');
-
-    // ─────────────────────────────────────────────────────────
-    // BACKGROUND ANALYTICS (Fire & Forget)
-    // ─────────────────────────────────────────────────────────
-    
-    console.log('📊 Starting background analytics...');
-    
-    Promise.all([
-      trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
-        console.warn('⚠️ Main tracking failed:', err);
-      }),
-      
-      trackQRScan(tileId, {
-        sellerId: sellerId,
-        showroomId: tileData.showroomId,
-        scannedBy: currentUser?.user_id ?? 'anonymous',
-        userRole: currentUser?.role ?? 'visitor',
-        scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-      }).catch(err => {
-        console.warn('⚠️ Legacy tracking failed:', err);
-      }),
-      
-      currentUser?.role === 'worker' && currentUser?.user_id
-        ? trackWorkerActivity(currentUser.user_id, 'scan', { 
-            tileId, 
-            tileName: tileData.name, 
-            sellerId,
-            authorized: true,
-            scanMethod: data.type === 'manual_entry' ? 'manual' : 'qr'
-          }).catch(err => {
-            console.warn('⚠️ Worker tracking failed:', err);
-          })
-        : Promise.resolve()
-    ]).then(() => {
-      console.log('✅ Background tracking completed');
-      
-      const event = new CustomEvent('tile-scanned', { 
-        detail: { 
-          tileId, 
-          sellerId,
-          tileName: tileData.name,
-          timestamp: new Date().toISOString(),
-          scannedBy: currentUser?.role,
-          method: data.type === 'manual_entry' ? 'manual' : 'qr'
-        } 
+      saveRecentScan({
+        id: tileId,
+        tileName: tileData.name,
+        tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
+        scannedAt: new Date().toISOString(),
+        tileId: tileId
       });
-      window.dispatchEvent(event);
+
+      setSuccess(`✅ ${tileData.name} scanned successfully!`);
+      setShowScanner(false);
       
-      console.log('✅ Scan event broadcasted');
-    });
+      setScannedTileData({
+        id: tileId,
+        name: tileData.name,
+        image: tileData.imageUrl || tileData.image_url,
+        code: tileData.tileCode || tileData.tile_code,
+        size: tileData.size,
+        price: tileData.price,
+        stock: tileData.stock,
+        inStock: tileData.inStock
+      });
 
-    console.log('🎉 ===== SCAN COMPLETED SUCCESSFULLY =====');
+      setLoading(false);
 
-  } catch (err: any) {
-    console.error('❌ Scan error:', err);
-    setShowScanner(false);
-    setLoading(false);
-    setTimeout(() => {
-      setError('Failed to process scan. Please try again.');
-    }, 100);
-  }
-};
+      // Background Analytics
+      Promise.all([
+        trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
+          console.warn('⚠️ Main tracking failed:', err);
+        }),
+        
+        trackQRScan(tileId, {
+          sellerId: sellerId,
+          showroomId: tileData.showroomId,
+          scannedBy: currentUser?.user_id ?? 'anonymous',
+          userRole: currentUser?.role ?? 'visitor',
+          scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
+        }).catch(err => {
+          console.warn('⚠️ Legacy tracking failed:', err);
+        }),
+        
+        currentUser?.role === 'worker' && currentUser?.user_id
+          ? trackWorkerActivity(currentUser.user_id, 'scan', { 
+              tileId, 
+              tileName: tileData.name, 
+              sellerId,
+              authorized: true,
+              scanMethod: data.type === 'manual_entry' ? 'manual' : 'qr'
+            }).catch(err => {
+              console.warn('⚠️ Worker tracking failed:', err);
+            })
+          : Promise.resolve()
+      ]).then(() => {
+        console.log('✅ Background tracking completed');
+        
+        const event = new CustomEvent('tile-scanned', { 
+          detail: { 
+            tileId, 
+            sellerId,
+            tileName: tileData.name,
+            timestamp: new Date().toISOString(),
+            scannedBy: currentUser?.role,
+            method: data.type === 'manual_entry' ? 'manual' : 'qr'
+          } 
+        });
+        window.dispatchEvent(event);
+      });
 
+      console.log('🎉 ===== SCAN COMPLETED SUCCESSFULLY =====');
+
+    } catch (err: any) {
+      console.error('❌ Scan error:', err);
+      setShowScanner(false);
+      setLoading(false);
+      setTimeout(() => {
+        setError('Failed to process scan. Please try again.');
+      }, 100);
+    }
+  };
 
   // ═══════════════════════════════════════════════════════════
   // LOGOUT HANDLER
@@ -562,6 +401,7 @@ const handleScanSuccess = async (data: any) => {
           }
         }
         
+        clearCustomerSession();
         await logout();
         localStorage.removeItem('worker_recent_scans');
         sessionStorage.clear();
@@ -575,10 +415,6 @@ const handleScanSuccess = async (data: any) => {
     }
   };
 
-  const openRecentScan = (tileId: string) => {
-    navigate(`/tile/${tileId}`);
-  };
-
   // ═══════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════
@@ -589,27 +425,116 @@ const handleScanSuccess = async (data: any) => {
           HEADER
           ═══════════════════════════════════════════════════════ */}
       <header className="bg-black/30 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <QrCode className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          
+          {/* Desktop Header */}
+          <div className="hidden md:flex items-center justify-between gap-4">
+            {/* Left: Branding */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <QrCode className="w-6 h-6 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-white font-bold text-xl truncate">Tile Scanner</h1>
+                <p className="text-blue-200 text-sm truncate">
+                  Welcome, {getUserDisplayName()}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-white font-bold text-base sm:text-xl truncate">Tile Scanner</h1>
-              <p className="text-blue-200 text-xs sm:text-sm truncate">
-                {isMobile ? getUserDisplayName() : `Welcome, ${getUserDisplayName()}`}
-              </p>
+
+            {/* Right: Buttons */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* New Customer Button */}
+              <button
+                onClick={handleNewCustomer}
+                disabled={!activeSessionExists}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all border ${
+                  activeSessionExists
+                    ? 'bg-blue-600/20 text-blue-200 border-blue-500/30 hover:bg-blue-600/30 hover:scale-105 cursor-pointer'
+                    : 'bg-gray-600/20 text-gray-400 border-gray-500/20 cursor-not-allowed opacity-50'
+                }`}
+                title={activeSessionExists ? 'Start new customer session' : 'No active customer session'}
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>New Customer</span>
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-200 rounded-lg hover:bg-red-600/30 active:bg-red-600/40 transition-all border border-red-500/30 text-sm font-medium"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-red-600/20 text-red-200 rounded-lg hover:bg-red-600/30 active:bg-red-600/40 transition-colors border border-red-500/30 text-xs sm:text-sm font-medium touch-manipulation flex-shrink-0"
-            aria-label="Logout"
-          >
-            <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">Logout</span>
-          </button>
+          {/* Mobile Header */}
+          <div className="md:hidden">
+            {/* Top Row: Branding */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <QrCode className="w-4 h-4 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-white font-bold text-base truncate">Tile Scanner</h1>
+                <p className="text-blue-200 text-xs truncate">
+                  {getUserDisplayName()}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom Row: Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* New Customer Button */}
+              <button
+                onClick={handleNewCustomer}
+                disabled={!activeSessionExists}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs transition-all border touch-manipulation ${
+                  activeSessionExists
+                    ? 'bg-blue-600/20 text-blue-200 border-blue-500/30 active:bg-blue-600/30 active:scale-95'
+                    : 'bg-gray-600/20 text-gray-400 border-gray-500/20 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>New Customer</span>
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600/20 text-red-200 rounded-lg border border-red-500/30 text-xs font-medium active:bg-red-600/40 transition-all touch-manipulation active:scale-95"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Active Session Badge */}
+          {activeSessionExists && (() => {
+            const session = getCustomerFromSession();
+            return session ? (
+              <div className="mt-3 bg-green-600/20 border border-green-500/30 rounded-lg px-3 py-2 flex items-center justify-between gap-2 backdrop-blur-sm">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0"></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-green-200 text-xs font-medium">Active Customer:</p>
+                    <p className="text-white text-sm font-semibold truncate">
+                      {session.name} • {session.phone}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleNewCustomer}
+                  className="px-2 py-1 bg-green-600/30 hover:bg-green-600/40 rounded text-green-200 text-xs font-medium transition-colors flex-shrink-0 touch-manipulation"
+                >
+                  Change
+                </button>
+              </div>
+            ) : null;
+          })()}
         </div>
       </header>
 
@@ -747,7 +672,6 @@ const handleScanSuccess = async (data: any) => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <button
                 onClick={() => {
@@ -796,7 +720,7 @@ const handleScanSuccess = async (data: any) => {
                 <li>• Show 3D visualization</li>
                 <li>• Help select room types</li>
                 <li>• Demonstrate combinations</li>
-                <li>• Share links</li>
+                <li>• ✅ Use "New Customer" for next client</li>
               </ul>
             </div>
           </div>

@@ -11,7 +11,7 @@ import {
   Building,
   Package,
 } from "lucide-react";
-
+import { saveCustomerToSession } from '../utils/customerSession';
 interface CustomerInquiryFormProps {
   tileId: string;
   tileName: string;
@@ -245,21 +245,40 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
       };
 
       await onSubmit(inquiryData);
-
-      // Haptic feedback on success
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
-    } catch (error: any) {
-      console.error("❌ Inquiry submission failed:", error);
-      setSubmitError(
-        error.message || "Failed to save customer details. Please try again."
-      );
-      setIsSubmitting(false);
-
-      // Scroll to error message
-      window.scrollTo({ top: 0, behavior: "smooth" });
+       console.log('💾 Saving customer to session...');
+    
+    const sessionSaved = saveCustomerToSession({
+      name: formData.customer_name.trim(),
+      phone: formData.customer_phone.trim(),
+      address: formData.customer_address.trim(),
+      email: formData.customer_email.trim() || undefined,
+      tileId: tileId,
+      workerId: workerId
+    });
+    
+    if (sessionSaved) {
+      console.log('✅ Customer saved to session - no more forms for this customer!');
+    } else {
+      console.warn('⚠️ Failed to save to session, but inquiry saved to Firebase');
     }
+    
+    // Haptic feedback on success
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
+  } catch (error: any) {
+    console.error('❌ Inquiry submission failed:', error);
+    setSubmitError(
+      error.message || "Failed to save customer details. Please try again."
+    );
+    setIsSubmitting(false);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+      
+
+     
   };
 
   const handleCancel = () => {

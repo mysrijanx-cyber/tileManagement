@@ -22,7 +22,10 @@ import {
   where, 
   getDocs 
 } from 'firebase/firestore';
-
+import { 
+  getCustomerFromSession, 
+  isSessionValid 
+} from '../utils/customerSession'
 interface TileSize {
   width: number;
   height: number;
@@ -152,6 +155,112 @@ const [inquirySubmitted, setInquirySubmitted] = useState(false);
 
   // ✅ Load wall tile from QR scan with session tracking
   
+// const loadTileData = async () => {
+//   if (!tileId) {
+//     setError('Tile ID is missing');
+//     setLoading(false);
+//     return;
+//   }
+
+//   try {
+//     setLoading(true);
+//     setError(null);
+    
+//     console.log('🔍 Loading tile data:', tileId);
+    
+//     const tileData = await getTileById(tileId);
+    
+//     if (!tileData) {
+//       setError('Tile not found');
+//       setTimeout(() => navigate('/'), 3000);
+//       return;
+//     }
+    
+//     setTile(tileData);
+//     console.log('✅ Tile loaded:', tileData.name);
+
+//     // ═══════════════════════════════════════════════════════════
+//     // ✅ NEW: CHECK IF WORKER IS SCANNING
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const currentUser = auth.currentUser;
+    
+//     if (currentUser) {
+//       try {
+//         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        
+//         if (userDoc.exists()) {
+//           const userData = userDoc.data();
+          
+//           // If worker is scanning, show inquiry form FIRST
+//           if (userData.role === 'worker') {
+//             console.log('👷 Worker detected - showing customer inquiry form');
+//             setInquirySubmitted(false);
+//             // Get seller info
+//             const sellerId = userData.seller_id;
+//             let sellerBusinessName = 'Showroom';
+            
+//             if (sellerId) {
+//               try {
+//                 const sellerQuery = query(
+//                   collection(db, 'sellers'),
+//                   where('user_id', '==', sellerId)
+//                 );
+//                 const sellerSnapshot = await getDocs(sellerQuery);
+                
+//                 if (!sellerSnapshot.empty) {
+//                   const sellerData = sellerSnapshot.docs[0].data();
+//                   sellerBusinessName = sellerData.business_name || 'Showroom';
+//                 }
+//               } catch (sellerErr) {
+//                 console.warn('⚠️ Could not fetch seller name:', sellerErr);
+//               }
+//             }
+            
+//             // Prepare form data
+//             setInquiryFormData({
+//               tileId: tileData.id,
+//               tileName: tileData.name,
+//               tileCode: tileData.tileCode || tileData.tile_code,
+//               tileImageUrl: tileData.imageUrl || tileData.image_url,
+//               tileSize: tileData.size,
+//               tilePrice: tileData.price,
+//               workerId: currentUser.uid,
+//               workerEmail: currentUser.email || userData.email,
+//               sellerId: sellerId,
+//               sellerBusinessName: sellerBusinessName
+//             });
+            
+//             // Show form
+//             setShowInquiryForm(true);
+//             setLoading(false);
+//             return; // Don't proceed to 3D view yet
+//           }
+//         }
+//       } catch (userErr) {
+//         console.warn('⚠️ Could not check user role:', userErr);
+//       }
+//     }
+    
+//     // ═══════════════════════════════════════════════════════════
+//     // EXISTING CODE: Set floor tile for regular users/customers
+//     // ═══════════════════════════════════════════════════════════
+    
+//     setFloorTile({
+//       texture: tileData.textureUrl || tileData.imageUrl,
+//       size: parseTileSize(tileData.size, 'floor')
+//     });
+
+//   } catch (err) {
+//     console.error('❌ Error loading tile:', err);
+//     setError('Failed to load tile data');
+//     setTimeout(() => navigate('/'), 2000);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+  // ✅ FIND THIS EXISTING FUNCTION AND REPLACE IT COMPLETELY
+
 const loadTileData = async () => {
   if (!tileId) {
     setError('Tile ID is missing');
@@ -177,7 +286,7 @@ const loadTileData = async () => {
     console.log('✅ Tile loaded:', tileData.name);
 
     // ═══════════════════════════════════════════════════════════
-    // ✅ NEW: CHECK IF WORKER IS SCANNING
+    // ✅ NEW: CHECK SESSION BEFORE SHOWING FORM
     // ═══════════════════════════════════════════════════════════
     
     const currentUser = auth.currentUser;
@@ -189,10 +298,35 @@ const loadTileData = async () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           
-          // If worker is scanning, show inquiry form FIRST
+          // If worker is scanning
           if (userData.role === 'worker') {
-            console.log('👷 Worker detected - showing customer inquiry form');
-            setInquirySubmitted(false);
+            console.log('👷 Worker detected');
+            
+            // ✅ CHECK IF SESSION EXISTS
+            const existingSession = getCustomerFromSession();
+            
+            if (existingSession && isSessionValid()) {
+              console.log('✅ Valid customer session found - SKIPPING FORM');
+              console.log('📊 Session customer:', existingSession.name);
+              
+              // Skip form, load tile directly
+              setFloorTile({
+                texture: tileData.textureUrl || tileData.imageUrl,
+                size: parseTileSize(tileData.size, 'floor')
+              });
+              
+              setInquirySubmitted(true); // Mark as submitted
+              setShowInquiryForm(false); // Don't show form
+              setLoading(false);
+              
+              setSuccess(`✅ Showing for ${existingSession.name}`);
+              
+              return; // EXIT - Don't show form
+            }
+            
+            // No session exists, show form
+            console.log('📝 No session found - showing customer form');
+            
             // Get seller info
             const sellerId = userData.seller_id;
             let sellerBusinessName = 'Showroom';
@@ -240,7 +374,7 @@ const loadTileData = async () => {
     }
     
     // ═══════════════════════════════════════════════════════════
-    // EXISTING CODE: Set floor tile for regular users/customers
+    // EXISTING CODE: Regular users/customers (no form)
     // ═══════════════════════════════════════════════════════════
     
     setFloorTile({
@@ -256,7 +390,6 @@ const loadTileData = async () => {
     setLoading(false);
   }
 };
-  
   
    const handleInquirySubmit = async (formData: any) => {
     try {
