@@ -224,100 +224,202 @@ const stream = await navigator.mediaDevices.getUserMedia({
   // ═══════════════════════════════════════════════════════════════
   // ✅ IMAGE UPLOAD OPTIMIZATION
   // ═══════════════════════════════════════════════════════════════
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
 
-    try {
-      setError(null);
-      setSuccessMessage(null);
-      setIsLoading(true);
+  //   try {
+  //     setError(null);
+  //     setSuccessMessage(null);
+  //     setIsLoading(true);
       
-      const img = new Image();
-      const reader = new FileReader();
+  //     const img = new Image();
+  //     const reader = new FileReader();
 
-      reader.onload = (event) => {
-        img.onload = () => {
-          const canvas = canvasRef.current;
-          if (!canvas) {
-            setIsLoading(false);
-            return;
-          }
+  //     reader.onload = (event) => {
+  //       img.onload = () => {
+  //         const canvas = canvasRef.current;
+  //         if (!canvas) {
+  //           setIsLoading(false);
+  //           return;
+  //         }
 
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            setIsLoading(false);
-            return;
-          }
+  //         const ctx = canvas.getContext('2d');
+  //         if (!ctx) {
+  //           setIsLoading(false);
+  //           return;
+  //         }
 
-          // ✅ OPTIMIZE: Scale down large images
-          const maxSize = 1024;
-          let width = img.width;
-          let height = img.height;
+  //         // ✅ OPTIMIZE: Scale down large images
+  //         const maxSize = 1024;
+  //         let width = img.width;
+  //         let height = img.height;
           
-          if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = (height / width) * maxSize;
-              width = maxSize;
-            } else {
-              width = (width / height) * maxSize;
-              height = maxSize;
-            }
-          }
+  //         if (width > maxSize || height > maxSize) {
+  //           if (width > height) {
+  //             height = (height / width) * maxSize;
+  //             width = maxSize;
+  //           } else {
+  //             width = (width / height) * maxSize;
+  //             height = maxSize;
+  //           }
+  //         }
 
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
+  //         canvas.width = width;
+  //         canvas.height = height;
+  //         ctx.drawImage(img, 0, 0, width, height);
 
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  //         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert'
-          });
+  //         const code = jsQR(imageData.data, imageData.width, imageData.height, {
+  //           inversionAttempts: 'dontInvert'
+  //         });
 
-          setIsLoading(false);
+  //         setIsLoading(false);
 
-          if (code && code.data) {
-            try {
-              const parsed = JSON.parse(code.data);
+  //         if (code && code.data) {
+  //           try {
+  //             const parsed = JSON.parse(code.data);
               
-              if (parsed.type === 'tile_viewer' && parsed.tileId) {
-                setSuccessMessage('QR Code found in image!');
-                if (navigator.vibrate) {
-                  navigator.vibrate(200);
-                }
-                onScanSuccess(parsed);
-              } else {
-                setError('Invalid QR code in image.');
-              }
-            } catch (parseErr) {
-              setError('Could not parse QR code from image.');
-            }
-          } else {
-            setError('No QR code found in image. Please try another image.');
-          }
-        };
+  //             if (parsed.type === 'tile_viewer' && parsed.tileId) {
+  //               setSuccessMessage('QR Code found in image!');
+  //               if (navigator.vibrate) {
+  //                 navigator.vibrate(200);
+  //               }
+  //               onScanSuccess(parsed);
+  //             } else {
+  //               setError('Invalid QR code in image.');
+  //             }
+  //           } catch (parseErr) {
+  //             setError('Could not parse QR code from image.');
+  //           }
+  //         } else {
+  //           setError('No QR code found in image. Please try another image.');
+  //         }
+  //       };
         
-        img.onerror = () => {
+  //       img.onerror = () => {
+  //         setIsLoading(false);
+  //         setError('Failed to load image. Please try another file.');
+  //       };
+        
+  //       img.src = event.target?.result as string;
+  //     };
+
+  //     reader.onerror = () => {
+  //       setIsLoading(false);
+  //       setError('Failed to read file. Please try again.');
+  //     };
+
+  //     reader.readAsDataURL(file);
+  //   } catch (err) {
+  //     setIsLoading(false);
+  //     setError('Failed to process image. Please try again.');
+  //   }
+  // };
+const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+    
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
           setIsLoading(false);
-          setError('Failed to load image. Please try another file.');
-        };
+          return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          setIsLoading(false);
+          return;
+        }
+
+        const maxSize = 1024;
+        let width = img.width;
+        let height = img.height;
         
-        img.src = event.target?.result as string;
-      };
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = (height / width) * maxSize;
+            width = maxSize;
+          } else {
+            width = (width / height) * maxSize;
+            height = maxSize;
+          }
+        }
 
-      reader.onerror = () => {
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'attemptBoth' // ✅ CHANGED: Try both normal and inverted
+        });
+
         setIsLoading(false);
-        setError('Failed to read file. Please try again.');
+
+        if (code && code.data) {
+          try {
+            console.log('📸 RAW QR from Upload:', code.data);
+            
+            // ✅ SANITIZE: Remove whitespace and newlines
+            const cleanData = code.data.trim();
+            console.log('🧹 Cleaned QR:', cleanData);
+            
+            const parsed = JSON.parse(cleanData);
+            console.log('✅ Parsed Upload QR:', parsed);
+            
+            if (parsed.type === 'tile_viewer' && parsed.tileId) {
+              // ✅ SANITIZE tileId
+              parsed.tileId = parsed.tileId.trim();
+              
+              setSuccessMessage('QR Code found in image!');
+              if (navigator.vibrate) {
+                navigator.vibrate(200);
+              }
+              onScanSuccess(parsed);
+            } else {
+              setError('Invalid QR code in image.');
+            }
+          } catch (parseErr) {
+            console.error('❌ Parse error:', parseErr);
+            setError('Could not parse QR code from image.');
+          }
+        } else {
+          setError('No QR code found in image. Please try another image.');
+        }
       };
+      
+      img.onerror = () => {
+        setIsLoading(false);
+        setError('Failed to load image. Please try another file.');
+      };
+      
+      img.src = event.target?.result as string;
+    };
 
-      reader.readAsDataURL(file);
-    } catch (err) {
+    reader.onerror = () => {
       setIsLoading(false);
-      setError('Failed to process image. Please try again.');
-    }
-  };
+      setError('Failed to read file. Please try again.');
+    };
 
+    reader.readAsDataURL(file);
+  } catch (err) {
+    setIsLoading(false);
+    setError('Failed to process image. Please try again.');
+  }
+};
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     

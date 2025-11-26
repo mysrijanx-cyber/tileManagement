@@ -43,7 +43,177 @@
     transform: translate(-50%, 0);
   }
 }
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE 3D VIEWER UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
 
+/* ✅ Safe Area Support for Notched Devices */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ✅ Smooth Animations */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+/* ✅ Touch-Friendly Minimum Sizes */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ✅ Prevent Text Selection in Canvas Controls */
+.canvas-controls,
+.canvas-controls * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* ✅ Canvas Touch Optimization */
+canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ✅ Responsive Text Scaling */
+@media (max-width: 374px) {
+  /* iPhone SE and smaller */
+  .responsive-text {
+    font-size: clamp(0.75rem, 3vw, 0.875rem);
+  }
+}
+
+@media (min-width: 375px) and (max-width: 767px) {
+  /* Standard mobile */
+  .responsive-text {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet */
+  .responsive-text {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop */
+  .responsive-text {
+    font-size: 1rem;
+  }
+}
+
+/* ✅ Landscape Mobile Optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Compact controls for landscape mobile */
+  .canvas-controls {
+    scale: 0.85;
+  }
+}
+
+/* ✅ High DPI Display Optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* ✅ Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+  .viewer-panel {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* ✅ Reduce Motion for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ✅ Focus Visible for Keyboard Navigation */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ✅ Prevent Overscroll Bounce on iOS */
+body {
+  overscroll-behavior: none;
+}
+
+/* ✅ Smooth Scrolling for Modals */
+.modal-content {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
 }

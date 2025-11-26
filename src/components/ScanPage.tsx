@@ -198,190 +198,392 @@ export const ScanPage: React.FC = () => {
   // SCAN HANDLER
   // ═══════════════════════════════════════════════════════════
 
-  const handleScanSuccess = async (data: any) => {
-    console.log('🎯 ===== SCAN HANDLER CALLED =====');
-    console.log('📥 Scan Data:', data);
+  // const handleScanSuccess = async (data: any) => {
+  //   console.log('🎯 ===== SCAN HANDLER CALLED =====');
+  //   console.log('📥 Scan Data:', data);
     
-    try {
-      setLoading(true);
-      setError(null);
-      setSuccess(null);
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     setSuccess(null);
 
-      let tileId: string;
-      let tileData: any;
+  //     let tileId: string;
+  //     let tileData: any;
 
-      // MODE 1: QR CODE SCAN
-      if (data.tileId) {
-        tileId = data.tileId;
-        console.log('✅ QR Scan Mode - Tile ID:', tileId);
+  //     // MODE 1: QR CODE SCAN
+  //     if (data.tileId) {
+  //       tileId = data.tileId;
+  //       console.log('✅ QR Scan Mode - Tile ID:', tileId);
 
-        if (currentUser?.role === 'worker' && currentUser?.user_id) {
-          console.log('🔒 Worker detected - verifying QR access...');
+  //       if (currentUser?.role === 'worker' && currentUser?.user_id) {
+  //         console.log('🔒 Worker detected - verifying QR access...');
           
-          const verification = await verifyWorkerTileAccess(tileId, currentUser.user_id);
+  //         const verification = await verifyWorkerTileAccess(tileId, currentUser.user_id);
           
-          if (!verification.allowed) {
-            console.error('🚫 QR ACCESS DENIED:', verification.error);
+  //         if (!verification.allowed) {
+  //           console.error('🚫 QR ACCESS DENIED:', verification.error);
             
-            setShowScanner(false);
-            setLoading(false);
+  //           setShowScanner(false);
+  //           setLoading(false);
             
-            if (navigator.vibrate) {
-              navigator.vibrate([200, 100, 200, 100, 200]);
-            }
+  //           if (navigator.vibrate) {
+  //             navigator.vibrate([200, 100, 200, 100, 200]);
+  //           }
             
-            setTimeout(() => {
-              setError(verification.error || 'Unauthorized tile access');
-            }, 100);
+  //           setTimeout(() => {
+  //             setError(verification.error || 'Unauthorized tile access');
+  //           }, 100);
             
-            setTimeout(() => setError(null), 10000);
-            return;
-          }
+  //           setTimeout(() => setError(null), 10000);
+  //           return;
+  //         }
           
-          console.log('✅ Worker authorized for QR scan');
-        }
+  //         console.log('✅ Worker authorized for QR scan');
+  //       }
 
-        console.log('📦 Fetching tile data...');
-        tileData = await getTileById(tileId);
+  //       console.log('📦 Fetching tile data...');
+  //       tileData = await getTileById(tileId);
         
-        if (!tileData) {
-          console.error('❌ Tile not found');
-          setShowScanner(false);
-          setLoading(false);
-          setTimeout(() => {
-            setError('Tile not found in database.');
-          }, 100);
-          return;
-        }
+  //       if (!tileData) {
+  //         console.error('❌ Tile not found');
+  //         setShowScanner(false);
+  //         setLoading(false);
+  //         setTimeout(() => {
+  //           setError('Tile not found in database.');
+  //         }, 100);
+  //         return;
+  //       }
 
-        console.log('✅ Tile loaded via QR:', tileData.name);
-      }
-      // MODE 2: MANUAL ENTRY
-      else if (data.type === 'manual_entry' && data.tileCode) {
-        console.log('✅ Manual Entry Mode - Code:', data.tileCode);
+  //       console.log('✅ Tile loaded via QR:', tileData.name);
+  //     }
+  //     // MODE 2: MANUAL ENTRY
+  //     else if (data.type === 'manual_entry' && data.tileCode) {
+  //       console.log('✅ Manual Entry Mode - Code:', data.tileCode);
 
-        const searchResult = await getTileByCode(
-          data.tileCode,
-          currentUser?.role === 'worker' ? currentUser?.user_id : undefined
-        );
+  //       const searchResult = await getTileByCode(
+  //         data.tileCode,
+  //         currentUser?.role === 'worker' ? currentUser?.user_id : undefined
+  //       );
 
-        if (!searchResult.success) {
-          console.error('❌ Manual search failed:', searchResult.error);
+  //       if (!searchResult.success) {
+  //         console.error('❌ Manual search failed:', searchResult.error);
+          
+  //         setShowScanner(false);
+  //         setLoading(false);
+          
+  //         if (navigator.vibrate) {
+  //           navigator.vibrate([200, 100, 200]);
+  //         }
+          
+  //         setTimeout(() => {
+  //           setError(searchResult.error || 'Tile not found');
+  //         }, 100);
+          
+  //         setTimeout(() => setError(null), 8000);
+  //         return;
+  //       }
+
+  //       tileData = searchResult.tile;
+  //       tileId = tileData.id;
+
+  //       console.log('✅ Tile found via manual entry:', tileData.name);
+  //     }
+  //     // INVALID DATA
+  //     else {
+  //       console.error('❌ Invalid scan data format');
+  //       setError('Invalid scan data. Please try again.');
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     // SUCCESS PATH
+  //     const sellerId = tileData.sellerId || tileData.seller_id;
+
+  //     if (navigator.vibrate) {
+  //       navigator.vibrate(200);
+  //     }
+
+  //     saveRecentScan({
+  //       id: tileId,
+  //       tileName: tileData.name,
+  //       tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
+  //       scannedAt: new Date().toISOString(),
+  //       tileId: tileId
+  //     });
+
+  //     setSuccess(`✅ ${tileData.name} scanned successfully!`);
+  //     setShowScanner(false);
+      
+  //     setScannedTileData({
+  //       id: tileId,
+  //       name: tileData.name,
+  //       image: tileData.imageUrl || tileData.image_url,
+  //       code: tileData.tileCode || tileData.tile_code,
+  //       size: tileData.size,
+  //       price: tileData.price,
+  //       stock: tileData.stock,
+  //       inStock: tileData.inStock
+  //     });
+
+  //     setLoading(false);
+
+  //     // Background Analytics
+  //     Promise.all([
+  //       trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
+  //         console.warn('⚠️ Main tracking failed:', err);
+  //       }),
+        
+  //       trackQRScan(tileId, {
+  //         sellerId: sellerId,
+  //         showroomId: tileData.showroomId,
+  //         scannedBy: currentUser?.user_id ?? 'anonymous',
+  //         userRole: currentUser?.role ?? 'visitor',
+  //         scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
+  //       }).catch(err => {
+  //         console.warn('⚠️ Legacy tracking failed:', err);
+  //       }),
+        
+  //       currentUser?.role === 'worker' && currentUser?.user_id
+  //         ? trackWorkerActivity(currentUser.user_id, 'scan', { 
+  //             tileId, 
+  //             tileName: tileData.name, 
+  //             sellerId,
+  //             authorized: true,
+  //             scanMethod: data.type === 'manual_entry' ? 'manual' : 'qr'
+  //           }).catch(err => {
+  //             console.warn('⚠️ Worker tracking failed:', err);
+  //           })
+  //         : Promise.resolve()
+  //     ]).then(() => {
+  //       console.log('✅ Background tracking completed');
+        
+  //       const event = new CustomEvent('tile-scanned', { 
+  //         detail: { 
+  //           tileId, 
+  //           sellerId,
+  //           tileName: tileData.name,
+  //           timestamp: new Date().toISOString(),
+  //           scannedBy: currentUser?.role,
+  //           method: data.type === 'manual_entry' ? 'manual' : 'qr'
+  //         } 
+  //       });
+  //       window.dispatchEvent(event);
+  //     });
+
+  //     console.log('🎉 ===== SCAN COMPLETED SUCCESSFULLY =====');
+
+  //   } catch (err: any) {
+  //     console.error('❌ Scan error:', err);
+  //     setShowScanner(false);
+  //     setLoading(false);
+  //     setTimeout(() => {
+  //       setError('Failed to process scan. Please try again.');
+  //     }, 100);
+  //   }
+  // };
+const handleScanSuccess = async (data: any) => {
+  console.log('🎯 ===== SCAN HANDLER CALLED =====');
+  console.log('📥 Scan Data:', data);
+  
+  try {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    let tileId: string;
+    let tileData: any;
+
+    // MODE 1: QR CODE SCAN
+    if (data.tileId) {
+      // ✅ SANITIZE: Clean tileId
+      tileId = data.tileId.trim();
+      console.log('✅ QR Scan Mode - Tile ID:', tileId);
+
+      if (currentUser?.role === 'worker' && currentUser?.user_id) {
+        console.log('🔒 Worker detected - verifying QR access...');
+        
+        const verification = await verifyWorkerTileAccess(tileId, currentUser.user_id);
+        
+        if (!verification.allowed) {
+          console.error('🚫 QR ACCESS DENIED:', verification.error);
           
           setShowScanner(false);
           setLoading(false);
           
           if (navigator.vibrate) {
-            navigator.vibrate([200, 100, 200]);
+            navigator.vibrate([200, 100, 200, 100, 200]);
           }
           
           setTimeout(() => {
-            setError(searchResult.error || 'Tile not found');
+            setError(verification.error || 'Unauthorized tile access');
           }, 100);
           
-          setTimeout(() => setError(null), 8000);
+          setTimeout(() => setError(null), 10000);
           return;
         }
-
-        tileData = searchResult.tile;
-        tileId = tileData.id;
-
-        console.log('✅ Tile found via manual entry:', tileData.name);
+        
+        console.log('✅ Worker authorized for QR scan');
       }
-      // INVALID DATA
-      else {
-        console.error('❌ Invalid scan data format');
-        setError('Invalid scan data. Please try again.');
+
+      console.log('📦 Fetching tile by ID...');
+      tileData = await getTileById(tileId);
+      
+      // ✅ FALLBACK: If ID search fails, try as tile code
+      if (!tileData) {
+        console.warn('⚠️ getTileById failed, trying as tile_code...');
+        
+        const codeSearchResult = await getTileByCode(
+          tileId,
+          currentUser?.role === 'worker' ? currentUser?.user_id : undefined
+        );
+        
+        if (codeSearchResult.success && codeSearchResult.tile) {
+          console.log('✅ Found via tile_code fallback!');
+          tileData = codeSearchResult.tile;
+          tileId = tileData.id; // Update to correct document ID
+        }
+      }
+      
+      if (!tileData) {
+        console.error('❌ Tile not found - ID:', tileId);
+        console.error('❌ User Role:', currentUser?.role);
+        console.error('❌ User ID:', currentUser?.user_id);
+        
+        setShowScanner(false);
         setLoading(false);
+        setTimeout(() => {
+          setError(`Tile not found.\n\nQR ID: ${tileId}\n\nThis QR code may be outdated or invalid. Please try:\n• Scanning again\n• Using manual entry\n• Contacting admin`);
+        }, 100);
         return;
       }
 
-      // SUCCESS PATH
-      const sellerId = tileData.sellerId || tileData.seller_id;
+      console.log('✅ Tile loaded via QR:', tileData.name);
+    }
+    // MODE 2: MANUAL ENTRY
+    else if (data.type === 'manual_entry' && data.tileCode) {
+      console.log('✅ Manual Entry Mode - Code:', data.tileCode);
 
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
+      const searchResult = await getTileByCode(
+        data.tileCode,
+        currentUser?.role === 'worker' ? currentUser?.user_id : undefined
+      );
+
+      if (!searchResult.success) {
+        console.error('❌ Manual search failed:', searchResult.error);
+        
+        setShowScanner(false);
+        setLoading(false);
+        
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+        
+        setTimeout(() => {
+          setError(searchResult.error || 'Tile not found');
+        }, 100);
+        
+        setTimeout(() => setError(null), 8000);
+        return;
       }
 
-      saveRecentScan({
-        id: tileId,
-        tileName: tileData.name,
-        tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
-        scannedAt: new Date().toISOString(),
-        tileId: tileId
-      });
+      tileData = searchResult.tile;
+      tileId = tileData.id;
 
-      setSuccess(`✅ ${tileData.name} scanned successfully!`);
-      setShowScanner(false);
-      
-      setScannedTileData({
-        id: tileId,
-        name: tileData.name,
-        image: tileData.imageUrl || tileData.image_url,
-        code: tileData.tileCode || tileData.tile_code,
-        size: tileData.size,
-        price: tileData.price,
-        stock: tileData.stock,
-        inStock: tileData.inStock
-      });
-
-      setLoading(false);
-
-      // Background Analytics
-      Promise.all([
-        trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
-          console.warn('⚠️ Main tracking failed:', err);
-        }),
-        
-        trackQRScan(tileId, {
-          sellerId: sellerId,
-          showroomId: tileData.showroomId,
-          scannedBy: currentUser?.user_id ?? 'anonymous',
-          userRole: currentUser?.role ?? 'visitor',
-          scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-        }).catch(err => {
-          console.warn('⚠️ Legacy tracking failed:', err);
-        }),
-        
-        currentUser?.role === 'worker' && currentUser?.user_id
-          ? trackWorkerActivity(currentUser.user_id, 'scan', { 
-              tileId, 
-              tileName: tileData.name, 
-              sellerId,
-              authorized: true,
-              scanMethod: data.type === 'manual_entry' ? 'manual' : 'qr'
-            }).catch(err => {
-              console.warn('⚠️ Worker tracking failed:', err);
-            })
-          : Promise.resolve()
-      ]).then(() => {
-        console.log('✅ Background tracking completed');
-        
-        const event = new CustomEvent('tile-scanned', { 
-          detail: { 
-            tileId, 
-            sellerId,
-            tileName: tileData.name,
-            timestamp: new Date().toISOString(),
-            scannedBy: currentUser?.role,
-            method: data.type === 'manual_entry' ? 'manual' : 'qr'
-          } 
-        });
-        window.dispatchEvent(event);
-      });
-
-      console.log('🎉 ===== SCAN COMPLETED SUCCESSFULLY =====');
-
-    } catch (err: any) {
-      console.error('❌ Scan error:', err);
-      setShowScanner(false);
-      setLoading(false);
-      setTimeout(() => {
-        setError('Failed to process scan. Please try again.');
-      }, 100);
+      console.log('✅ Tile found via manual entry:', tileData.name);
     }
-  };
+    // INVALID DATA
+    else {
+      console.error('❌ Invalid scan data format:', data);
+      setError('Invalid scan data. Please try again.');
+      setLoading(false);
+      return;
+    }
 
+    // SUCCESS PATH (rest remains same...)
+    const sellerId = tileData.sellerId || tileData.seller_id;
+
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
+
+    saveRecentScan({
+      id: tileId,
+      tileName: tileData.name,
+      tileImage: tileData.imageUrl || tileData.image_url || '/placeholder-tile.png',
+      scannedAt: new Date().toISOString(),
+      tileId: tileId
+    });
+
+    setSuccess(`✅ ${tileData.name} scanned successfully!`);
+    setShowScanner(false);
+    
+    setScannedTileData({
+      id: tileId,
+      name: tileData.name,
+      image: tileData.imageUrl || tileData.image_url,
+      code: tileData.tileCode || tileData.tile_code,
+      size: tileData.size,
+      price: tileData.price,
+      stock: tileData.stock,
+      inStock: tileData.inStock
+    });
+
+    setLoading(false);
+
+    // Background Analytics
+    Promise.all([
+      trackTileScanEnhanced(tileId, sellerId, currentUser?.user_id).catch(err => {
+        console.warn('⚠️ Main tracking failed:', err);
+      }),
+      
+      trackQRScan(tileId, {
+        sellerId: sellerId,
+        showroomId: tileData.showroomId,
+        scannedBy: currentUser?.user_id ?? 'anonymous',
+        userRole: currentUser?.role ?? 'visitor',
+        scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
+      }).catch(err => {
+        console.warn('⚠️ Legacy tracking failed:', err);
+      }),
+      
+      currentUser?.role === 'worker' && currentUser?.user_id
+        ? trackWorkerActivity(currentUser.user_id, 'scan', { 
+            tileId, 
+            tileName: tileData.name, 
+            sellerId,
+            authorized: true,
+            scanMethod: data.type === 'manual_entry' ? 'manual' : 'qr'
+          }).catch(err => {
+            console.warn('⚠️ Worker tracking failed:', err);
+          })
+        : Promise.resolve()
+    ]).then(() => {
+      console.log('✅ Background tracking completed');
+      
+      const event = new CustomEvent('tile-scanned', { 
+        detail: { 
+          tileId, 
+          sellerId,
+          tileName: tileData.name,
+          timestamp: new Date().toISOString(),
+          scannedBy: currentUser?.role,
+          method: data.type === 'manual_entry' ? 'manual' : 'qr'
+        } 
+      });
+      window.dispatchEvent(event);
+    });
+
+    console.log('🎉 ===== SCAN COMPLETED SUCCESSFULLY =====');
+
+  } catch (err: any) {
+    console.error('❌ Scan error:', err);
+    setShowScanner(false);
+    setLoading(false);
+    setTimeout(() => {
+      setError('Failed to process scan. Please try again.');
+    }, 100);
+  }
+};
   // ═══════════════════════════════════════════════════════════
   // LOGOUT HANDLER
   // ═══════════════════════════════════════════════════════════
