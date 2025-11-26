@@ -1,5 +1,8 @@
 name: Deploy to Firebase Hosting
 
+permissions:
+  contents: write  
+
 on:
   push:
     branches:
