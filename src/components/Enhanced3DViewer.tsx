@@ -1,5607 +1,7 @@
-  
-// // // // // // // src/components/Enhanced3DViewer.tsx
-// // // // // // import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
-// // // // // // import { Canvas, useThree } from '@react-three/fiber';
-// // // // // // import { 
-// // // // // //   OrbitControls, 
-// // // // // //   Environment, 
-// // // // // //   ContactShadows,
-// // // // // //   Sky,
-// // // // // //   AccumulativeShadows,
-// // // // // //   RandomizedLight,
-// // // // // //   BakeShadows
-// // // // // // } from '@react-three/drei';
-// // // // // // import * as THREE from 'three';
-// // // // // // import { 
-// // // // // //   Maximize2, 
-// // // // // //   Minimize2, 
-// // // // // //   RotateCcw, 
-// // // // // //   Info, 
-// // // // // //   Camera, 
-// // // // // //   Sun,
-// // // // // //   Play,
-// // // // // //   Pause,
-// // // // // //   Settings,
-// // // // // //   Package
-// // // // // // } from 'lucide-react';
 
-// // // // // // // Import luxury scene
-// // // // // // import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
-
-// // // // // // // ============================================
-// // // // // // // TYPES & INTERFACES
-// // // // // // // ============================================
-
-// // // // // // interface Enhanced3DViewerProps {
-// // // // // //   roomType: 'drawing' | 'kitchen' | 'bathroom';
-// // // // // //   floorTile?: {
-// // // // // //     texture?: string;
-// // // // // //     size: { width: number; height: number };
-// // // // // //   };
-// // // // // //   wallTile?: {
-// // // // // //     texture?: string;
-// // // // // //     size: { width: number; height: number };
-// // // // // //   };
-// // // // // //   activeSurface: 'floor' | 'wall' | 'both';
-// // // // // //   onSurfaceChange?: (surface: 'floor' | 'wall' | 'both') => void;
-// // // // // // }
-
-// // // // // // interface CameraPreset {
-// // // // // //   position: [number, number, number];
-// // // // // //   target: [number, number, number];
-// // // // // //   name: string;
-// // // // // //   fov: number;
-// // // // // // }
-
-// // // // // // type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
-// // // // // // type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
-
-// // // // // // // ============================================
-// // // // // // // CONSTANTS
-// // // // // // // ============================================
-
-// // // // // // const ROOM_CONFIGS = {
-// // // // // //   drawing: { width: 5, depth: 6, height: 3 },
-// // // // // //   kitchen: { width: 4, depth: 5, height: 2.8 },
-// // // // // //   bathroom: { width: 3, depth: 3.5, height: 2.8 }
-// // // // // // } as const;
-
-// // // // // // const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
-// // // // // //   drawing: [
-// // // // // //     { name: 'Luxury View', position: [5, 2, 6], target: [0, 1.2, 0], fov: 45 },
-// // // // // //     { name: 'TV Wall Focus', position: [2, 1.5, 4], target: [0, 1.5, -4.5], fov: 50 },
-// // // // // //     { name: 'Sofa Area', position: [-3, 1.8, 4], target: [0, 1, 2], fov: 48 },
-// // // // // //     { name: 'Full Room', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-// // // // // //   ],
-// // // // // //   kitchen: [
-// // // // // //     { name: 'Overview', position: [3, 2.2, 4], target: [0, 1.2, 0], fov: 50 },
-// // // // // //     { name: 'Counter View', position: [0, 1.4, 2.5], target: [0, 1, -1.5], fov: 45 },
-// // // // // //     { name: 'Floor Detail', position: [1.5, 1.8, 2], target: [0, 0, 0], fov: 40 },
-// // // // // //     { name: 'Backsplash', position: [0, 1.6, 1.5], target: [0, 1.4, -2], fov: 50 },
-// // // // // //   ],
-// // // // // //   bathroom: [
-// // // // // //     { name: 'Overview', position: [2, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-// // // // // //     { name: 'Mirror View', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-// // // // // //     { name: 'Floor Tiles', position: [1, 1.6, 1.5], target: [0, 0, 0], fov: 45 },
-// // // // // //     { name: 'Wall Detail', position: [1.2, 1.4, 0.8], target: [-1, 1.4, 0], fov: 40 },
-// // // // // //   ],
-// // // // // // };
-
-// // // // // // const LIGHTING_PRESETS: Record<TimeOfDay, {
-// // // // // //   sunPosition: [number, number, number];
-// // // // // //   sunIntensity: number;
-// // // // // //   sunColor: string;
-// // // // // //   ambientIntensity: number;
-// // // // // //   skyTurbidity: number;
-// // // // // //   skyRayleigh: number;
-// // // // // // }> = {
-// // // // // //   morning: {
-// // // // // //     sunPosition: [50, 20, -30],
-// // // // // //     sunIntensity: 2.5,
-// // // // // //     sunColor: '#fff4e6',
-// // // // // //     ambientIntensity: 0.6,
-// // // // // //     skyTurbidity: 3,
-// // // // // //     skyRayleigh: 0.5,
-// // // // // //   },
-// // // // // //   afternoon: {
-// // // // // //     sunPosition: [0, 50, 0],
-// // // // // //     sunIntensity: 3,
-// // // // // //     sunColor: '#ffffff',
-// // // // // //     ambientIntensity: 0.8,
-// // // // // //     skyTurbidity: 2,
-// // // // // //     skyRayleigh: 1,
-// // // // // //   },
-// // // // // //   evening: {
-// // // // // //     sunPosition: [-50, 15, 30],
-// // // // // //     sunIntensity: 1.8,
-// // // // // //     sunColor: '#ffcc99',
-// // // // // //     ambientIntensity: 0.4,
-// // // // // //     skyTurbidity: 8,
-// // // // // //     skyRayleigh: 2,
-// // // // // //   },
-// // // // // //   night: {
-// // // // // //     sunPosition: [0, -10, 0],
-// // // // // //     sunIntensity: 0.1,
-// // // // // //     sunColor: '#6699cc',
-// // // // // //     ambientIntensity: 0.2,
-// // // // // //     skyTurbidity: 10,
-// // // // // //     skyRayleigh: 0,
-// // // // // //   },
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // CUSTOM HOOKS
-// // // // // // // ============================================
-
-// // // // // // const useHighQualityTexture = (
-// // // // // //   textureUrl: string | undefined,
-// // // // // //   tileWidth: number,
-// // // // // //   tileHeight: number
-// // // // // // ) => {
-// // // // // //   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-// // // // // //   const textureRef = useRef<THREE.Texture | null>(null);
-
-// // // // // //   useEffect(() => {
-// // // // // //     if (!textureUrl) {
-// // // // // //       if (textureRef.current) {
-// // // // // //         textureRef.current.dispose();
-// // // // // //         textureRef.current = null;
-// // // // // //       }
-// // // // // //       setTexture(null);
-// // // // // //       return;
-// // // // // //     }
-
-// // // // // //     let isCancelled = false;
-// // // // // //     const loader = new THREE.TextureLoader();
-    
-// // // // // //     loader.load(
-// // // // // //       textureUrl,
-// // // // // //       (loadedTexture) => {
-// // // // // //         if (isCancelled) {
-// // // // // //           loadedTexture.dispose();
-// // // // // //           return;
-// // // // // //         }
-
-// // // // // //         if (textureRef.current) {
-// // // // // //           textureRef.current.dispose();
-// // // // // //         }
-
-// // // // // //         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // // // //         loadedTexture.wrapS = THREE.RepeatWrapping;
-// // // // // //         loadedTexture.wrapT = THREE.RepeatWrapping;
-// // // // // //         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // // // //         loadedTexture.magFilter = THREE.LinearFilter;
-// // // // // //         loadedTexture.anisotropy = 16;
-// // // // // //         loadedTexture.needsUpdate = true;
-        
-// // // // // //         textureRef.current = loadedTexture;
-// // // // // //         setTexture(loadedTexture);
-// // // // // //       },
-// // // // // //       undefined,
-// // // // // //       (error) => {
-// // // // // //         if (!isCancelled) {
-// // // // // //           console.error('Texture loading error:', error);
-// // // // // //           setTexture(null);
-// // // // // //         }
-// // // // // //       }
-// // // // // //     );
-// // // // // //     return () => {
-// // // // // //       isCancelled = true;
-// // // // // //       if (textureRef.current) {
-// // // // // //         textureRef.current.dispose();
-// // // // // //         textureRef.current = null;
-// // // // // //       }
-// // // // // //     };
-// // // // // //   }, [textureUrl, tileWidth, tileHeight]);
-
-// // // // // //   return texture;
-// // // // // // };
-
-// // // // // // const useDeviceQuality = (): QualityLevel => {
-// // // // // //   const [quality, setQuality] = useState<QualityLevel>('high');
-
-// // // // // //   useEffect(() => {
-// // // // // //     const canvas = document.createElement('canvas');
-// // // // // //     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-// // // // // //     if (!gl) {
-// // // // // //       setQuality('low');
-// // // // // //       return;
-// // // // // //     }
-
-// // // // // //     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-// // // // // //     const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
-    
-// // // // // //     const isMobile = /mobile|android|iphone|ipad/i.test(navigator.userAgent);
-// // // // // //     const isHighEnd = /apple gpu|adreno 6|mali-g|nvidia|amd/i.test(renderer.toLowerCase());
-    
-// // // // // //     if (isMobile) {
-// // // // // //       setQuality(isHighEnd ? 'medium' : 'low');
-// // // // // //     } else {
-// // // // // //       setQuality(isHighEnd ? 'ultra' : 'high');
-// // // // // //     }
-// // // // // //   }, []);
-
-// // // // // //   return quality;
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // LIGHTING COMPONENTS
-// // // // // // // ============================================
-
-// // // // // // const AdvancedLighting: React.FC<{ 
-// // // // // //   roomType: string; 
-// // // // // //   timeOfDay: TimeOfDay;
-// // // // // //   quality: QualityLevel;
-// // // // // // }> = ({ roomType, timeOfDay, quality }) => {
-// // // // // //   const preset = LIGHTING_PRESETS[timeOfDay];
-  
-// // // // // //   return (
-// // // // // //     <>
-// // // // // //       <ambientLight intensity={preset.ambientIntensity * 1.2} color="#ffffff" />
-      
-// // // // // //       <hemisphereLight 
-// // // // // //         args={['#87ceeb', '#a0866a', preset.ambientIntensity * 0.8]} 
-// // // // // //       />
-
-// // // // // //       <directionalLight
-// // // // // //         position={preset.sunPosition}
-// // // // // //         intensity={preset.sunIntensity * 1.2}
-// // // // // //         color={preset.sunColor}
-// // // // // //         castShadow={quality !== 'low'}
-// // // // // //         shadow-mapSize={quality === 'ultra' ? [4096, 4096] : [2048, 2048]}
-// // // // // //         shadow-camera-left={-10}
-// // // // // //         shadow-camera-right={10}
-// // // // // //         shadow-camera-top={10}
-// // // // // //         shadow-camera-bottom={-10}
-// // // // // //         shadow-bias={-0.0001}
-// // // // // //         shadow-radius={quality === 'ultra' ? 4 : 2}
-// // // // // //       />
-
-// // // // // //       {roomType === 'kitchen' && (
-// // // // // //         <>
-// // // // // //           <rectAreaLight
-// // // // // //             position={[0, 2.6, -1]}
-// // // // // //             width={3}
-// // // // // //             height={0.3}
-// // // // // //             intensity={timeOfDay === 'night' ? 12 : 6}
-// // // // // //             color="#fffaef"
-// // // // // //           />
-          
-// // // // // //           <rectAreaLight
-// // // // // //             position={[0, 1.8, -2.2]}
-// // // // // //             width={3.5}
-// // // // // //             height={0.1}
-// // // // // //             intensity={timeOfDay === 'night' ? 10 : 4}
-// // // // // //             color="#ffffff"
-// // // // // //           />
-// // // // // //         </>
-// // // // // //       )}
-
-// // // // // //       {roomType === 'bathroom' && (
-// // // // // //         <>
-// // // // // //           <pointLight
-// // // // // //             position={[0, 2.5, 0]}
-// // // // // //             intensity={timeOfDay === 'night' ? 18 : 10}
-// // // // // //             distance={6}
-// // // // // //             decay={2}
-// // // // // //             color="#f8f8ff"
-// // // // // //             castShadow={quality !== 'low'}
-// // // // // //           />
-          
-// // // // // //           <pointLight
-// // // // // //             position={[-0.8, 1.8, -1.6]}
-// // // // // //             intensity={timeOfDay === 'night' ? 8 : 4}
-// // // // // //             distance={3}
-// // // // // //             decay={2}
-// // // // // //             color="#fffff0"
-// // // // // //           />
-// // // // // //           <pointLight
-// // // // // //             position={[0.8, 1.8, -1.6]}
-// // // // // //             intensity={timeOfDay === 'night' ? 8 : 4}
-// // // // // //             distance={3}
-// // // // // //             decay={2}
-// // // // // //             color="#fffff0"
-// // // // // //           />
-// // // // // //         </>
-// // // // // //       )}
-
-// // // // // //       <pointLight position={[3, 2, 3]} intensity={2} distance={10} decay={2} />
-// // // // // //       <pointLight position={[-3, 2, 3]} intensity={2} distance={10} decay={2} />
-// // // // // //       <pointLight position={[3, 2, -3]} intensity={2} distance={10} decay={2} />
-// // // // // //       <pointLight position={[-3, 2, -3]} intensity={2} distance={10} decay={2} />
-// // // // // //     </>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // TILE COMPONENTS
-// // // // // // // ============================================
-
-// // // // // // const TiledFloor: React.FC<{
-// // // // // //   baseTexture: THREE.Texture | null;
-// // // // // //   tileSize: { width: number; height: number };
-// // // // // //   roomWidth: number;
-// // // // // //   roomDepth: number;
-// // // // // //   position: [number, number, number];
-// // // // // //   quality: QualityLevel;
-// // // // // // }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position, quality }) => {
-  
-// // // // // //   const material = useMemo(() => {
-// // // // // //     if (!baseTexture) {
-// // // // // //       return new THREE.MeshStandardMaterial({
-// // // // // //         color: '#d4d4d4',
-// // // // // //         roughness: 0.7,
-// // // // // //         metalness: 0,
-// // // // // //       });
-// // // // // //     }
-
-// // // // // //     const clonedTexture = baseTexture.clone();
-// // // // // //     clonedTexture.needsUpdate = true;
-    
-// // // // // //     const tileSizeM = {
-// // // // // //       width: tileSize.width / 100,
-// // // // // //       height: tileSize.height / 100
-// // // // // //     };
-    
-// // // // // //     const repeatX = roomWidth / tileSizeM.width;
-// // // // // //     const repeatY = roomDepth / tileSizeM.height;
-    
-// // // // // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // // // // //     const mat = new THREE.MeshPhysicalMaterial({
-// // // // // //       map: clonedTexture,
-// // // // // //       roughness: 0.2,
-// // // // // //       metalness: 0,
-// // // // // //       clearcoat: 0.3,
-// // // // // //       clearcoatRoughness: 0.2,
-// // // // // //       reflectivity: 0.6,
-// // // // // //       envMapIntensity: quality === 'ultra' ? 1.2 : 0.6,
-// // // // // //       sheen: 0.3,
-// // // // // //       sheenColor: new THREE.Color('#ffffff'),
-// // // // // //     });
-
-// // // // // //     (mat as any)._customTexture = clonedTexture;
-// // // // // //     return mat;
-// // // // // //   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth, quality]);
-
-// // // // // //   useEffect(() => {
-// // // // // //     return () => {
-// // // // // //       if ((material as any)._customTexture) {
-// // // // // //         (material as any)._customTexture.dispose();
-// // // // // //       }
-// // // // // //       material.dispose();
-// // // // // //     };
-// // // // // //   }, [material]);
-
-// // // // // //   return (
-// // // // // //     <mesh 
-// // // // // //       rotation={[-Math.PI / 2, 0, 0]} 
-// // // // // //       position={position}
-// // // // // //       receiveShadow
-// // // // // //     >
-// // // // // //       <planeGeometry args={[roomWidth, roomDepth, 64, 64]} />
-// // // // // //       <primitive object={material} attach="material" />
-// // // // // //     </mesh>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // const TiledWall: React.FC<{
-// // // // // //   baseTexture: THREE.Texture | null;
-// // // // // //   tileSize: { width: number; height: number };
-// // // // // //   width: number;
-// // // // // //   height: number;
-// // // // // //   position: [number, number, number];
-// // // // // //   rotation?: [number, number, number];
-// // // // // //   quality: QualityLevel;
-// // // // // // }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0], quality }) => {
-  
-// // // // // //   const material = useMemo(() => {
-// // // // // //     if (!baseTexture) {
-// // // // // //       return new THREE.MeshStandardMaterial({
-// // // // // //         color: '#f5f5f5',
-// // // // // //         roughness: 0.6,
-// // // // // //         metalness: 0,
-// // // // // //       });
-// // // // // //     }
-
-// // // // // //     const clonedTexture = baseTexture.clone();
-// // // // // //     clonedTexture.needsUpdate = true;
-    
-// // // // // //     const tileSizeM = {
-// // // // // //       width: tileSize.width / 100,
-// // // // // //       height: tileSize.height / 100
-// // // // // //     };
-    
-// // // // // //     const repeatX = width / tileSizeM.width;
-// // // // // //     const repeatY = height / tileSizeM.height;
-    
-// // // // // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // // // // //     const mat = new THREE.MeshPhysicalMaterial({
-// // // // // //       map: clonedTexture,
-// // // // // //       roughness: 0.15,
-// // // // // //       metalness: 0,
-// // // // // //       clearcoat: 0.35,
-// // // // // //       clearcoatRoughness: 0.15,
-// // // // // //       reflectivity: 0.5,
-// // // // // //       envMapIntensity: quality === 'ultra' ? 1.0 : 0.5,
-// // // // // //     });
-
-// // // // // //     (mat as any)._customTexture = clonedTexture;
-// // // // // //     return mat;
-// // // // // //   }, [baseTexture, tileSize.width, tileSize.height, width, height, quality]);
-
-// // // // // //   useEffect(() => {
-// // // // // //     return () => {
-// // // // // //       if ((material as any)._customTexture) {
-// // // // // //         (material as any)._customTexture.dispose();
-// // // // // //       }
-// // // // // //       material.dispose();
-// // // // // //     };
-// // // // // //   }, [material]);
-
-// // // // // //   return (
-// // // // // //     <mesh position={position} rotation={rotation} receiveShadow>
-// // // // // //       <planeGeometry args={[width, height, 32, 32]} />
-// // // // // //       <primitive object={material} attach="material" />
-// // // // // //     </mesh>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // SHADOWS
-// // // // // // // ============================================
-
-// // // // // // const RealisticShadows: React.FC<{ quality: QualityLevel }> = ({ quality }) => {
-// // // // // //   if (quality === 'low') {
-// // // // // //     return <ContactShadows position={[0, 0.01, 0]} opacity={0.3} scale={10} blur={1.5} />;
-// // // // // //   }
-
-// // // // // //   if (quality === 'medium') {
-// // // // // //     return <ContactShadows position={[0, 0.01, 0]} opacity={0.4} scale={10} blur={2} far={4} />;
-// // // // // //   }
-
-// // // // // //   return (
-// // // // // //     <AccumulativeShadows
-// // // // // //       temporal
-// // // // // //       frames={100}
-// // // // // //       color="#000000"
-// // // // // //       colorBlend={0.5}
-// // // // // //       opacity={0.7}
-// // // // // //       scale={12}
-// // // // // //       alphaTest={0.85}
-// // // // // //       position={[0, 0.01, 0]}
-// // // // // //     >
-// // // // // //       <RandomizedLight
-// // // // // //         amount={8}
-// // // // // //         radius={5}
-// // // // // //         ambient={0.5}
-// // // // // //         intensity={1}
-// // // // // //         position={[5, 5, -5]}
-// // // // // //         bias={0.001}
-// // // // // //       />
-// // // // // //     </AccumulativeShadows>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // CAMERA CONTROLLER
-// // // // // // // ============================================
-
-// // // // // // const CameraController: React.FC<{
-// // // // // //   preset: CameraPreset | null;
-// // // // // //   autoRotate: boolean;
-// // // // // //   onTransitionComplete?: () => void;
-// // // // // // }> = ({ preset, autoRotate, onTransitionComplete }) => {
-// // // // // //   const { camera } = useThree();
-// // // // // //   const controlsRef = useRef<any>();
-// // // // // //   const [isTransitioning, setIsTransitioning] = useState(false);
-
-// // // // // //   useEffect(() => {
-// // // // // //     if (!preset || !controlsRef.current) return;
-
-// // // // // //     setIsTransitioning(true);
-    
-// // // // // //     const startPos = camera.position.clone();
-// // // // // //     const startTarget = controlsRef.current.target.clone();
-// // // // // //     const endPos = new THREE.Vector3(...preset.position);
-// // // // // //     const endTarget = new THREE.Vector3(...preset.target);
-
-// // // // // //     let progress = 0;
-// // // // // //     const duration = 1500;
-// // // // // //     const startTime = Date.now();
-
-// // // // // //     const animate = () => {
-// // // // // //       const elapsed = Date.now() - startTime;
-// // // // // //       progress = Math.min(elapsed / duration, 1);
-      
-// // // // // //       const eased = 1 - Math.pow(1 - progress, 3);
-
-// // // // // //       camera.position.lerpVectors(startPos, endPos, eased);
-// // // // // //       controlsRef.current.target.lerpVectors(startTarget, endTarget, eased);
-// // // // // //       camera.fov = THREE.MathUtils.lerp(camera.fov, preset.fov, eased);
-// // // // // //       camera.updateProjectionMatrix();
-
-// // // // // //       if (progress < 1) {
-// // // // // //         requestAnimationFrame(animate);
-// // // // // //       } else {
-// // // // // //         setIsTransitioning(false);
-// // // // // //         onTransitionComplete?.();
-// // // // // //       }
-// // // // // //     };
-
-// // // // // //     animate();
-// // // // // //   }, [preset, camera, onTransitionComplete]);
-
-// // // // // //   return (
-// // // // // //     <OrbitControls
-// // // // // //       ref={controlsRef}
-// // // // // //       enablePan={!isTransitioning}
-// // // // // //       enableZoom={!isTransitioning}
-// // // // // //       enableRotate={!isTransitioning}
-// // // // // //       autoRotate={autoRotate && !isTransitioning}
-// // // // // //       autoRotateSpeed={0.5}
-// // // // // //       maxPolarAngle={Math.PI * 0.95}
-// // // // // //       minPolarAngle={Math.PI * 0.05}
-// // // // // //       minDistance={0.8}
-// // // // // //       maxDistance={10}
-// // // // // //       enableDamping
-// // // // // //       dampingFactor={0.05}
-// // // // // //       rotateSpeed={0.5}
-// // // // // //       zoomSpeed={0.8}
-// // // // // //       panSpeed={0.5}
-
-  
-// // // // // //   // Camera distance limits
-
-
-  
-// // // // // //   // Vertical angle limits (keeps camera inside)
-
-
-  
-// // // // // //   // Horizontal tation limits
-// // // // // //   minAzimuthAngle={-Math.PI / 2}
-// // // // // //   maxAzimuthAngle={Math.PI / 2}
-  
-// // // // // //   // Look at center of room
-// // // // // //   target={[0, 1.4, 0]}
-  
-// // // // // //   // Smooth damping
-// // // // // //   enableDamping={true}
-// // // // // //   dampingFactor={0.05}
-  
-// // // // // //   // Pan limits (optional - keeps within bounds)
-// // // // // //   maxTargetRadius={4}
-// // // // // //     />
-// // // // // //   );
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // CEILING
-// // // // // // // ============================================
-
-// // // // // // const Ceiling: React.FC<{
-// // // // // //   width: number;
-// // // // // //   depth: number;
-// // // // // //   height: number;
-// // // // // // }> = ({ width, depth, height }) => {
-// // // // // //   return (
-// // // // // //     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]} receiveShadow>
-// // // // // //       <planeGeometry args={[width, depth]} />
-// // // // // //       <meshStandardMaterial 
-// // // // // //         color="#fefefe" 
-// // // // // //         roughness={0.9}
-// // // // // //         metalness={0}
-// // // // // //         envMapIntensity={0.1}
-// // // // // //       />
-// // // // // //     </mesh>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // // ============================================
-// // // // // // // KITCHEN & BATHROOM SCENES (Simplified)
-// // // // // // // ============================================
-
-// // // // // // const KitchenScene: React.FC<{ 
-// // // // // //   floorTexture: THREE.Texture | null;
-// // // // // //   floorTileSize: { width: number; height: number };
-// // // // // //   wallTexture: THREE.Texture | null;
-// // // // // //   wallTileSize: { width: number; height: number };
-// // // // // //   showWallTiles: boolean;
-// // // // // //   quality: QualityLevel;
-// // // // // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // // // // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
-
-// // // // // //   return (
-// // // // // //     <group>
-// // // // // //       <TiledFloor
-// // // // // //         baseTexture={floorTexture}
-// // // // // //         tileSize={floorTileSize}
-// // // // // //         roomWidth={W}
-// // // // // //         roomDepth={D}
-// // // // // //         position={[0, 0, 0]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <Ceiling width={W} depth={D} height={H} />
-
-// // // // // //       <TiledWall
-// // // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // // //         tileSize={wallTileSize}
-// // // // // //         width={W}
-// // // // // //         height={H}
-// // // // // //         position={[0, H/2, -D/2]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]} receiveShadow>
-// // // // // //         <planeGeometry args={[W, H]} />
-// // // // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // // // //       </mesh>
-
-// // // // // //       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]} receiveShadow>
-// // // // // //         <planeGeometry args={[D, H]} />
-// // // // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // // // //       </mesh>
-
-// // // // // //       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]} receiveShadow>
-// // // // // //         <planeGeometry args={[D, H]} />
-// // // // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // // // //       </mesh>
-
-// // // // // //       <group position={[0, 0, -2.35]}>
-// // // // // //         <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-// // // // // //           <boxGeometry args={[3.6, 0.9, 0.65]} />
-// // // // // //           <meshStandardMaterial color="#6b4e3d" roughness={0.7} />
-// // // // // //         </mesh>
-// // // // // //         <mesh position={[0, 0.92, 0]} castShadow receiveShadow>
-// // // // // //           <boxGeometry args={[3.7, 0.04, 0.7]} />
-// // // // // //           <meshStandardMaterial color="#1a1a1a" roughness={0.2} metalness={0.6} />
-// // // // // //         </mesh>
-// // // // // //         <mesh position={[0, 1.85, -0.25]} castShadow receiveShadow>
-// // // // // //           <boxGeometry args={[3.6, 0.85, 0.4]} />
-// // // // // //           <meshStandardMaterial color="#7a5c47" roughness={0.7} />
-// // // // // //         </mesh>
-// // // // // //       </group>
-
-// // // // // //       <mesh position={[1.75, 1.05, -2.25]} castShadow receiveShadow>
-// // // // // //         <boxGeometry args={[0.75, 2.1, 0.75]} />
-// // // // // //         <meshStandardMaterial color="#e5e5e5" roughness={0.15} metalness={0.7} />
-// // // // // //       </mesh>
-
-// // // // // //       <RealisticShadows quality={quality} />
-// // // // // //     </group>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // const BathroomScene: React.FC<{ 
-// // // // // //   floorTexture: THREE.Texture | null;
-// // // // // //   floorTileSize: { width: number; height: number };
-// // // // // //   wallTexture: THREE.Texture | null;
-// // // // // //   wallTileSize: { width: number; height: number };
-// // // // // //   showWallTiles: boolean;
-// // // // // //   quality: QualityLevel;
-// // // // // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // // // // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
-
-// // // // // //   return (
-// // // // // //     <group>
-// // // // // //       <TiledFloor
-// // // // // //         baseTexture={floorTexture}
-// // // // // //         tileSize={floorTileSize}
-// // // // // //         roomWidth={W}
-// // // // // //         roomDepth={D}
-// // // // // //         position={[0, 0, 0]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <Ceiling width={W} depth={D} height={H} />
-
-// // // // // //       <TiledWall
-// // // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // // //         tileSize={wallTileSize}
-// // // // // //         width={W}
-// // // // // //         height={H}
-// // // // // //         position={[0, H/2, -D/2]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <TiledWall
-// // // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // // //         tileSize={wallTileSize}
-// // // // // //         width={W}
-// // // // // //         height={H}
-// // // // // //         position={[0, H/2, D/2]}
-// // // // // //         rotation={[0, Math.PI, 0]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <TiledWall
-// // // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // // //         tileSize={wallTileSize}
-// // // // // //         width={D}
-// // // // // //         height={H}
-// // // // // //         position={[-W/2, H/2, 0]}
-// // // // // //         rotation={[0, Math.PI/2, 0]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <TiledWall
-// // // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // // //         tileSize={wallTileSize}
-// // // // // //         width={D}
-// // // // // //         height={H}
-// // // // // //         position={[W/2, H/2, 0]}
-// // // // // //         rotation={[0, -Math.PI/2, 0]}
-// // // // // //         quality={quality}
-// // // // // //       />
-
-// // // // // //       <group position={[-0.85, 0, -1.3]}>
-// // // // // //         <mesh position={[0, 0.32, 0]} castShadow receiveShadow>
-// // // // // //           <cylinderGeometry args={[0.27, 0.22, 0.64, 20]} />
-// // // // // //           <meshStandardMaterial color="#fafafa" roughness={0.05} metalness={0.1} />
-// // // // // //         </mesh>
-// // // // // //       </group>
-
-// // // // // //       <RealisticShadows quality={quality} />
-// // // // // //     </group>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // const SceneLoader: React.FC = () => (
-// // // // // //   <mesh>
-// // // // // //     <boxGeometry args={[1, 1, 1]} />
-// // // // // //     <meshStandardMaterial color="#3b82f6" />
-// // // // // //   </mesh>
-// // // // // // );
-
-// // // // // // // ============================================
-// // // // // // // MAIN COMPONENT
-// // // // // // // ============================================
-
-// // // // // // export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
-// // // // // //   roomType,
-// // // // // //   floorTile,
-// // // // // //   wallTile,
-// // // // // //   activeSurface,
-// // // // // // }) => {
-// // // // // //   const [isFullscreen, setIsFullscreen] = useState(false);
-// // // // // //   const [showControls, setShowControls] = useState(true);
-// // // // // //   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
-// // // // // //   const [autoRotate, setAutoRotate] = useState(false);
-// // // // // //   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('afternoon');
-// // // // // //   const [quality, setQuality] = useState<QualityLevel>('high');
-// // // // // //   const [showSettings, setShowSettings] = useState(false);
-
-// // // // // //   const autoQuality = useDeviceQuality();
-
-// // // // // //   useEffect(() => {
-// // // // // //     setQuality(autoQuality);
-// // // // // //   }, [autoQuality]);
-
-// // // // // //   const floorTexture = useHighQualityTexture(
-// // // // // //     floorTile?.texture,
-// // // // // //     floorTile?.size.width || 60,
-// // // // // //     floorTile?.size.height || 60
-// // // // // //   );
-
-// // // // // //   const wallTexture = useHighQualityTexture(
-// // // // // //     wallTile?.texture,
-// // // // // //     wallTile?.size.width || 30,
-// // // // // //     wallTile?.size.height || 45
-// // // // // //   );
-
-// // // // // //   const handleReset = () => {
-// // // // // //     setSelectedPreset(null);
-// // // // // //     setAutoRotate(false);
-// // // // // //     setTimeOfDay('afternoon');
-// // // // // //   };
-
-// // // // // //   const toggleFullscreen = () => {
-// // // // // //     if (!document.fullscreenElement) {
-// // // // // //       document.documentElement.requestFullscreen();
-// // // // // //       setIsFullscreen(true);
-// // // // // //     } else {
-// // // // // //       document.exitFullscreen();
-// // // // // //       setIsFullscreen(false);
-// // // // // //     }
-// // // // // //   };
-
-// // // // // //   // ✅ FIX: renderScene now properly uses quality from state
-// // // // // //   const renderScene = () => {
-// // // // // //     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
-// // // // // //     const showFloorTiles = activeSurface === 'floor' || activeSurface === 'both';
-
-// // // // // //     const defaultFloorSize = { width: 60, height: 60 };
-// // // // // //     const defaultWallSize = { width: 30, height: 45 };
-
-// // // // // //     switch (roomType) {
-// // // // // //       case 'drawing':
-// // // // // //         return (
-// // // // // //           <LuxuryDrawingRoomScene 
-// // // // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // // // //             quality={quality}
-// // // // // //           />
-// // // // // //         );
-// // // // // //       case 'kitchen':
-// // // // // //         return (
-// // // // // //           <KitchenScene
-// // // // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // // // //             wallTexture={showWallTiles ? wallTexture : null}
-// // // // // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // // // // //             showWallTiles={showWallTiles}
-// // // // // //             quality={quality}
-// // // // // //           />
-// // // // // //         );
-// // // // // //       case 'bathroom':
-// // // // // //         return (
-// // // // // //           <BathroomScene
-// // // // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // // // //             wallTexture={showWallTiles ? wallTexture : null}
-// // // // // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // // // // //             showWallTiles={showWallTiles}
-// // // // // //             quality={quality}
-// // // // // //           />
-// // // // // //         );
-// // // // // //     }
-// // // // // //   };
-
-// // // // // //   const presets = CAMERA_PRESETS[roomType] || [];
-// // // // // //   const hasFloorTile = !!floorTile?.texture;
-// // // // // //   const hasWallTile = !!wallTile?.texture;
-
-// // // // // //   return (
-// // // // // //     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
-// // // // // //       <Canvas
-// // // // // //         shadows
-// // // // // //         gl={{ 
-// // // // // //           antialias: true,
-// // // // // //           toneMapping: THREE.ACESFilmicToneMapping,
-// // // // // //           toneMappingExposure: 1.5,
-// // // // // //           powerPreference: 'high-performance',
-// // // // // //           outputColorSpace: THREE.SRGBColorSpace
-// // // // // //         }}
-// // // // // //         camera={{
-// // // // // //           position: [0, 1.6, 3],
-// // // // // //           fov: 50,
-// // // // // //           near: 0.1,
-// // // // // //           far: 1000
-// // // // // //         }}
-// // // // // //       >
-// // // // // //         <Suspense fallback={<SceneLoader />}>
-// // // // // //           <color attach="background" args={['#e8f4f8']} />
-
-// // // // // //           <AdvancedLighting roomType={roomType} timeOfDay={timeOfDay} quality={quality} />
-
-// // // // // //           {renderScene()}
-
-// // // // // //           <CameraController 
-// // // // // //             preset={selectedPreset} 
-// // // // // //             autoRotate={autoRotate}
-// // // // // //             onTransitionComplete={() => setSelectedPreset(null)}
-// // // // // //           />
-
-// // // // // //           <Environment preset="apartment" background={false} />
-
-// // // // // //           <Sky 
-// // // // // //             distance={450000}
-// // // // // //             sunPosition={LIGHTING_PRESETS[timeOfDay].sunPosition}
-// // // // // //             inclination={0.6}
-// // // // // //             azimuth={0.25}
-// // // // // //             turbidity={LIGHTING_PRESETS[timeOfDay].skyTurbidity}
-// // // // // //             rayleigh={LIGHTING_PRESETS[timeOfDay].skyRayleigh}
-// // // // // //           />
-
-// // // // // //           <BakeShadows />
-// // // // // //         </Suspense>
-// // // // // //       </Canvas>
-
-// // // // // //       {showControls && (
-// // // // // //         <div className="absolute top-4 left-4 bg-black/80 text-white px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10 max-w-xs">
-// // // // // //           <p className="font-semibold mb-1 flex items-center gap-2 text-sm">
-// // // // // //             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-// // // // // //             {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-// // // // // //           </p>
-// // // // // //           <p className="text-xs opacity-75">
-// // // // // //             Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span>
-// // // // // //           </p>
-// // // // // //           {floorTile && (
-// // // // // //             <p className="text-xs opacity-75 mt-1">
-// // // // // //               Floor: {floorTile.size.width}×{floorTile.size.height} cm
-// // // // // //             </p>
-// // // // // //           )}
-// // // // // //           {wallTile && (
-// // // // // //             <p className="text-xs opacity-75">
-// // // // // //               Wall: {wallTile.size.width}×{wallTile.size.height} cm
-// // // // // //             </p>
-// // // // // //           )}
-// // // // // //         </div>
-// // // // // //       )}
-
-// // // // // //       <div className="absolute top-4 right-4 bg-black/80 text-white px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // // // //         <p className="text-xs font-medium mb-1">Applied:</p>
-// // // // // //         <p className="text-sm font-bold capitalize">{activeSurface}</p>
-// // // // // //         {hasFloorTile && <p className="text-xs opacity-75 mt-1 text-green-400">✓ Floor Tile</p>}
-// // // // // //         {hasWallTile && <p className="text-xs opacity-75 text-blue-400">✓ Wall Tile</p>}
-// // // // // //       </div>
-
-// // // // // //       <div className="absolute top-24 right-4 bg-black/80 text-white p-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // // // //         <p className="text-xs font-semibold mb-2 flex items-center gap-2">
-// // // // // //           <Camera className="w-3 h-3" />
-// // // // // //           Camera Views
-// // // // // //         </p>
-// // // // // //         <div className="flex flex-col gap-1.5">
-// // // // // //           {presets.map((preset, index) => (
-// // // // // //             <button
-// // // // // //               key={index}
-// // // // // //               onClick={() => setSelectedPreset(preset)}
-// // // // // //               className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition-all hover:scale-105"
-// // // // // //             >
-// // // // // //               {preset.name}
-// // // // // //             </button>
-// // // // // //           ))}
-// // // // // //         </div>
-// // // // // //       </div>
-
-// // // // // //       <div className="absolute bottom-24 left-4 bg-black/80 text-white p-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // // // //         <p className="text-xs font-semibold mb-2 flex items-center gap-2">
-// // // // // //           <Sun className="w-3 h-3" />
-// // // // // //           Time of Day
-// // // // // //         </p>
-// // // // // //         <div className="flex flex-col gap-1.5">
-// // // // // //           {(['morning', 'afternoon', 'evening', 'night'] as TimeOfDay[]).map((time) => (
-// // // // // //             <button
-// // // // // //               key={time}
-// // // // // //               onClick={() => setTimeOfDay(time)}
-// // // // // //               className={`px-3 py-1.5 rounded-lg text-xs transition-all capitalize ${
-// // // // // //                 timeOfDay === time 
-// // // // // //                   ? 'bg-blue-600 scale-105' 
-// // // // // //                   : 'bg-white/10 hover:bg-white/20'
-// // // // // //               }`}
-// // // // // //             >
-// // // // // //               {time === 'morning' && '🌅'}
-// // // // // //               {time === 'afternoon' && '☀️'}
-// // // // // //               {time === 'evening' && '🌆'}
-// // // // // //               {time === 'night' && '🌙'}
-// // // // // //               {' '}{time}
-// // // // // //             </button>
-// // // // // //           ))}
-// // // // // //         </div>
-// // // // // //       </div>
-
-// // // // // //       {showSettings && (
-// // // // // //         <div className="absolute bottom-24 right-4 bg-black/90 text-white p-4 rounded-xl backdrop-blur-md shadow-2xl border border-white/10 min-w-[200px]">
-// // // // // //           <p className="text-xs font-semibold mb-3 flex items-center gap-2">
-// // // // // //             <Settings className="w-3 h-3" />
-// // // // // //             Settings
-// // // // // //           </p>
-          
-// // // // // //           <div className="space-y-3">
-// // // // // //             <div>
-// // // // // //               <p className="text-xs mb-1.5 opacity-75">Quality</p>
-// // // // // //               <div className="flex flex-col gap-1">
-// // // // // //                 {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-// // // // // //                   <button
-// // // // // //                     key={q}
-// // // // // //                     onClick={() => setQuality(q)}
-// // // // // //                     className={`px-2 py-1 rounded text-xs capitalize transition-all ${
-// // // // // //                       quality === q 
-// // // // // //                         ? 'bg-blue-600' 
-// // // // // //                         : 'bg-white/10 hover:bg-white/20'
-// // // // // //                     }`}
-// // // // // //                   >
-// // // // // //                     {q}
-// // // // // //                   </button>
-// // // // // //                 ))}
-// // // // // //               </div>
-// // // // // //             </div>
-
-// // // // // //             <div>
-// // // // // //               <label className="flex items-center gap-2 text-xs cursor-pointer">
-// // // // // //                 <input
-// // // // // //                   type="checkbox"
-// // // // // //                   checked={autoRotate}
-// // // // // //                   onChange={(e) => setAutoRotate(e.target.checked)}
-// // // // // //                   className="w-3 h-3"
-// // // // // //                 />
-// // // // // //                 <span>Auto Rotate</span>
-// // // // // //               </label>
-// // // // // //             </div>
-// // // // // //           </div>
-// // // // // //         </div>
-// // // // // //       )}
-
-// // // // // //       <div className="absolute bottom-4 right-4 flex gap-2">
-// // // // // //         <button
-// // // // // //           onClick={() => setShowControls(!showControls)}
-// // // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // // //           title="Info"
-// // // // // //         >
-// // // // // //           <Info className="w-5 h-5" />
-// // // // // //         </button>
-// // // // // //         <button
-// // // // // //           onClick={() => setShowSettings(!showSettings)}
-// // // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // // //           title="Settings"
-// // // // // //         >
-// // // // // //           <Settings className="w-5 h-5" />
-// // // // // //         </button>
-// // // // // //         <button
-// // // // // //           onClick={() => setAutoRotate(!autoRotate)}
-// // // // // //           className={`bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105 ${
-// // // // // //             autoRotate ? 'ring-2 ring-blue-500' : ''
-// // // // // //           }`}
-// // // // // //           title={autoRotate ? 'Stop Rotation' : 'Auto Rotate'}
-// // // // // //         >
-// // // // // //           {autoRotate ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-// // // // // //         </button>
-// // // // // //         <button
-// // // // // //           onClick={handleReset}
-// // // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // // //           title="Reset"
-// // // // // //         >
-// // // // // //           <RotateCcw className="w-5 h-5" />
-// // // // // //         </button>
-// // // // // //         <button
-// // // // // //           onClick={toggleFullscreen}
-// // // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // // //           title="Fullscreen"
-// // // // // //         >
-// // // // // //           {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-// // // // // //         </button>
-// // // // // //       </div>
-
-// // // // // //       {(!hasFloorTile && !hasWallTile) && (
-// // // // // //         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md pointer-events-none">
-// // // // // //           <div className="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-md">
-// // // // // //             <Package className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-// // // // // //             <p className="text-gray-800 font-semibold text-lg mb-2">No Tiles Applied</p>
-// // // // // //             <p className="text-gray-500 text-sm">Upload floor and/or wall tiles to visualize</p>
-// // // // // //           </div>
-// // // // // //         </div>
-// // // // // //       )}
-// // // // // //     </div>
-// // // // // //   );
-// // // // // // };
-
-// // // // // // export default Enhanced3DViewer;  
-// // // // // // src/components/Enhanced3DViewer.tsx
-// // // // // import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
-// // // // // import { Canvas, useThree } from '@react-three/fiber';
-// // // // // import { OrbitControls } from '@react-three/drei';
-// // // // // import * as THREE from 'three';
-// // // // // import { 
-// // // // //   Maximize2, 
-// // // // //   Minimize2, 
-// // // // //   RotateCcw, 
-// // // // //   Info, 
-// // // // //   Camera, 
-// // // // //   Sun,
-// // // // //   Play,
-// // // // //   Pause,
-// // // // //   Settings,
-// // // // //   Package
-// // // // // } from 'lucide-react';
-
-// // // // // // Import luxury scene
-// // // // // import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
-
-// // // // // // ============================================
-// // // // // // TYPES & INTERFACES
-// // // // // // ============================================
-
-// // // // // interface Enhanced3DViewerProps {
-// // // // //   roomType: 'drawing' | 'kitchen' | 'bathroom';
-// // // // //   floorTile?: {
-// // // // //     texture?: string;
-// // // // //     size: { width: number; height: number };
-// // // // //   };
-// // // // //   wallTile?: {
-// // // // //     texture?: string;
-// // // // //     size: { width: number; height: number };
-// // // // //   };
-// // // // //   activeSurface: 'floor' | 'wall' | 'both';
-// // // // //   onSurfaceChange?: (surface: 'floor' | 'wall' | 'both') => void;
-// // // // // }
-
-// // // // // interface CameraPreset {
-// // // // //   position: [number, number, number];
-// // // // //   target: [number, number, number];
-// // // // //   name: string;
-// // // // //   fov: number;
-// // // // // }
-
-// // // // // type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
-// // // // // type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
-
-// // // // // // ============================================
-// // // // // // CONSTANTS
-// // // // // // ============================================
-
-// // // // // const ROOM_CONFIGS = {
-// // // // //   drawing: { width: 5, depth: 6, height: 3 },
-// // // // //   kitchen: { width: 4, depth: 5, height: 2.8 },
-// // // // //   bathroom: { width: 3, depth: 3.5, height: 2.8 }
-// // // // // } as const;
-
-// // // // // const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
-// // // // //   drawing: [
-// // // // //     { name: 'Luxury View', position: [5, 2, 6], target: [0, 1.2, 0], fov: 45 },
-// // // // //     { name: 'TV Wall Focus', position: [2, 1.5, 4], target: [0, 1.5, -4.5], fov: 50 },
-// // // // //     { name: 'Sofa Area', position: [-3, 1.8, 4], target: [0, 1, 2], fov: 48 },
-// // // // //     { name: 'Full Room', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-// // // // //   ],
-// // // // //   kitchen: [
-// // // // //     { name: 'Overview', position: [3, 2.2, 4], target: [0, 1.2, 0], fov: 50 },
-// // // // //     { name: 'Counter View', position: [0, 1.4, 2.5], target: [0, 1, -1.5], fov: 45 },
-// // // // //     { name: 'Floor Detail', position: [1.5, 1.8, 2], target: [0, 0, 0], fov: 40 },
-// // // // //     { name: 'Backsplash', position: [0, 1.6, 1.5], target: [0, 1.4, -2], fov: 50 },
-// // // // //   ],
-// // // // //   bathroom: [
-// // // // //     { name: 'Overview', position: [2, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-// // // // //     { name: 'Mirror View', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-// // // // //     { name: 'Floor Tiles', position: [1, 1.6, 1.5], target: [0, 0, 0], fov: 45 },
-// // // // //     { name: 'Wall Detail', position: [1.2, 1.4, 0.8], target: [-1, 1.4, 0], fov: 40 },
-// // // // //   ],
-// // // // // };
-
-// // // // // // ============================================
-// // // // // // CUSTOM HOOKS
-// // // // // // ============================================
-
-// // // // // const useHighQualityTexture = (
-// // // // //   textureUrl: string | undefined,
-// // // // //   tileWidth: number,
-// // // // //   tileHeight: number
-// // // // // ) => {
-// // // // //   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-// // // // //   const textureRef = useRef<THREE.Texture | null>(null);
-
-// // // // //   useEffect(() => {
-// // // // //     if (!textureUrl) {
-// // // // //       if (textureRef.current) {
-// // // // //         textureRef.current.dispose();
-// // // // //         textureRef.current = null;
-// // // // //       }
-// // // // //       setTexture(null);
-// // // // //       return;
-// // // // //     }
-
-// // // // //     let isCancelled = false;
-// // // // //     const loader = new THREE.TextureLoader();
-    
-// // // // //     loader.load(
-// // // // //       textureUrl,
-// // // // //       (loadedTexture) => {
-// // // // //         if (isCancelled) {
-// // // // //           loadedTexture.dispose();
-// // // // //           return;
-// // // // //         }
-
-// // // // //         if (textureRef.current) {
-// // // // //           textureRef.current.dispose();
-// // // // //         }
-
-// // // // //         // ✅ EXACT COLOR PRESERVATION
-// // // // //         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // // //         loadedTexture.wrapS = THREE.RepeatWrapping;
-// // // // //         loadedTexture.wrapT = THREE.RepeatWrapping;
-// // // // //         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // // //         loadedTexture.magFilter = THREE.LinearFilter;
-// // // // //         loadedTexture.anisotropy = 16;
-// // // // //         loadedTexture.needsUpdate = true;
-        
-// // // // //         textureRef.current = loadedTexture;
-// // // // //         setTexture(loadedTexture);
-// // // // //       },
-// // // // //       undefined,
-// // // // //       (error) => {
-// // // // //         if (!isCancelled) {
-// // // // //           console.error('Texture loading error:', error);
-// // // // //           setTexture(null);
-// // // // //         }
-// // // // //       }
-// // // // //     );
-    
-// // // // //     return () => {
-// // // // //       isCancelled = true;
-// // // // //       if (textureRef.current) {
-// // // // //         textureRef.current.dispose();
-// // // // //         textureRef.current = null;
-// // // // //       }
-// // // // //     };
-// // // // //   }, [textureUrl, tileWidth, tileHeight]);
-
-// // // // //   return texture;
-// // // // // };
-
-// // // // // const useDeviceQuality = (): QualityLevel => {
-// // // // //   const [quality, setQuality] = useState<QualityLevel>('high');
-
-// // // // //   useEffect(() => {
-// // // // //     const canvas = document.createElement('canvas');
-// // // // //     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-// // // // //     if (!gl) {
-// // // // //       setQuality('low');
-// // // // //       return;
-// // // // //     }
-
-// // // // //     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-// // // // //     const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
-    
-// // // // //     const isMobile = /mobile|android|iphone|ipad/i.test(navigator.userAgent);
-// // // // //     const isHighEnd = /apple gpu|adreno 6|mali-g|nvidia|amd/i.test(renderer.toLowerCase());
-    
-// // // // //     if (isMobile) {
-// // // // //       setQuality(isHighEnd ? 'medium' : 'low');
-// // // // //     } else {
-// // // // //       setQuality(isHighEnd ? 'ultra' : 'high');
-// // // // //     }
-// // // // //   }, []);
-
-// // // // //   return quality;
-// // // // // };
-
-// // // // // // ============================================
-// // // // // // LIGHTING COMPONENTS - MINIMAL FOR ROOM ONLY
-// // // // // // ============================================
-
-// // // // // const MinimalLighting: React.FC = () => {
-// // // // //   return (
-// // // // //     <>
-// // // // //       {/* Basic ambient light for room structure visibility */}
-// // // // //       <ambientLight intensity={0.6} color="#ffffff" />
-      
-// // // // //       {/* Single directional light for depth perception */}
-// // // // //       <directionalLight
-// // // // //         position={[5, 5, 5]}
-// // // // //         intensity={0.5}
-// // // // //         color="#ffffff"
-// // // // //       />
-      
-// // // // //       {/* Subtle fill lights */}
-// // // // //       <pointLight position={[3, 2, 3]} intensity={0.3} color="#ffffff" />
-// // // // //       <pointLight position={[-3, 2, -3]} intensity={0.3} color="#ffffff" />
-// // // // //     </>
-// // // // //   );
-// // // // // };
-
-// // // // // // ============================================
-// // // // // // TILE COMPONENTS - NO LIGHTING EFFECTS
-// // // // // // ============================================
-
-// // // // // const TiledFloor: React.FC<{
-// // // // //   baseTexture: THREE.Texture | null;
-// // // // //   tileSize: { width: number; height: number };
-// // // // //   roomWidth: number;
-// // // // //   roomDepth: number;
-// // // // //   position: [number, number, number];
-// // // // //   quality: QualityLevel;
-// // // // // }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position }) => {
-  
-// // // // //   const material = useMemo(() => {
-// // // // //     if (!baseTexture) {
-// // // // //       return new THREE.MeshBasicMaterial({
-// // // // //         color: '#d4d4d4',
-// // // // //       });
-// // // // //     }
-
-// // // // //     const clonedTexture = baseTexture.clone();
-// // // // //     clonedTexture.needsUpdate = true;
-// // // // //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // // //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// // // // //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// // // // //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // // //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// // // // //     const tileSizeM = {
-// // // // //       width: tileSize.width / 100,
-// // // // //       height: tileSize.height / 100
-// // // // //     };
-    
-// // // // //     const repeatX = roomWidth / tileSizeM.width;
-// // // // //     const repeatY = roomDepth / tileSizeM.height;
-    
-// // // // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // // // //     // ✅ MeshBasicMaterial - NO LIGHTING EFFECTS - EXACT COLORS
-// // // // //     const mat = new THREE.MeshBasicMaterial({
-// // // // //       map: clonedTexture,
-// // // // //     });
-
-// // // // //     (mat as any)._customTexture = clonedTexture;
-// // // // //     return mat;
-// // // // //   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
-
-// // // // //   useEffect(() => {
-// // // // //     return () => {
-// // // // //       if ((material as any)._customTexture) {
-// // // // //         (material as any)._customTexture.dispose();
-// // // // //       }
-// // // // //       material.dispose();
-// // // // //     };
-// // // // //   }, [material]);
-
-// // // // //   return (
-// // // // //     <mesh 
-// // // // //       rotation={[-Math.PI / 2, 0, 0]} 
-// // // // //       position={position}
-// // // // //     >
-// // // // //       <planeGeometry args={[roomWidth, roomDepth]} />
-// // // // //       <primitive object={material} attach="material" />
-// // // // //     </mesh>
-// // // // //   );
-// // // // // };
-
-// // // // // const TiledWall: React.FC<{
-// // // // //   baseTexture: THREE.Texture | null;
-// // // // //   tileSize: { width: number; height: number };
-// // // // //   width: number;
-// // // // //   height: number;
-// // // // //   position: [number, number, number];
-// // // // //   rotation?: [number, number, number];
-// // // // //   quality: QualityLevel;
-// // // // // }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0] }) => {
-  
-// // // // //   const material = useMemo(() => {
-// // // // //     if (!baseTexture) {
-// // // // //       return new THREE.MeshBasicMaterial({
-// // // // //         color: '#f5f5f5',
-// // // // //       });
-// // // // //     }
-
-// // // // //     const clonedTexture = baseTexture.clone();
-// // // // //     clonedTexture.needsUpdate = true;
-// // // // //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // // //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// // // // //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// // // // //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // // //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// // // // //     const tileSizeM = {
-// // // // //       width: tileSize.width / 100,
-// // // // //       height: tileSize.height / 100
-// // // // //     };
-    
-// // // // //     const repeatX = width / tileSizeM.width;
-// // // // //     const repeatY = height / tileSizeM.height;
-    
-// // // // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // // // //     // ✅ MeshBasicMaterial - NO LIGHTING EFFECTS - EXACT COLORS
-// // // // //     const mat = new THREE.MeshBasicMaterial({
-// // // // //       map: clonedTexture,
-// // // // //     });
-
-// // // // //     (mat as any)._customTexture = clonedTexture;
-// // // // //     return mat;
-// // // // //   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
-
-// // // // //   useEffect(() => {
-// // // // //     return () => {
-// // // // //       if ((material as any)._customTexture) {
-// // // // //         (material as any)._customTexture.dispose();
-// // // // //       }
-// // // // //       material.dispose();
-// // // // //     };
-// // // // //   }, [material]);
-
-// // // // //   return (
-// // // // //     <mesh position={position} rotation={rotation}>
-// // // // //       <planeGeometry args={[width, height]} />
-// // // // //       <primitive object={material} attach="material" />
-// // // // //     </mesh>
-// // // // //   );
-// // // // // };
-
-// // // // // // ============================================
-// // // // // // CAMERA CONTROLLER
-// // // // // // ============================================
-
-// // // // // const CameraController: React.FC<{
-// // // // //   preset: CameraPreset | null;
-// // // // //   autoRotate: boolean;
-// // // // //   onTransitionComplete?: () => void;
-// // // // // }> = ({ preset, autoRotate, onTransitionComplete }) => {
-// // // // //   const { camera } = useThree();
-// // // // //   const controlsRef = useRef<any>();
-// // // // //   const [isTransitioning, setIsTransitioning] = useState(false);
-
-// // // // //   useEffect(() => {
-// // // // //     if (!preset || !controlsRef.current) return;
-
-// // // // //     setIsTransitioning(true);
-    
-// // // // //     const startPos = camera.position.clone();
-// // // // //     const startTarget = controlsRef.current.target.clone();
-// // // // //     const endPos = new THREE.Vector3(...preset.position);
-// // // // //     const endTarget = new THREE.Vector3(...preset.target);
-
-// // // // //     let progress = 0;
-// // // // //     const duration = 1500;
-// // // // //     const startTime = Date.now();
-
-// // // // //     const animate = () => {
-// // // // //       const elapsed = Date.now() - startTime;
-// // // // //       progress = Math.min(elapsed / duration, 1);
-      
-// // // // //       const eased = 1 - Math.pow(1 - progress, 3);
-
-// // // // //       camera.position.lerpVectors(startPos, endPos, eased);
-// // // // //       controlsRef.current.target.lerpVectors(startTarget, endTarget, eased);
-// // // // //       camera.fov = THREE.MathUtils.lerp(camera.fov, preset.fov, eased);
-// // // // //       camera.updateProjectionMatrix();
-
-// // // // //       if (progress < 1) {
-// // // // //         requestAnimationFrame(animate);
-// // // // //       } else {
-// // // // //         setIsTransitioning(false);
-// // // // //         onTransitionComplete?.();
-// // // // //       }
-// // // // //     };
-
-// // // // //     animate();
-// // // // //   }, [preset, camera, onTransitionComplete]);
-
-// // // // //   return (
-// // // // //     <OrbitControls
-// // // // //       ref={controlsRef}
-// // // // //       enablePan={!isTransitioning}
-// // // // //       enableZoom={!isTransitioning}
-// // // // //       enableRotate={!isTransitioning}
-// // // // //       autoRotate={autoRotate && !isTransitioning}
-// // // // //       autoRotateSpeed={0.5}
-// // // // //       maxPolarAngle={Math.PI * 0.95}
-// // // // //       minPolarAngle={Math.PI * 0.05}
-// // // // //       minDistance={0.8}
-// // // // //       maxDistance={10}
-// // // // //       minAzimuthAngle={-Math.PI / 2}
-// // // // //       maxAzimuthAngle={Math.PI / 2}
-// // // // //       target={[0, 1.4, 0]}
-// // // // //       enableDamping={true}
-// // // // //       dampingFactor={0.05}
-// // // // //       maxTargetRadius={4}
-// // // // //     />
-// // // // //   );
-// // // // // };
-
-// // // // // // ============================================
-// // // // // // CEILING
-// // // // // // ============================================
-
-// // // // // const Ceiling: React.FC<{
-// // // // //   width: number;
-// // // // //   depth: number;
-// // // // //   height: number;
-// // // // // }> = ({ width, depth, height }) => {
-// // // // //   return (
-// // // // //     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
-// // // // //       <planeGeometry args={[width, depth]} />
-// // // // //       <meshStandardMaterial 
-// // // // //         color="#fefefe" 
-// // // // //         roughness={0.9}
-// // // // //         metalness={0}
-// // // // //       />
-// // // // //     </mesh>
-// // // // //   );
-// // // // // };
-
-// // // // // // ============================================
-// // // // // // KITCHEN & BATHROOM SCENES
-// // // // // // ============================================
-
-// // // // // const KitchenScene: React.FC<{ 
-// // // // //   floorTexture: THREE.Texture | null;
-// // // // //   floorTileSize: { width: number; height: number };
-// // // // //   wallTexture: THREE.Texture | null;
-// // // // //   wallTileSize: { width: number; height: number };
-// // // // //   showWallTiles: boolean;
-// // // // //   quality: QualityLevel;
-// // // // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // // // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
-
-// // // // //   return (
-// // // // //     <group>
-// // // // //       <TiledFloor
-// // // // //         baseTexture={floorTexture}
-// // // // //         tileSize={floorTileSize}
-// // // // //         roomWidth={W}
-// // // // //         roomDepth={D}
-// // // // //         position={[0, 0, 0]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <Ceiling width={W} depth={D} height={H} />
-
-// // // // //       <TiledWall
-// // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // //         tileSize={wallTileSize}
-// // // // //         width={W}
-// // // // //         height={H}
-// // // // //         position={[0, H/2, -D/2]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
-// // // // //         <planeGeometry args={[W, H]} />
-// // // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // // //       </mesh>
-
-// // // // //       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
-// // // // //         <planeGeometry args={[D, H]} />
-// // // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // // //       </mesh>
-
-// // // // //       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
-// // // // //         <planeGeometry args={[D, H]} />
-// // // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // // //       </mesh>
-
-// // // // //       <group position={[0, 0, -2.35]}>
-// // // // //         <mesh position={[0, 0.45, 0]} castShadow>
-// // // // //           <boxGeometry args={[3.6, 0.9, 0.65]} />
-// // // // //           <meshStandardMaterial color="#6b4e3d" roughness={0.7} />
-// // // // //         </mesh>
-// // // // //         <mesh position={[0, 0.92, 0]} castShadow>
-// // // // //           <boxGeometry args={[3.7, 0.04, 0.7]} />
-// // // // //           <meshStandardMaterial color="#1a1a1a" roughness={0.2} metalness={0.6} />
-// // // // //         </mesh>
-// // // // //         <mesh position={[0, 1.85, -0.25]} castShadow>
-// // // // //           <boxGeometry args={[3.6, 0.85, 0.4]} />
-// // // // //           <meshStandardMaterial color="#7a5c47" roughness={0.7} />
-// // // // //         </mesh>
-// // // // //       </group>
-
-// // // // //       <mesh position={[1.75, 1.05, -2.25]} castShadow>
-// // // // //         <boxGeometry args={[0.75, 2.1, 0.75]} />
-// // // // //         <meshStandardMaterial color="#e5e5e5" roughness={0.15} metalness={0.7} />
-// // // // //       </mesh>
-// // // // //     </group>
-// // // // //   );
-// // // // // };
-
-// // // // // const BathroomScene: React.FC<{ 
-// // // // //   floorTexture: THREE.Texture | null;
-// // // // //   floorTileSize: { width: number; height: number };
-// // // // //   wallTexture: THREE.Texture | null;
-// // // // //   wallTileSize: { width: number; height: number };
-// // // // //   showWallTiles: boolean;
-// // // // //   quality: QualityLevel;
-// // // // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // // // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
-
-// // // // //   return (
-// // // // //     <group>
-// // // // //       <TiledFloor
-// // // // //         baseTexture={floorTexture}
-// // // // //         tileSize={floorTileSize}
-// // // // //         roomWidth={W}
-// // // // //         roomDepth={D}
-// // // // //         position={[0, 0, 0]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <Ceiling width={W} depth={D} height={H} />
-
-// // // // //       <TiledWall
-// // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // //         tileSize={wallTileSize}
-// // // // //         width={W}
-// // // // //         height={H}
-// // // // //         position={[0, H/2, -D/2]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <TiledWall
-// // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // //         tileSize={wallTileSize}
-// // // // //         width={W}
-// // // // //         height={H}
-// // // // //         position={[0, H/2, D/2]}
-// // // // //         rotation={[0, Math.PI, 0]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <TiledWall
-// // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // //         tileSize={wallTileSize}
-// // // // //         width={D}
-// // // // //         height={H}
-// // // // //         position={[-W/2, H/2, 0]}
-// // // // //         rotation={[0, Math.PI/2, 0]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <TiledWall
-// // // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // // //         tileSize={wallTileSize}
-// // // // //         width={D}
-// // // // //         height={H}
-// // // // //         position={[W/2, H/2, 0]}
-// // // // //         rotation={[0, -Math.PI/2, 0]}
-// // // // //         quality={quality}
-// // // // //       />
-
-// // // // //       <group position={[-0.85, 0, -1.3]}>
-// // // // //         <mesh position={[0, 0.32, 0]} castShadow>
-// // // // //           <cylinderGeometry args={[0.27, 0.22, 0.64, 20]} />
-// // // // //           <meshStandardMaterial color="#fafafa" roughness={0.05} metalness={0.1} />
-// // // // //         </mesh>
-// // // // //       </group>
-// // // // //     </group>
-// // // // //   );
-// // // // // };
-
-// // // // // const SceneLoader: React.FC = () => (
-// // // // //   <mesh>
-// // // // //     <boxGeometry args={[1, 1, 1]} />
-// // // // //     <meshStandardMaterial color="#3b82f6" />
-// // // // //   </mesh>
-// // // // // );
-
-// // // // // // ============================================
-// // // // // // MAIN COMPONENT
-// // // // // // ============================================
-
-// // // // // export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
-// // // // //   roomType,
-// // // // //   floorTile,
-// // // // //   wallTile,
-// // // // //   activeSurface,
-// // // // // }) => {
-// // // // //   const [isFullscreen, setIsFullscreen] = useState(false);
-// // // // //   const [showControls, setShowControls] = useState(true);
-// // // // //   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
-// // // // //   const [autoRotate, setAutoRotate] = useState(false);
-// // // // //   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('afternoon');
-// // // // //   const [quality, setQuality] = useState<QualityLevel>('high');
-// // // // //   const [showSettings, setShowSettings] = useState(false);
-
-// // // // //   const autoQuality = useDeviceQuality();
-
-// // // // //   useEffect(() => {
-// // // // //     setQuality(autoQuality);
-// // // // //   }, [autoQuality]);
-
-// // // // //   const floorTexture = useHighQualityTexture(
-// // // // //     floorTile?.texture,
-// // // // //     floorTile?.size.width || 60,
-// // // // //     floorTile?.size.height || 60
-// // // // //   );
-
-// // // // //   const wallTexture = useHighQualityTexture(
-// // // // //     wallTile?.texture,
-// // // // //     wallTile?.size.width || 30,
-// // // // //     wallTile?.size.height || 45
-// // // // //   );
-
-// // // // //   const handleReset = () => {
-// // // // //     setSelectedPreset(null);
-// // // // //     setAutoRotate(false);
-// // // // //     setTimeOfDay('afternoon');
-// // // // //   };
-
-// // // // //   const toggleFullscreen = () => {
-// // // // //     if (!document.fullscreenElement) {
-// // // // //       document.documentElement.requestFullscreen();
-// // // // //       setIsFullscreen(true);
-// // // // //     } else {
-// // // // //       document.exitFullscreen();
-// // // // //       setIsFullscreen(false);
-// // // // //     }
-// // // // //   };
-
-// // // // //   const renderScene = () => {
-// // // // //     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
-// // // // //     const showFloorTiles = activeSurface === 'floor' || activeSurface === 'both';
-
-// // // // //     const defaultFloorSize = { width: 60, height: 60 };
-// // // // //     const defaultWallSize = { width: 30, height: 45 };
-
-// // // // //     switch (roomType) {
-// // // // //       case 'drawing':
-// // // // //         return (
-// // // // //           <LuxuryDrawingRoomScene 
-// // // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // // //             quality={quality}
-// // // // //           />
-// // // // //         );
-// // // // //       case 'kitchen':
-// // // // //         return (
-// // // // //           <KitchenScene
-// // // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // // //             wallTexture={showWallTiles ? wallTexture : null}
-// // // // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // // // //             showWallTiles={showWallTiles}
-// // // // //             quality={quality}
-// // // // //           />
-// // // // //         );
-// // // // //       case 'bathroom':
-// // // // //         return (
-// // // // //           <BathroomScene
-// // // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // // //             wallTexture={showWallTiles ? wallTexture : null}
-// // // // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // // // //             showWallTiles={showWallTiles}
-// // // // //             quality={quality}
-// // // // //           />
-// // // // //         );
-// // // // //     }
-// // // // //   };
-
-// // // // //   const presets = CAMERA_PRESETS[roomType] || [];
-// // // // //   const hasFloorTile = !!floorTile?.texture;
-// // // // //   const hasWallTile = !!wallTile?.texture;
-
-// // // // //   return (
-// // // // //     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
-// // // // //       <Canvas
-// // // // //         gl={{ 
-// // // // //           antialias: true,
-// // // // //           toneMapping: THREE.NoToneMapping,
-// // // // //           outputColorSpace: THREE.SRGBColorSpace,
-// // // // //           powerPreference: 'high-performance',
-// // // // //         }}
-// // // // //         camera={{
-// // // // //           position: [0, 1.6, 3],
-// // // // //           fov: 50,
-// // // // //           near: 0.1,
-// // // // //           far: 1000
-// // // // //         }}
-// // // // //       >
-// // // // //         <Suspense fallback={<SceneLoader />}>
-// // // // //           <color attach="background" args={['#e8f4f8']} />
-
-// // // // //           <MinimalLighting />
-
-// // // // //           {renderScene()}
-
-// // // // //           <CameraController 
-// // // // //             preset={selectedPreset} 
-// // // // //             autoRotate={autoRotate}
-// // // // //             onTransitionComplete={() => setSelectedPreset(null)}
-// // // // //           />
-// // // // //         </Suspense>
-// // // // //       </Canvas>
-
-// // // // //       {showControls && (
-// // // // //         <div className="absolute top-4 left-4 bg-black/80 text-white px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10 max-w-xs">
-// // // // //           <p className="font-semibold mb-1 flex items-center gap-2 text-sm">
-// // // // //             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-// // // // //             {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-// // // // //           </p>
-// // // // //           <p className="text-xs opacity-75">
-// // // // //             Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span>
-// // // // //           </p>
-// // // // //           {floorTile && (
-// // // // //             <p className="text-xs opacity-75 mt-1">
-// // // // //               Floor: {floorTile.size.width}×{floorTile.size.height} cm
-// // // // //             </p>
-// // // // //           )}
-// // // // //           {wallTile && (
-// // // // //             <p className="text-xs opacity-75">
-// // // // //               Wall: {wallTile.size.width}×{wallTile.size.height} cm
-// // // // //             </p>
-// // // // //           )}
-// // // // //         </div>
-// // // // //       )}
-
-// // // // //       <div className="absolute top-4 right-4 bg-black/80 text-white px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // // //         <p className="text-xs font-medium mb-1">Applied:</p>
-// // // // //         <p className="text-sm font-bold capitalize">{activeSurface}</p>
-// // // // //         {hasFloorTile && <p className="text-xs opacity-75 mt-1 text-green-400">✓ Floor Tile</p>}
-// // // // //         {hasWallTile && <p className="text-xs opacity-75 text-blue-400">✓ Wall Tile</p>}
-// // // // //       </div>
-
-// // // // //       <div className="absolute top-24 right-4 bg-black/80 text-white p-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // // //         <p className="text-xs font-semibold mb-2 flex items-center gap-2">
-// // // // //           <Camera className="w-3 h-3" />
-// // // // //           Camera Views
-// // // // //         </p>
-// // // // //         <div className="flex flex-col gap-1.5">
-// // // // //           {presets.map((preset, index) => (
-// // // // //             <button
-// // // // //               key={index}
-// // // // //               onClick={() => setSelectedPreset(preset)}
-// // // // //               className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition-all hover:scale-105"
-// // // // //             >
-// // // // //               {preset.name}
-// // // // //             </button>
-// // // // //           ))}
-// // // // //         </div>
-// // // // //       </div>
-
-// // // // //       {showSettings && (
-// // // // //         <div className="absolute bottom-24 right-4 bg-black/90 text-white p-4 rounded-xl backdrop-blur-md shadow-2xl border border-white/10 min-w-[200px]">
-// // // // //           <p className="text-xs font-semibold mb-3 flex items-center gap-2">
-// // // // //             <Settings className="w-3 h-3" />
-// // // // //             Settings
-// // // // //           </p>
-          
-// // // // //           <div className="space-y-3">
-// // // // //             <div>
-// // // // //               <p className="text-xs mb-1.5 opacity-75">Quality</p>
-// // // // //               <div className="flex flex-col gap-1">
-// // // // //                 {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-// // // // //                   <button
-// // // // //                     key={q}
-// // // // //                     onClick={() => setQuality(q)}
-// // // // //                     className={`px-2 py-1 rounded text-xs capitalize transition-all ${
-// // // // //                       quality === q 
-// // // // //                         ? 'bg-blue-600' 
-// // // // //                         : 'bg-white/10 hover:bg-white/20'
-// // // // //                     }`}
-// // // // //                   >
-// // // // //                     {q}
-// // // // //                   </button>
-// // // // //                 ))}
-// // // // //               </div>
-// // // // //             </div>
-
-// // // // //             <div>
-             
-// // // // //             </div>
-// // // // //           </div>
-// // // // //         </div>
-// // // // //       )}
-
-// // // // //       <div className="absolute bottom-4 right-4 flex gap-2">
-// // // // //         <button
-// // // // //           onClick={() => setShowControls(!showControls)}
-// // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // //           title="Info"
-// // // // //         >
-// // // // //           <Info className="w-5 h-5" />
-// // // // //         </button>
-// // // // //         <button
-// // // // //           onClick={() => setShowSettings(!showSettings)}
-// // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // //           title="Settings"
-// // // // //         >
-// // // // //           <Settings className="w-5 h-5" />
-// // // // //         </button>
- 
-// // // // //         <button
-// // // // //           onClick={handleReset}
-// // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // //           title="Reset"
-// // // // //         >
-// // // // //           <RotateCcw className="w-5 h-5" />
-// // // // //         </button>
-// // // // //         <button
-// // // // //           onClick={toggleFullscreen}
-// // // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // // //           title="Fullscreen"
-// // // // //         >
-// // // // //           {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-// // // // //         </button>
-// // // // //       </div>
-
-// // // // //       {(!hasFloorTile && !hasWallTile) && (
-// // // // //         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md pointer-events-none">
-// // // // //           <div className="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-md">
-// // // // //             <Package className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-// // // // //             <p className="text-gray-800 font-semibold text-lg mb-2">No Tiles Applied</p>
-// // // // //             <p className="text-gray-500 text-sm">Upload floor and/or wall tiles to visualize</p>
-// // // // //           </div>
-// // // // //         </div>
-// // // // //       )}  `1`
-// // // // //     </div>
-// // // // //   );
-// // // // // };
-
-// // // // // export default Enhanced3DViewer;   
-
-// // // // // src/components/Enhanced3DViewer.tsx
-// // // // import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
-// // // // import { Canvas, useThree } from '@react-three/fiber';
-// // // // import { OrbitControls } from '@react-three/drei';
-// // // // import * as THREE from 'three';
-// // // // import { 
-// // // //   Maximize2, 
-// // // //   Minimize2, 
-// // // //   RotateCcw, 
-// // // //   Info, 
-// // // //   Camera, 
-// // // //   Settings,
-// // // //   Package
-// // // // } from 'lucide-react';
-
-// // // // // Import luxury scene
-// // // // import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
-
-// // // // // ============================================
-// // // // // TYPES & INTERFACES
-// // // // // ============================================
-
-// // // // interface Enhanced3DViewerProps {
-// // // //   roomType: 'drawing' | 'kitchen' | 'bathroom';
-// // // //   floorTile?: {
-// // // //     texture?: string;
-// // // //     size: { width: number; height: number };
-// // // //   };
-// // // //   wallTile?: {
-// // // //     texture?: string;
-// // // //     size: { width: number; height: number };
-// // // //   };
-// // // //   activeSurface: 'floor' | 'wall' | 'both';
-// // // //   onSurfaceChange?: (surface: 'floor' | 'wall' | 'both') => void;
-// // // // }
-
-// // // // interface CameraPreset {
-// // // //   position: [number, number, number];
-// // // //   target: [number, number, number];
-// // // //   name: string;
-// // // //   fov: number;
-// // // // }
-
-// // // // type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
-
-// // // // // ============================================
-// // // // // CONSTANTS
-// // // // // ============================================
-
-// // // // const ROOM_CONFIGS = {
-// // // //   drawing: { width: 5, depth: 6, height: 3 },
-// // // //   kitchen: { width: 4, depth: 5, height: 2.8 },
-// // // //   bathroom: { width: 3, depth: 3.5, height: 2.8 }
-// // // // } as const;
-
-// // // // const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
-// // // //   drawing: [
-// // // //     { name: 'Luxury View', position: [5, 2, 6], target: [0, 1.2, 0], fov: 45 },
-// // // //     { name: 'TV Wall Focus', position: [2, 1.5, 4], target: [0, 1.5, -4.5], fov: 50 },
-// // // //     { name: 'Sofa Area', position: [-3, 1.8, 4], target: [0, 1, 2], fov: 48 },
-// // // //     { name: 'Full Room', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-// // // //   ],
-// // // //   kitchen: [
-// // // //     { name: 'Overview', position: [3, 2.2, 4], target: [0, 1.2, 0], fov: 50 },
-// // // //     { name: 'Counter View', position: [0, 1.4, 2.5], target: [0, 1, -1.5], fov: 45 },
-// // // //     { name: 'Floor Detail', position: [1.5, 1.8, 2], target: [0, 0, 0], fov: 40 },
-// // // //     { name: 'Backsplash', position: [0, 1.6, 1.5], target: [0, 1.4, -2], fov: 50 },
-// // // //   ],
-// // // //   bathroom: [
-// // // //     { name: 'Overview', position: [2, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-// // // //     { name: 'Mirror View', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-// // // //     { name: 'Floor Tiles', position: [1, 1.6, 1.5], target: [0, 0, 0], fov: 45 },
-// // // //     { name: 'Wall Detail', position: [1.2, 1.4, 0.8], target: [-1, 1.4, 0], fov: 40 },
-// // // //   ],
-// // // // };
-
-// // // // // ============================================
-// // // // // CUSTOM HOOKS
-// // // // // ============================================
-
-// // // // const useHighQualityTexture = (
-// // // //   textureUrl: string | undefined,
-// // // //   tileWidth: number,
-// // // //   tileHeight: number
-// // // // ) => {
-// // // //   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-// // // //   const textureRef = useRef<THREE.Texture | null>(null);
-
-// // // //   useEffect(() => {
-// // // //     if (!textureUrl) {
-// // // //       if (textureRef.current) {
-// // // //         textureRef.current.dispose();
-// // // //         textureRef.current = null;
-// // // //       }
-// // // //       setTexture(null);
-// // // //       return;
-// // // //     }
-
-// // // //     let isCancelled = false;
-// // // //     const loader = new THREE.TextureLoader();
-    
-// // // //     loader.load(
-// // // //       textureUrl,
-// // // //       (loadedTexture) => {
-// // // //         if (isCancelled) {
-// // // //           loadedTexture.dispose();
-// // // //           return;
-// // // //         }
-
-// // // //         if (textureRef.current) {
-// // // //           textureRef.current.dispose();
-// // // //         }
-
-// // // //         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // //         loadedTexture.wrapS = THREE.RepeatWrapping;
-// // // //         loadedTexture.wrapT = THREE.RepeatWrapping;
-// // // //         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // //         loadedTexture.magFilter = THREE.LinearFilter;
-// // // //         loadedTexture.anisotropy = 16;
-// // // //         loadedTexture.needsUpdate = true;
-        
-// // // //         textureRef.current = loadedTexture;
-// // // //         setTexture(loadedTexture);
-// // // //       },
-// // // //       undefined,
-// // // //       (error) => {
-// // // //         if (!isCancelled) {
-// // // //           console.error('Texture loading error:', error);
-// // // //           setTexture(null);
-// // // //         }
-// // // //       }
-// // // //     );
-    
-// // // //     return () => {
-// // // //       isCancelled = true;
-// // // //       if (textureRef.current) {
-// // // //         textureRef.current.dispose();
-// // // //         textureRef.current = null;
-// // // //       }
-// // // //     };
-// // // //   }, [textureUrl, tileWidth, tileHeight]);
-
-// // // //   return texture;
-// // // // };
-
-// // // // const useDeviceQuality = (): QualityLevel => {
-// // // //   const [quality, setQuality] = useState<QualityLevel>('high');
-
-// // // //   useEffect(() => {
-// // // //     const canvas = document.createElement('canvas');
-// // // //     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-// // // //     if (!gl) {
-// // // //       setQuality('low');
-// // // //       return;
-// // // //     }
-
-// // // //     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-// // // //     const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
-    
-// // // //     const isMobile = /mobile|android|iphone|ipad/i.test(navigator.userAgent);
-// // // //     const isHighEnd = /apple gpu|adreno 6|mali-g|nvidia|amd/i.test(renderer.toLowerCase());
-    
-// // // //     if (isMobile) {
-// // // //       setQuality(isHighEnd ? 'medium' : 'low');
-// // // //     } else {
-// // // //       setQuality(isHighEnd ? 'ultra' : 'high');
-// // // //     }
-// // // //   }, []);
-
-// // // //   return quality;
-// // // // };
-
-// // // // // ============================================
-// // // // // LIGHTING COMPONENTS
-// // // // // ============================================
-
-// // // // const MinimalLighting: React.FC = () => {
-// // // //   return (
-// // // //     <>
-// // // //       <ambientLight intensity={0.6} color="#ffffff" />
-// // // //       <directionalLight
-// // // //         position={[5, 5, 5]}
-// // // //         intensity={0.5}
-// // // //         color="#ffffff"
-// // // //       />
-// // // //       <pointLight position={[3, 2, 3]} intensity={0.3} color="#ffffff" />
-// // // //       <pointLight position={[-3, 2, -3]} intensity={0.3} color="#ffffff" />
-// // // //     </>
-// // // //   );
-// // // // };
-
-// // // // // ============================================
-// // // // // TILE COMPONENTS
-// // // // // ============================================
-
-// // // // const TiledFloor: React.FC<{
-// // // //   baseTexture: THREE.Texture | null;
-// // // //   tileSize: { width: number; height: number };
-// // // //   roomWidth: number;
-// // // //   roomDepth: number;
-// // // //   position: [number, number, number];
-// // // //   quality: QualityLevel;
-// // // // }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position }) => {
-  
-// // // //   const material = useMemo(() => {
-// // // //     if (!baseTexture) {
-// // // //       return new THREE.MeshBasicMaterial({
-// // // //         color: '#d4d4d4',
-// // // //       });
-// // // //     }
-
-// // // //     const clonedTexture = baseTexture.clone();
-// // // //     clonedTexture.needsUpdate = true;
-// // // //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// // // //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// // // //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// // // //     const tileSizeM = {
-// // // //       width: tileSize.width / 100,
-// // // //       height: tileSize.height / 100
-// // // //     };
-    
-// // // //     const repeatX = roomWidth / tileSizeM.width;
-// // // //     const repeatY = roomDepth / tileSizeM.height;
-    
-// // // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // // //     const mat = new THREE.MeshBasicMaterial({
-// // // //       map: clonedTexture,
-// // // //     });
-
-// // // //     (mat as any)._customTexture = clonedTexture;
-// // // //     return mat;
-// // // //   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
-
-// // // //   useEffect(() => {
-// // // //     return () => {
-// // // //       if ((material as any)._customTexture) {
-// // // //         (material as any)._customTexture.dispose();
-// // // //       }
-// // // //       material.dispose();
-// // // //     };
-// // // //   }, [material]);
-
-// // // //   return (
-// // // //     <mesh 
-// // // //       rotation={[-Math.PI / 2, 0, 0]} 
-// // // //       position={position}
-// // // //     >
-// // // //       <planeGeometry args={[roomWidth, roomDepth]} />
-// // // //       <primitive object={material} attach="material" />
-// // // //     </mesh>
-// // // //   );
-// // // // };
-
-// // // // const TiledWall: React.FC<{
-// // // //   baseTexture: THREE.Texture | null;
-// // // //   tileSize: { width: number; height: number };
-// // // //   width: number;
-// // // //   height: number;
-// // // //   position: [number, number, number];
-// // // //   rotation?: [number, number, number];
-// // // //   quality: QualityLevel;
-// // // // }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0] }) => {
-  
-// // // //   const material = useMemo(() => {
-// // // //     if (!baseTexture) {
-// // // //       return new THREE.MeshBasicMaterial({
-// // // //         color: '#f5f5f5',
-// // // //       });
-// // // //     }
-
-// // // //     const clonedTexture = baseTexture.clone();
-// // // //     clonedTexture.needsUpdate = true;
-// // // //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// // // //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// // // //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// // // //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // // //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// // // //     const tileSizeM = {
-// // // //       width: tileSize.width / 100,
-// // // //       height: tileSize.height / 100
-// // // //     };
-    
-// // // //     const repeatX = width / tileSizeM.width;
-// // // //     const repeatY = height / tileSizeM.height;
-    
-// // // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // // //     const mat = new THREE.MeshBasicMaterial({
-// // // //       map: clonedTexture,
-// // // //     });
-
-// // // //     (mat as any)._customTexture = clonedTexture;
-// // // //     return mat;
-// // // //   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
-
-// // // //   useEffect(() => {
-// // // //     return () => {
-// // // //       if ((material as any)._customTexture) {
-// // // //         (material as any)._customTexture.dispose();
-// // // //       }
-// // // //       material.dispose();
-// // // //     };
-// // // //   }, [material]);
-
-// // // //   return (
-// // // //     <mesh position={position} rotation={rotation}>
-// // // //       <planeGeometry args={[width, height]} />
-// // // //       <primitive object={material} attach="material" />
-// // // //     </mesh>
-// // // //   );
-// // // // };
-
-// // // // // ============================================
-// // // // // CAMERA CONTROLLER - MANUAL ONLY
-// // // // // ============================================
-
-// // // // const CameraController: React.FC<{
-// // // //   preset: CameraPreset | null;
-// // // //   onTransitionComplete?: () => void;
-// // // // }> = ({ preset, onTransitionComplete }) => {
-// // // //   const { camera } = useThree();
-// // // //   const controlsRef = useRef<any>();
-
-// // // //   useEffect(() => {
-// // // //     if (!preset || !controlsRef.current) return;
-
-// // // //     // ✅ INSTANT JUMP - No animation
-// // // //     camera.position.set(...preset.position);
-// // // //     controlsRef.current.target.set(...preset.target);
-// // // //     camera.fov = preset.fov;
-// // // //     camera.updateProjectionMatrix();
-    
-// // // //     onTransitionComplete?.();
-// // // //   }, [preset, camera, onTransitionComplete]);
-
-// // // //   return (
-// // // //     <OrbitControls
-// // // //       ref={controlsRef}
-// // // //       enablePan={true}
-// // // //       enableZoom={true}
-// // // //       enableRotate={true}
-// // // //       autoRotate={false}
-// // // //       maxPolarAngle={Math.PI * 0.95}
-// // // //       minPolarAngle={Math.PI * 0.05}
-// // // //       minDistance={0.8}
-// // // //       maxDistance={10}
-// // // //       minAzimuthAngle={-Math.PI / 2}
-// // // //       maxAzimuthAngle={Math.PI / 2}
-// // // //       target={[0, 1.4, 0]}
-// // // //       enableDamping={true}
-// // // //       dampingFactor={0.02}
-// // // //       maxTargetRadius={4}
-// // // //     />
-// // // //   );
-// // // // };
-
-// // // // // ============================================
-// // // // // CEILING
-// // // // // ============================================
-
-// // // // const Ceiling: React.FC<{
-// // // //   width: number;
-// // // //   depth: number;
-// // // //   height: number;
-// // // // }> = ({ width, depth, height }) => {
-// // // //   return (
-// // // //     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
-// // // //       <planeGeometry args={[width, depth]} />
-// // // //       <meshStandardMaterial 
-// // // //         color="#fefefe" 
-// // // //         roughness={0.9}
-// // // //         metalness={0}
-// // // //       />
-// // // //     </mesh>
-// // // //   );
-// // // // };
-
-// // // // // ============================================
-// // // // // KITCHEN & BATHROOM SCENES
-// // // // // ============================================
-
-// // // // const KitchenScene: React.FC<{ 
-// // // //   floorTexture: THREE.Texture | null;
-// // // //   floorTileSize: { width: number; height: number };
-// // // //   wallTexture: THREE.Texture | null;
-// // // //   wallTileSize: { width: number; height: number };
-// // // //   showWallTiles: boolean;
-// // // //   quality: QualityLevel;
-// // // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
-
-// // // //   return (
-// // // //     <group>
-// // // //       <TiledFloor
-// // // //         baseTexture={floorTexture}
-// // // //         tileSize={floorTileSize}
-// // // //         roomWidth={W}
-// // // //         roomDepth={D}
-// // // //         position={[0, 0, 0]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <Ceiling width={W} depth={D} height={H} />
-
-// // // //       <TiledWall
-// // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // //         tileSize={wallTileSize}
-// // // //         width={W}
-// // // //         height={H}
-// // // //         position={[0, H/2, -D/2]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
-// // // //         <planeGeometry args={[W, H]} />
-// // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // //       </mesh>
-
-// // // //       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
-// // // //         <planeGeometry args={[D, H]} />
-// // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // //       </mesh>
-
-// // // //       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
-// // // //         <planeGeometry args={[D, H]} />
-// // // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // // //       </mesh>
-
-// // // //       <group position={[0, 0, -2.35]}>
-// // // //         <mesh position={[0, 0.45, 0]} castShadow>
-// // // //           <boxGeometry args={[3.6, 0.9, 0.65]} />
-// // // //           <meshStandardMaterial color="#6b4e3d" roughness={0.7} />
-// // // //         </mesh>
-// // // //         <mesh position={[0, 0.92, 0]} castShadow>
-// // // //           <boxGeometry args={[3.7, 0.04, 0.7]} />
-// // // //           <meshStandardMaterial color="#1a1a1a" roughness={0.2} metalness={0.6} />
-// // // //         </mesh>
-// // // //         <mesh position={[0, 1.85, -0.25]} castShadow>
-// // // //           <boxGeometry args={[3.6, 0.85, 0.4]} />
-// // // //           <meshStandardMaterial color="#7a5c47" roughness={0.7} />
-// // // //         </mesh>
-// // // //       </group>
-
-// // // //       <mesh position={[1.75, 1.05, -2.25]} castShadow>
-// // // //         <boxGeometry args={[0.75, 2.1, 0.75]} />
-// // // //         <meshStandardMaterial color="#e5e5e5" roughness={0.15} metalness={0.7} />
-// // // //       </mesh>
-// // // //     </group>
-// // // //   );
-// // // // };
-
-// // // // const BathroomScene: React.FC<{ 
-// // // //   floorTexture: THREE.Texture | null;
-// // // //   floorTileSize: { width: number; height: number };
-// // // //   wallTexture: THREE.Texture | null;
-// // // //   wallTileSize: { width: number; height: number };
-// // // //   showWallTiles: boolean;
-// // // //   quality: QualityLevel;
-// // // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
-
-// // // //   return (
-// // // //     <group>
-// // // //       <TiledFloor
-// // // //         baseTexture={floorTexture}
-// // // //         tileSize={floorTileSize}
-// // // //         roomWidth={W}
-// // // //         roomDepth={D}
-// // // //         position={[0, 0, 0]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <Ceiling width={W} depth={D} height={H} />
-
-// // // //       <TiledWall
-// // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // //         tileSize={wallTileSize}
-// // // //         width={W}
-// // // //         height={H}
-// // // //         position={[0, H/2, -D/2]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <TiledWall
-// // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // //         tileSize={wallTileSize}
-// // // //         width={W}
-// // // //         height={H}
-// // // //         position={[0, H/2, D/2]}
-// // // //         rotation={[0, Math.PI, 0]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <TiledWall
-// // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // //         tileSize={wallTileSize}
-// // // //         width={D}
-// // // //         height={H}
-// // // //         position={[-W/2, H/2, 0]}
-// // // //         rotation={[0, Math.PI/2, 0]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <TiledWall
-// // // //         baseTexture={showWallTiles ? wallTexture : null}
-// // // //         tileSize={wallTileSize}
-// // // //         width={D}
-// // // //         height={H}
-// // // //         position={[W/2, H/2, 0]}
-// // // //         rotation={[0, -Math.PI/2, 0]}
-// // // //         quality={quality}
-// // // //       />
-
-// // // //       <group position={[-0.85, 0, -1.3]}>
-// // // //         <mesh position={[0, 0.32, 0]} castShadow>
-// // // //           <cylinderGeometry args={[0.27, 0.22, 0.64, 20]} />
-// // // //           <meshStandardMaterial color="#fafafa" roughness={0.05} metalness={0.1} />
-// // // //         </mesh>
-// // // //       </group>
-// // // //     </group>
-// // // //   );
-// // // // };
-
-// // // // const SceneLoader: React.FC = () => (
-// // // //   <mesh>
-// // // //     <boxGeometry args={[1, 1, 1]} />
-// // // //     <meshStandardMaterial color="#3b82f6" />
-// // // //   </mesh>
-// // // // );
-
-// // // // // ============================================
-// // // // // MAIN COMPONENT
-// // // // // ============================================
-
-// // // // export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
-// // // //   roomType,
-// // // //   floorTile,
-// // // //   wallTile,
-// // // //   activeSurface,
-// // // // }) => {
-// // // //   const [isFullscreen, setIsFullscreen] = useState(false);
-// // // //   const [showControls, setShowControls] = useState(true);
-// // // //   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
-// // // //   const [quality, setQuality] = useState<QualityLevel>('high');
-// // // //   const [showSettings, setShowSettings] = useState(false);
-
-// // // //   const autoQuality = useDeviceQuality();
-
-// // // //   useEffect(() => {
-// // // //     setQuality(autoQuality);
-// // // //   }, [autoQuality]);
-
-// // // //   const floorTexture = useHighQualityTexture(
-// // // //     floorTile?.texture,
-// // // //     floorTile?.size.width || 60,
-// // // //     floorTile?.size.height || 60
-// // // //   );
-
-// // // //   const wallTexture = useHighQualityTexture(
-// // // //     wallTile?.texture,
-// // // //     wallTile?.size.width || 30,
-// // // //     wallTile?.size.height || 45
-// // // //   );
-
-// // // //   const handleReset = useCallback(() => {
-// // // //     setSelectedPreset(null);
-// // // //   }, []);
-
-// // // //   const handleTransitionComplete = useCallback(() => {
-// // // //     setSelectedPreset(null);
-// // // //   }, []);
-
-// // // //   const toggleFullscreen = () => {
-// // // //     if (!document.fullscreenElement) {
-// // // //       document.documentElement.requestFullscreen();
-// // // //       setIsFullscreen(true);
-// // // //     } else {
-// // // //       document.exitFullscreen();
-// // // //       setIsFullscreen(false);
-// // // //     }
-// // // //   };
-
-// // // //   const renderScene = () => {
-// // // //     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
-// // // //     const showFloorTiles = activeSurface === 'floor' || activeSurface === 'both';
-
-// // // //     const defaultFloorSize = { width: 60, height: 60 };
-// // // //     const defaultWallSize = { width: 30, height: 45 };
-
-// // // //     switch (roomType) {
-// // // //       case 'drawing':
-// // // //         return (
-// // // //           <LuxuryDrawingRoomScene 
-// // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // //             quality={quality}
-// // // //           />
-// // // //         );
-// // // //       case 'kitchen':
-// // // //         return (
-// // // //           <KitchenScene
-// // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // //             wallTexture={showWallTiles ? wallTexture : null}
-// // // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // // //             showWallTiles={showWallTiles}
-// // // //             quality={quality}
-// // // //           />
-// // // //         );
-// // // //       case 'bathroom':
-// // // //         return (
-// // // //           <BathroomScene
-// // // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // // //             wallTexture={showWallTiles ? wallTexture : null}
-// // // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // // //             showWallTiles={showWallTiles}
-// // // //             quality={quality}
-// // // //           />
-// // // //         );
-// // // //     }
-// // // //   };
-
-// // // //   const presets = CAMERA_PRESETS[roomType] || [];
-// // // //   const hasFloorTile = !!floorTile?.texture;
-// // // //   const hasWallTile = !!wallTile?.texture;
-
-// // // //   return (
-// // // //     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
-// // // //       <Canvas
-// // // //         gl={{ 
-// // // //           antialias: true,
-// // // //           toneMapping: THREE.NoToneMapping,
-// // // //           outputColorSpace: THREE.SRGBColorSpace,
-// // // //           powerPreference: 'high-performance',
-// // // //         }}
-// // // //         camera={{
-// // // //           position: [0, 1.6, 3],
-// // // //           fov: 50,
-// // // //           near: 0.1,
-// // // //           far: 1000
-// // // //         }}
-// // // //       >
-// // // //         <Suspense fallback={<SceneLoader />}>
-// // // //           <color attach="background" args={['#e8f4f8']} />
-
-// // // //           <MinimalLighting />
-
-// // // //           {renderScene()}
-
-// // // //           <CameraController 
-// // // //             preset={selectedPreset} 
-// // // //             onTransitionComplete={handleTransitionComplete}
-// // // //           />
-// // // //         </Suspense>
-// // // //       </Canvas>
-
-// // // //       {showControls && (
-// // // //         <div className="absolute top-4 left-4 bg-black/80 text-white px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10 max-w-xs">
-// // // //           <p className="font-semibold mb-1 flex items-center gap-2 text-sm">
-// // // //             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-// // // //             {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-// // // //           </p>
-// // // //           <p className="text-xs opacity-75">
-// // // //             Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span>
-// // // //           </p>
-// // // //           {floorTile && (
-// // // //             <p className="text-xs opacity-75 mt-1">
-// // // //               Floor: {floorTile.size.width}×{floorTile.size.height} cm
-// // // //             </p>
-// // // //           )}
-// // // //           {wallTile && (
-// // // //             <p className="text-xs opacity-75">
-// // // //               Wall: {wallTile.size.width}×{wallTile.size.height} cm
-// // // //             </p>
-// // // //           )}
-// // // //         </div>
-// // // //       )}
-
-// // // //       <div className="absolute top-4 right-4 bg-black/80 text-white px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // //         <p className="text-xs font-medium mb-1">Applied:</p>
-// // // //         <p className="text-sm font-bold capitalize">{activeSurface}</p>
-// // // //         {hasFloorTile && <p className="text-xs opacity-75 mt-1 text-green-400">✓ Floor Tile</p>}
-// // // //         {hasWallTile && <p className="text-xs opacity-75 text-blue-400">✓ Wall Tile</p>}
-// // // //       </div>
-
-// // // //       <div className="absolute top-24 right-4 bg-black/80 text-white p-3 rounded-xl backdrop-blur-md shadow-2xl border border-white/10">
-// // // //         <p className="text-xs font-semibold mb-2 flex items-center gap-2">
-// // // //           <Camera className="w-3 h-3" />
-// // // //           Camera Views
-// // // //         </p>
-// // // //         <div className="flex flex-col gap-1.5">
-// // // //           {presets.map((preset, index) => (
-// // // //             <button
-// // // //               key={index}
-// // // //               onClick={() => setSelectedPreset(preset)}
-// // // //               className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition-all hover:scale-105"
-// // // //             >
-// // // //               {preset.name}
-// // // //             </button>
-// // // //           ))}
-// // // //         </div>
-// // // //       </div>
-
-// // // //       {showSettings && (
-// // // //         <div className="absolute bottom-24 right-4 bg-black/90 text-white p-4 rounded-xl backdrop-blur-md shadow-2xl border border-white/10 min-w-[200px]">
-// // // //           <p className="text-xs font-semibold mb-3 flex items-center gap-2">
-// // // //             <Settings className="w-3 h-3" />
-// // // //             Settings
-// // // //           </p>
-          
-// // // //           <div className="space-y-3">
-// // // //             <div>
-// // // //               <p className="text-xs mb-1.5 opacity-75">Quality</p>
-// // // //               <div className="flex flex-col gap-1">
-// // // //                 {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-// // // //                   <button
-// // // //                     key={q}
-// // // //                     onClick={() => setQuality(q)}
-// // // //                     className={`px-2 py-1 rounded text-xs capitalize transition-all ${
-// // // //                       quality === q 
-// // // //                         ? 'bg-blue-600' 
-// // // //                         : 'bg-white/10 hover:bg-white/20'
-// // // //                     }`}
-// // // //                   >
-// // // //                     {q}
-// // // //                   </button>
-// // // //                 ))}
-// // // //               </div>
-// // // //             </div>
-// // // //           </div>
-// // // //         </div>
-// // // //       )}
-
-// // // //       <div className="absolute bottom-4 right-4 flex gap-2">
-// // // //         <button
-// // // //           onClick={() => setShowControls(!showControls)}
-// // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // //           title="Info"
-// // // //         >
-// // // //           <Info className="w-5 h-5" />
-// // // //         </button>
-// // // //         <button
-// // // //           onClick={() => setShowSettings(!showSettings)}
-// // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // //           title="Settings"
-// // // //         >
-// // // //           <Settings className="w-5 h-5" />
-// // // //         </button>
-// // // //         <button
-// // // //           onClick={handleReset}
-// // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // //           title="Reset"
-// // // //         >
-// // // //           <RotateCcw className="w-5 h-5" />
-// // // //         </button>
-// // // //         <button
-// // // //           onClick={toggleFullscreen}
-// // // //           className="bg-black/80 text-white p-3 rounded-xl hover:bg-black/95 transition-all backdrop-blur-md shadow-xl border border-white/10 hover:scale-105"
-// // // //           title="Fullscreen"
-// // // //         >
-// // // //           {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-// // // //         </button>
-// // // //       </div>
-
-// // // //       {(!hasFloorTile && !hasWallTile) && (
-// // // //         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md pointer-events-none">
-// // // //           <div className="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-md">
-// // // //             <Package className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-// // // //             <p className="text-gray-800 font-semibold text-lg mb-2">No Tiles Applied</p>
-// // // //             <p className="text-gray-500 text-sm">Upload floor and/or wall tiles to visualize</p>
-// // // //           </div>
-// // // //         </div>
-// // // //       )}
-// // // //     </div>
-// // // //   );
-// // // // };
-
-// // // // export default Enhanced3DViewer; 
-
-// // // // src/components/Enhanced3DViewer.tsx - COMPLETE PRODUCTION READY
-// // // import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
-// // // import { Canvas, useThree } from '@react-three/fiber';
-// // // import { OrbitControls } from '@react-three/drei';
-// // // import * as THREE from 'three';
-// // // import { 
-// // //   Maximize2, 
-// // //   Minimize2, 
-// // //   RotateCcw, 
-// // //   Info, 
-// // //   Camera, 
-// // //   Settings,
-// // //   Package
-// // // } from 'lucide-react';
-
-// // // import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
-
-// // // interface Enhanced3DViewerProps {
-// // //   roomType: 'drawing' | 'kitchen' | 'bathroom';
-// // //   floorTile?: {
-// // //     texture?: string;
-// // //     size: { width: number; height: number };
-// // //   };
-// // //   wallTile?: {
-// // //     texture?: string;
-// // //     size: { width: number; height: number };
-// // //   };
-// // //   activeSurface: 'floor' | 'wall' | 'both';
-// // //   onSurfaceChange?: (surface: 'floor' | 'wall' | 'both') => void;
-// // // }
-
-// // // interface CameraPreset {
-// // //   position: [number, number, number];
-// // //   target: [number, number, number];
-// // //   name: string;
-// // //   fov: number;
-// // // }
-
-// // // type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
-
-// // // const ROOM_CONFIGS = {
-// // //   drawing: { width: 5, depth: 6, height: 3 },
-// // //   kitchen: { width: 4, depth: 5, height: 2.8 },
-// // //   bathroom: { width: 3, depth: 3.5, height: 2.8 }
-// // // } as const;
-
-// // // const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
-// // //   drawing: [
-// // //     { name: 'Luxury View', position: [5, 2, 6], target: [0, 1.2, 0], fov: 45 },
-// // //     { name: 'TV Wall Focus', position: [2, 1.5, 4], target: [0, 1.5, -4.5], fov: 50 },
-// // //     { name: 'Sofa Area', position: [-3, 1.8, 4], target: [0, 1, 2], fov: 48 },
-// // //     { name: 'Full Room', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-// // //   ],
-// // //   kitchen: [
-// // //     { name: 'Overview', position: [3, 2.2, 4], target: [0, 1.2, 0], fov: 50 },
-// // //     { name: 'Counter View', position: [0, 1.4, 2.5], target: [0, 1, -1.5], fov: 45 },
-// // //     { name: 'Floor Detail', position: [1.5, 1.8, 2], target: [0, 0, 0], fov: 40 },
-// // //     { name: 'Backsplash', position: [0, 1.6, 1.5], target: [0, 1.4, -2], fov: 50 },
-// // //   ],
-// // //   bathroom: [
-// // //     { name: 'Overview', position: [2, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-// // //     { name: 'Mirror View', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-// // //     { name: 'Floor Tiles', position: [1, 1.6, 1.5], target: [0, 0, 0], fov: 45 },
-// // //     { name: 'Wall Detail', position: [1.2, 1.4, 0.8], target: [-1, 1.4, 0], fov: 40 },
-// // //   ],
-// // // };
-
-// // // const useHighQualityTexture = (
-// // //   textureUrl: string | undefined,
-// // //   tileWidth: number,
-// // //   tileHeight: number
-// // // ) => {
-// // //   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-// // //   const textureRef = useRef<THREE.Texture | null>(null);
-
-// // //   useEffect(() => {
-// // //     if (!textureUrl) {
-// // //       if (textureRef.current) {
-// // //         textureRef.current.dispose();
-// // //         textureRef.current = null;
-// // //       }
-// // //       setTexture(null);
-// // //       return;
-// // //     }
-
-// // //     let isCancelled = false;
-// // //     const loader = new THREE.TextureLoader();
-    
-// // //     loader.load(
-// // //       textureUrl,
-// // //       (loadedTexture) => {
-// // //         if (isCancelled) {
-// // //           loadedTexture.dispose();
-// // //           return;
-// // //         }
-
-// // //         if (textureRef.current) {
-// // //           textureRef.current.dispose();
-// // //         }
-
-// // //         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-// // //         loadedTexture.wrapS = THREE.RepeatWrapping;
-// // //         loadedTexture.wrapT = THREE.RepeatWrapping;
-// // //         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // //         loadedTexture.magFilter = THREE.LinearFilter;
-// // //         loadedTexture.anisotropy = 16;
-// // //         loadedTexture.needsUpdate = true;
-        
-// // //         textureRef.current = loadedTexture;
-// // //         setTexture(loadedTexture);
-// // //       },
-// // //       undefined,
-// // //       (error) => {
-// // //         if (!isCancelled) {
-// // //           console.error('Texture loading error:', error);
-// // //           setTexture(null);
-// // //         }
-// // //       }
-// // //     );
-    
-// // //     return () => {
-// // //       isCancelled = true;
-// // //       if (textureRef.current) {
-// // //         textureRef.current.dispose();
-// // //         textureRef.current = null;
-// // //       }
-// // //     };
-// // //   }, [textureUrl, tileWidth, tileHeight]);
-
-// // //   return texture;
-// // // };
-
-// // // const useDeviceQuality = (): QualityLevel => {
-// // //   const [quality, setQuality] = useState<QualityLevel>('high');
-
-// // //   useEffect(() => {
-// // //     const canvas = document.createElement('canvas');
-// // //     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-// // //     if (!gl) {
-// // //       setQuality('low');
-// // //       return;
-// // //     }
-
-// // //     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-// // //     const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
-    
-// // //     const isMobile = /mobile|android|iphone|ipad/i.test(navigator.userAgent);
-// // //     const isHighEnd = /apple gpu|adreno 6|mali-g|nvidia|amd/i.test(renderer.toLowerCase());
-    
-// // //     if (isMobile) {
-// // //       setQuality(isHighEnd ? 'medium' : 'low');
-// // //     } else {
-// // //       setQuality(isHighEnd ? 'ultra' : 'high');
-// // //     }
-// // //   }, []);
-
-// // //   return quality;
-// // // };
-
-// // // const MinimalLighting: React.FC = () => {
-// // //   return (
-// // //     <>
-// // //       <ambientLight intensity={0.6} color="#ffffff" />
-// // //       <directionalLight position={[5, 5, 5]} intensity={0.5} color="#ffffff" />
-// // //       <pointLight position={[3, 2, 3]} intensity={0.3} color="#ffffff" />
-// // //       <pointLight position={[-3, 2, -3]} intensity={0.3} color="#ffffff" />
-// // //     </>
-// // //   );
-// // // };
-
-// // // const TiledFloor: React.FC<{
-// // //   baseTexture: THREE.Texture | null;
-// // //   tileSize: { width: number; height: number };
-// // //   roomWidth: number;
-// // //   roomDepth: number;
-// // //   position: [number, number, number];
-// // //   quality: QualityLevel;
-// // // }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position }) => {
-  
-// // //   const material = useMemo(() => {
-// // //     if (!baseTexture) {
-// // //       return new THREE.MeshBasicMaterial({ color: '#d4d4d4' });
-// // //     }
-
-// // //     const clonedTexture = baseTexture.clone();
-// // //     clonedTexture.needsUpdate = true;
-// // //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// // //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// // //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// // //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// // //     const tileSizeM = {
-// // //       width: tileSize.width / 100,
-// // //       height: tileSize.height / 100
-// // //     };
-    
-// // //     const repeatX = roomWidth / tileSizeM.width;
-// // //     const repeatY = roomDepth / tileSizeM.height;
-    
-// // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // //     const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
-// // //     (mat as any)._customTexture = clonedTexture;
-// // //     return mat;
-// // //   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
-
-// // //   useEffect(() => {
-// // //     return () => {
-// // //       if ((material as any)._customTexture) {
-// // //         (material as any)._customTexture.dispose();
-// // //       }
-// // //       material.dispose();
-// // //     };
-// // //   }, [material]);
-
-// // //   return (
-// // //     <mesh rotation={[-Math.PI / 2, 0, 0]} position={position}>
-// // //       <planeGeometry args={[roomWidth, roomDepth]} />
-// // //       <primitive object={material} attach="material" />
-// // //     </mesh>
-// // //   );
-// // // };
-
-// // // const TiledWall: React.FC<{
-// // //   baseTexture: THREE.Texture | null;
-// // //   tileSize: { width: number; height: number };
-// // //   width: number;
-// // //   height: number;
-// // //   position: [number, number, number];
-// // //   rotation?: [number, number, number];
-// // //   quality: QualityLevel;
-// // // }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0] }) => {
-  
-// // //   const material = useMemo(() => {
-// // //     if (!baseTexture) {
-// // //       return new THREE.MeshBasicMaterial({ color: '#f5f5f5' });
-// // //     }
-
-// // //     const clonedTexture = baseTexture.clone();
-// // //     clonedTexture.needsUpdate = true;
-// // //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// // //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// // //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// // //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// // //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// // //     const tileSizeM = {
-// // //       width: tileSize.width / 100,
-// // //       height: tileSize.height / 100
-// // //     };
-    
-// // //     const repeatX = width / tileSizeM.width;
-// // //     const repeatY = height / tileSizeM.height;
-    
-// // //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// // //     const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
-// // //     (mat as any)._customTexture = clonedTexture;
-// // //     return mat;
-// // //   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
-
-// // //   useEffect(() => {
-// // //     return () => {
-// // //       if ((material as any)._customTexture) {
-// // //         (material as any)._customTexture.dispose();
-// // //       }
-// // //       material.dispose();
-// // //     };
-// // //   }, [material]);
-
-// // //   return (
-// // //     <mesh position={position} rotation={rotation}>
-// // //       <planeGeometry args={[width, height]} />
-// // //       <primitive object={material} attach="material" />
-// // //     </mesh>
-// // //   );
-// // // };
-
-// // // const CameraController: React.FC<{
-// // //   preset: CameraPreset | null;
-// // //   onTransitionComplete?: () => void;
-// // // }> = ({ preset, onTransitionComplete }) => {
-// // //   const { camera } = useThree();
-// // //   const controlsRef = useRef<any>();
-
-// // //   useEffect(() => {
-// // //     if (!preset || !controlsRef.current) return;
-
-// // //     camera.position.set(...preset.position);
-// // //     controlsRef.current.target.set(...preset.target);
-// // //     camera.fov = preset.fov;
-// // //     camera.updateProjectionMatrix();
-    
-// // //     onTransitionComplete?.();
-// // //   }, [preset, camera, onTransitionComplete]);
-
-// // //   return (
-// // //     <OrbitControls
-// // //       ref={controlsRef}
-// // //       enablePan={true}
-// // //       enableZoom={true}
-// // //       enableRotate={true}
-// // //       autoRotate={false}
-// // //       maxPolarAngle={Math.PI * 0.95}
-// // //       minPolarAngle={Math.PI * 0.05}
-// // //       minDistance={0.8}
-// // //       maxDistance={10}
-// // //       minAzimuthAngle={-Math.PI / 2}
-// // //       maxAzimuthAngle={Math.PI / 2}
-// // //       target={[0, 1.4, 0]}
-// // //       enableDamping={true}
-// // //       dampingFactor={0.02}
-// // //       maxTargetRadius={4}
-// // //     />
-// // //   );
-// // // };
-
-// // // const Ceiling: React.FC<{
-// // //   width: number;
-// // //   depth: number;
-// // //   height: number;
-// // // }> = ({ width, depth, height }) => {
-// // //   return (
-// // //     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
-// // //       <planeGeometry args={[width, depth]} />
-// // //       <meshStandardMaterial color="#fefefe" roughness={0.9} metalness={0} />
-// // //     </mesh>
-// // //   );
-// // // };
-
-// // // const KitchenScene: React.FC<{ 
-// // //   floorTexture: THREE.Texture | null;
-// // //   floorTileSize: { width: number; height: number };
-// // //   wallTexture: THREE.Texture | null;
-// // //   wallTileSize: { width: number; height: number };
-// // //   showWallTiles: boolean;
-// // //   quality: QualityLevel;
-// // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
-
-// // //   return (
-// // //     <group>
-// // //       <TiledFloor baseTexture={floorTexture} tileSize={floorTileSize} roomWidth={W} roomDepth={D} position={[0, 0, 0]} quality={quality} />
-// // //       <Ceiling width={W} depth={D} height={H} />
-// // //       <TiledWall baseTexture={showWallTiles ? wallTexture : null} tileSize={wallTileSize} width={W} height={H} position={[0, H/2, -D/2]} quality={quality} />
-// // //       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
-// // //         <planeGeometry args={[W, H]} />
-// // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // //       </mesh>
-// // //       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
-// // //         <planeGeometry args={[D, H]} />
-// // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // //       </mesh>
-// // //       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
-// // //         <planeGeometry args={[D, H]} />
-// // //         <meshStandardMaterial color="#f0f0f0" roughness={0.9} />
-// // //       </mesh>
-// // //       <group position={[0, 0, -2.35]}>
-// // //         <mesh position={[0, 0.45, 0]} castShadow>
-// // //           <boxGeometry args={[3.6, 0.9, 0.65]} />
-// // //           <meshStandardMaterial color="#6b4e3d" roughness={0.7} />
-// // //         </mesh>
-// // //         <mesh position={[0, 0.92, 0]} castShadow>
-// // //           <boxGeometry args={[3.7, 0.04, 0.7]} />
-// // //           <meshStandardMaterial color="#1a1a1a" roughness={0.2} metalness={0.6} />
-// // //         </mesh>
-// // //         <mesh position={[0, 1.85, -0.25]} castShadow>
-// // //           <boxGeometry args={[3.6, 0.85, 0.4]} />
-// // //           <meshStandardMaterial color="#7a5c47" roughness={0.7} />
-// // //         </mesh>
-// // //       </group>
-// // //       <mesh position={[1.75, 1.05, -2.25]} castShadow>
-// // //         <boxGeometry args={[0.75, 2.1, 0.75]} />
-// // //         <meshStandardMaterial color="#e5e5e5" roughness={0.15} metalness={0.7} />
-// // //       </mesh>
-// // //     </group>
-// // //   );
-// // // };
-
-// // // const BathroomScene: React.FC<{ 
-// // //   floorTexture: THREE.Texture | null;
-// // //   floorTileSize: { width: number; height: number };
-// // //   wallTexture: THREE.Texture | null;
-// // //   wallTileSize: { width: number; height: number };
-// // //   showWallTiles: boolean;
-// // //   quality: QualityLevel;
-// // // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// // //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
-
-// // //   return (
-// // //     <group>
-// // //       <TiledFloor baseTexture={floorTexture} tileSize={floorTileSize} roomWidth={W} roomDepth={D} position={[0, 0, 0]} quality={quality} />
-// // //       <Ceiling width={W} depth={D} height={H} />
-// // //       <TiledWall baseTexture={showWallTiles ? wallTexture : null} tileSize={wallTileSize} width={W} height={H} position={[0, H/2, -D/2]} quality={quality} />
-// // //       <TiledWall baseTexture={showWallTiles ? wallTexture : null} tileSize={wallTileSize} width={W} height={H} position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]} quality={quality} />
-// // //       <TiledWall baseTexture={showWallTiles ? wallTexture : null} tileSize={wallTileSize} width={D} height={H} position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]} quality={quality} />
-// // //       <TiledWall baseTexture={showWallTiles ? wallTexture : null} tileSize={wallTileSize} width={D} height={H} position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]} quality={quality} />
-// // //       <group position={[-0.85, 0, -1.3]}>
-// // //         <mesh position={[0, 0.32, 0]} castShadow>
-// // //           <cylinderGeometry args={[0.27, 0.22, 0.64, 20]} />
-// // //           <meshStandardMaterial color="#fafafa" roughness={0.05} metalness={0.1} />
-// // //         </mesh>
-// // //       </group>
-// // //     </group>
-// // //   );
-// // // };
-
-// // // const SceneLoader: React.FC = () => (
-// // //   <mesh>
-// // //     <boxGeometry args={[1, 1, 1]} />
-// // //     <meshStandardMaterial color="#3b82f6" />
-// // //   </mesh>
-// // // );
-
-// // // export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
-// // //   roomType,
-// // //   floorTile,
-// // //   wallTile,
-// // //   activeSurface,
-// // // }) => {
-// // //   const [isFullscreen, setIsFullscreen] = useState(false);
-// // //   const [showControls, setShowControls] = useState(true);
-// // //   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
-// // //   const [quality, setQuality] = useState<QualityLevel>('high');
-// // //   const [showSettings, setShowSettings] = useState(false);
-
-// // //   const autoQuality = useDeviceQuality();
-
-// // //   useEffect(() => {
-// // //     setQuality(autoQuality);
-// // //   }, [autoQuality]);
-
-// // //   const floorTexture = useHighQualityTexture(
-// // //     floorTile?.texture,
-// // //     floorTile?.size.width || 60,
-// // //     floorTile?.size.height || 60
-// // //   );
-
-// // //   const wallTexture = useHighQualityTexture(
-// // //     wallTile?.texture,
-// // //     wallTile?.size.width || 30,
-// // //     wallTile?.size.height || 45
-// // //   );
-
-// // //   const handleReset = useCallback(() => {
-// // //     setSelectedPreset(null);
-// // //   }, []);
-
-// // //   const handleTransitionComplete = useCallback(() => {
-// // //     setSelectedPreset(null);
-// // //   }, []);
-
-// // //   const toggleFullscreen = () => {
-// // //     if (!document.fullscreenElement) {
-// // //       document.documentElement.requestFullscreen();
-// // //       setIsFullscreen(true);
-// // //     } else {
-// // //       document.exitFullscreen();
-// // //       setIsFullscreen(false);
-// // //     }
-// // //   };
-
-// // //   const renderScene = () => {
-// // //     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
-// // //     const showFloorTiles = activeSurface === 'floor' || activeSurface === 'both';
-
-// // //     const defaultFloorSize = { width: 60, height: 60 };
-// // //     const defaultWallSize = { width: 30, height: 45 };
-
-// // //     switch (roomType) {
-// // //       case 'drawing':
-// // //         return (
-// // //           <LuxuryDrawingRoomScene 
-// // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // //             quality={quality}
-// // //           />
-// // //         );
-// // //       case 'kitchen':
-// // //         return (
-// // //           <KitchenScene
-// // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // //             wallTexture={showWallTiles ? wallTexture : null}
-// // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // //             showWallTiles={showWallTiles}
-// // //             quality={quality}
-// // //           />
-// // //         );
-// // //       case 'bathroom':
-// // //         return (
-// // //           <BathroomScene
-// // //             floorTexture={showFloorTiles ? floorTexture : null}
-// // //             floorTileSize={floorTile?.size || defaultFloorSize}
-// // //             wallTexture={showWallTiles ? wallTexture : null}
-// // //             wallTileSize={wallTile?.size || defaultWallSize}
-// // //             showWallTiles={showWallTiles}
-// // //             quality={quality}
-// // //           />
-// // //         );
-// // //     }
-// // //   };
-
-// // //   const presets = CAMERA_PRESETS[roomType] || [];
-// // //   const hasFloorTile = !!floorTile?.texture;
-// // //   const hasWallTile = !!wallTile?.texture;
-
-// // //   return (
-// // //     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
-// // //       <Canvas
-// // //         gl={{ 
-// // //           antialias: true,
-// // //           toneMapping: THREE.NoToneMapping,
-// // //           outputColorSpace: THREE.SRGBColorSpace,
-// // //           powerPreference: 'high-performance',
-// // //         }}
-// // //         camera={{
-// // //           position: [0, 1.6, 3],
-// // //           fov: 50,
-// // //           near: 0.1,
-// // //           far: 1000
-// // //         }}
-// // //       >
-// // //         <Suspense fallback={<SceneLoader />}>
-// // //           <color attach="background" args={['#e8f4f8']} />
-// // //           <MinimalLighting />
-// // //           {renderScene()}
-// // //           <CameraController preset={selectedPreset} onTransitionComplete={handleTransitionComplete} />
-// // //         </Suspense>
-// // //       </Canvas>
-
-// // //       {showControls && (
-// // //         <div className="absolute top-2 left-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 max-w-[180px]">
-// // //           <p className="font-semibold mb-0.5 flex items-center gap-1.5 text-[11px]">
-// // //             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-// // //             {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-// // //           </p>
-// // //           <p className="text-[9px] opacity-75">Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span></p>
-// // //           {floorTile && <p className="text-[9px] opacity-75 mt-0.5">Floor: {floorTile.size.width}×{floorTile.size.height} cm</p>}
-// // //           {wallTile && <p className="text-[9px] opacity-75">Wall: {wallTile.size.width}×{wallTile.size.height} cm</p>}
-// // //         </div>
-// // //       )}
-
-// // //       <div className="absolute top-2 right-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-// // //         <p className="text-[9px] font-medium mb-0.5">Applied:</p>
-// // //         <p className="text-[11px] font-bold capitalize">{activeSurface}</p>
-// // //         {hasFloorTile && <p className="text-[9px] opacity-75 mt-0.5 text-green-400">✓ Floor</p>}
-// // //         {hasWallTile && <p className="text-[9px] opacity-75 text-blue-400">✓ Wall</p>}
-// // //       </div>
-
-// // //       <div className="absolute top-14 right-2 bg-black/80 text-white p-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-// // //         <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-// // //           <Camera className="w-2.5 h-2.5" />
-// // //           Camera
-// // //         </p>
-// // //         <div className="flex flex-col gap-1">
-// // //           {presets.map((preset, index) => (
-// // //             <button
-// // //               key={index}
-// // //               onClick={() => setSelectedPreset(preset)}
-// // //               className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[9px] transition-all"
-// // //             >
-// // //               {preset.name}
-// // //             </button>
-// // //           ))}
-// // //         </div>
-// // //       </div>
-
-// // //       {showSettings && (
-// // //         <div className="absolute bottom-12 right-2 bg-black/90 text-white p-2.5 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 min-w-[140px]">
-// // //           <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-// // //             <Settings className="w-2.5 h-2.5" />
-// // //             Settings
-// // //           </p>
-// // //           <div className="space-y-1.5">
-// // //             <div>
-// // //               <p className="text-[9px] mb-1 opacity-75">Quality</p>
-// // //               <div className="flex flex-col gap-0.5">
-// // //                 {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-// // //                   <button
-// // //                     key={q}
-// // //                     onClick={() => setQuality(q)}
-// // //                     className={`px-1.5 py-0.5 rounded text-[9px] capitalize transition-all ${
-// // //                       quality === q ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'
-// // //                     }`}
-// // //                   >
-// // //                     {q}
-// // //                   </button>
-// // //                 ))}
-// // //               </div>
-// // //             </div>
-// // //           </div>
-// // //         </div>
-// // //       )}
-
-// // //       <div className="absolute bottom-2 right-2 flex gap-1.5">
-// // //         <button
-// // //           onClick={() => setShowControls(!showControls)}
-// // //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// // //           title="Info"
-// // //         >
-// // //           <Info className="w-3.5 h-3.5" />
-// // //         </button>
-// // //         <button
-// // //           onClick={() => setShowSettings(!showSettings)}
-// // //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// // //           title="Settings"
-// // //         >
-// // //           <Settings className="w-3.5 h-3.5" />
-// // //         </button>
-// // //         <button
-// // //           onClick={handleReset}
-// // //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// // //           title="Reset"
-// // //         >
-// // //           <RotateCcw className="w-3.5 h-3.5" />
-// // //         </button>
-// // //         <button
-// // //           onClick={toggleFullscreen}
-// // //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// // //           title="Fullscreen"
-// // //         >
-// // //           {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-// // //         </button>
-// // //       </div>
-
-// // //       {(!hasFloorTile && !hasWallTile) && (
-// // //         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
-// // //           <div className="bg-white rounded-xl p-5 text-center shadow-2xl max-w-[280px] mx-4">
-// // //             <Package className="w-10 h-10 mx-auto mb-2.5 text-blue-600" />
-// // //             <p className="text-gray-800 font-semibold text-sm mb-1">No Tiles Applied</p>
-// // //             <p className="text-gray-500 text-xs">Upload tiles to visualize</p>
-// // //           </div>
-// // //         </div>
-// // //       )}
-// // //     </div>
-// // //   );
-// // // };
-
-// // // export default Enhanced3DViewer; 
-// // // src/components/Enhanced3DViewer.tsx - PREMIUM KITCHEN & BATHROOM VERSION
-// // import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
-// // import { Canvas, useThree } from '@react-three/fiber';
-// // import { OrbitControls } from '@react-three/drei';
-// // import * as THREE from 'three';
-// // import { 
-// //   Maximize2, 
-// //   Minimize2, 
-// //   RotateCcw, 
-// //   Info, 
-// //   Camera, 
-// //   Settings,
-// //   Package
-// // } from 'lucide-react';
-
-// // import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
-
-// // interface Enhanced3DViewerProps {
-// //   roomType: 'drawing' | 'kitchen' | 'bathroom';
-// //   floorTile?: {
-// //     texture?: string;
-// //     size: { width: number; height: number };
-// //   };
-// //   wallTile?: {
-// //     texture?: string;
-// //     size: { width: number; height: number };
-// //   };
-// //   activeSurface: 'floor' | 'wall' | 'both';
-// //   onSurfaceChange?: (surface: 'floor' | 'wall' | 'both') => void;
-// // }
-
-// // interface CameraPreset {
-// //   position: [number, number, number];
-// //   target: [number, number, number];
-// //   name: string;
-// //   fov: number;
-// // }
-
-// // type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
-
-// // const ROOM_CONFIGS = {
-// //   drawing: { width: 5, depth: 6, height: 3 },
-// //   kitchen: { width: 4, depth: 5, height: 2.8 },
-// //   bathroom: { width: 3, depth: 3.5, height: 2.8 }
-// // } as const;
-
-// // const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
-// //   drawing: [
-// //     { name: 'Luxury View', position: [5, 2, 6], target: [0, 1.2, 0], fov: 45 },
-// //     { name: 'TV Wall Focus', position: [2, 1.5, 4], target: [0, 1.5, -4.5], fov: 50 },
-// //     { name: 'Sofa Area', position: [-3, 1.8, 4], target: [0, 1, 2], fov: 48 },
-// //     { name: 'Full Room', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-// //   ],
-// //   kitchen: [
-// //     { name: 'Premium View', position: [3.5, 2.2, 4.5], target: [0, 1.2, 0], fov: 50 },
-// //     { name: 'Counter View', position: [0, 1.4, 2.5], target: [0, 1, -1.5], fov: 45 },
-// //     { name: 'Floor Detail', position: [1.5, 1.8, 2], target: [0, 0, 0], fov: 40 },
-// //     { name: 'Island View', position: [-2.5, 1.8, 3], target: [0, 1, 0], fov: 48 },
-// //   ],
-// //   bathroom: [
-// //     { name: 'Luxury Overview', position: [2.2, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-// //     { name: 'Vanity View', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-// //     { name: 'Floor Tiles', position: [1, 1.6, 1.5], target: [0, 0, 0], fov: 45 },
-// //     { name: 'Shower Area', position: [1.2, 1.4, 0.8], target: [-1, 1.2, -1], fov: 40 },
-// //   ],
-// // };
-
-// // const useHighQualityTexture = (
-// //   textureUrl: string | undefined,
-// //   tileWidth: number,
-// //   tileHeight: number
-// // ) => {
-// //   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-// //   const textureRef = useRef<THREE.Texture | null>(null);
-
-// //   useEffect(() => {
-// //     if (!textureUrl) {
-// //       if (textureRef.current) {
-// //         textureRef.current.dispose();
-// //         textureRef.current = null;
-// //       }
-// //       setTexture(null);
-// //       return;
-// //     }
-
-// //     let isCancelled = false;
-// //     const loader = new THREE.TextureLoader();
-    
-// //     loader.load(
-// //       textureUrl,
-// //       (loadedTexture) => {
-// //         if (isCancelled) {
-// //           loadedTexture.dispose();
-// //           return;
-// //         }
-
-// //         if (textureRef.current) {
-// //           textureRef.current.dispose();
-// //         }
-
-// //         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-// //         loadedTexture.wrapS = THREE.RepeatWrapping;
-// //         loadedTexture.wrapT = THREE.RepeatWrapping;
-// //         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// //         loadedTexture.magFilter = THREE.LinearFilter;
-// //         loadedTexture.anisotropy = 16;
-// //         loadedTexture.needsUpdate = true;
-        
-// //         textureRef.current = loadedTexture;
-// //         setTexture(loadedTexture);
-// //       },
-// //       undefined,
-// //       (error) => {
-// //         if (!isCancelled) {
-// //           console.error('Texture loading error:', error);
-// //           setTexture(null);
-// //         }
-// //       }
-// //     );
-    
-// //     return () => {
-// //       isCancelled = true;
-// //       if (textureRef.current) {
-// //         textureRef.current.dispose();
-// //         textureRef.current = null;
-// //       }
-// //     };
-// //   }, [textureUrl, tileWidth, tileHeight]);
-
-// //   return texture;
-// // };
-
-// // const useDeviceQuality = (): QualityLevel => {
-// //   const [quality, setQuality] = useState<QualityLevel>('high');
-
-// //   useEffect(() => {
-// //     const canvas = document.createElement('canvas');
-// //     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-// //     if (!gl) {
-// //       setQuality('low');
-// //       return;
-// //     }
-
-// //     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-// //     const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
-    
-// //     const isMobile = /mobile|android|iphone|ipad/i.test(navigator.userAgent);
-// //     const isHighEnd = /apple gpu|adreno 6|mali-g|nvidia|amd/i.test(renderer.toLowerCase());
-    
-// //     if (isMobile) {
-// //       setQuality(isHighEnd ? 'medium' : 'low');
-// //     } else {
-// //       setQuality(isHighEnd ? 'ultra' : 'high');
-// //     }
-// //   }, []);
-
-// //   return quality;
-// // };
-
-// // const MinimalLighting: React.FC = () => {
-// //   return (
-// //     <>
-// //       <ambientLight intensity={0.6} color="#ffffff" />
-// //       <directionalLight position={[5, 5, 5]} intensity={0.5} color="#ffffff" />
-// //       <pointLight position={[3, 2, 3]} intensity={0.3} color="#ffffff" />
-// //       <pointLight position={[-3, 2, -3]} intensity={0.3} color="#ffffff" />
-// //     </>
-// //   );
-// // };
-
-// // const TiledFloor: React.FC<{
-// //   baseTexture: THREE.Texture | null;
-// //   tileSize: { width: number; height: number };
-// //   roomWidth: number;
-// //   roomDepth: number;
-// //   position: [number, number, number];
-// //   quality: QualityLevel;
-// // }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position }) => {
-  
-// //   const material = useMemo(() => {
-// //     if (!baseTexture) {
-// //       return new THREE.MeshBasicMaterial({ color: '#d4d4d4' });
-// //     }
-
-// //     const clonedTexture = baseTexture.clone();
-// //     clonedTexture.needsUpdate = true;
-// //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// //     const tileSizeM = {
-// //       width: tileSize.width / 100,
-// //       height: tileSize.height / 100
-// //     };
-    
-// //     const repeatX = roomWidth / tileSizeM.width;
-// //     const repeatY = roomDepth / tileSizeM.height;
-    
-// //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// //     const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
-// //     (mat as any)._customTexture = clonedTexture;
-// //     return mat;
-// //   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
-
-// //   useEffect(() => {
-// //     return () => {
-// //       if ((material as any)._customTexture) {
-// //         (material as any)._customTexture.dispose();
-// //       }
-// //       material.dispose();
-// //     };
-// //   }, [material]);
-
-// //   return (
-// //     <mesh rotation={[-Math.PI / 2, 0, 0]} position={position}>
-// //       <planeGeometry args={[roomWidth, roomDepth]} />
-// //       <primitive object={material} attach="material" />
-// //     </mesh>
-// //   );
-// // };
-
-// // const TiledWall: React.FC<{
-// //   baseTexture: THREE.Texture | null;
-// //   tileSize: { width: number; height: number };
-// //   width: number;
-// //   height: number;
-// //   position: [number, number, number];
-// //   rotation?: [number, number, number];
-// //   quality: QualityLevel;
-// // }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0] }) => {
-  
-// //   const material = useMemo(() => {
-// //     if (!baseTexture) {
-// //       return new THREE.MeshBasicMaterial({ color: '#f5f5f5' });
-// //     }
-
-// //     const clonedTexture = baseTexture.clone();
-// //     clonedTexture.needsUpdate = true;
-// //     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-// //     clonedTexture.wrapS = THREE.RepeatWrapping;
-// //     clonedTexture.wrapT = THREE.RepeatWrapping;
-// //     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-// //     clonedTexture.magFilter = THREE.LinearFilter;
-    
-// //     const tileSizeM = {
-// //       width: tileSize.width / 100,
-// //       height: tileSize.height / 100
-// //     };
-    
-// //     const repeatX = width / tileSizeM.width;
-// //     const repeatY = height / tileSizeM.height;
-    
-// //     clonedTexture.repeat.set(repeatX, repeatY);
-
-// //     const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
-// //     (mat as any)._customTexture = clonedTexture;
-// //     return mat;
-// //   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
-
-// //   useEffect(() => {
-// //     return () => {
-// //       if ((material as any)._customTexture) {
-// //         (material as any)._customTexture.dispose();
-// //       }
-// //       material.dispose();
-// //     };
-// //   }, [material]);
-
-// //   return (
-// //     <mesh position={position} rotation={rotation}>
-// //       <planeGeometry args={[width, height]} />
-// //       <primitive object={material} attach="material" />
-// //     </mesh>
-// //   );
-// // };
-
-// // const CameraController: React.FC<{
-// //   preset: CameraPreset | null;
-// //   onTransitionComplete?: () => void;
-// // }> = ({ preset, onTransitionComplete }) => {
-// //   const { camera } = useThree();
-// //   const controlsRef = useRef<any>();
-
-// //   useEffect(() => {
-// //     if (!preset || !controlsRef.current) return;
-
-// //     camera.position.set(...preset.position);
-// //     controlsRef.current.target.set(...preset.target);
-// //     camera.fov = preset.fov;
-// //     camera.updateProjectionMatrix();
-    
-// //     onTransitionComplete?.();
-// //   }, [preset, camera, onTransitionComplete]);
-
-// //   return (
-// //     <OrbitControls
-// //       ref={controlsRef}
-// //       enablePan={true}
-// //       enableZoom={true}
-// //       enableRotate={true}
-// //       autoRotate={false}
-// //       maxPolarAngle={Math.PI * 0.95}
-// //       minPolarAngle={Math.PI * 0.05}
-// //       minDistance={0.8}
-// //       maxDistance={10}
-// //       minAzimuthAngle={-Math.PI / 2}
-// //       maxAzimuthAngle={Math.PI / 2}
-// //       target={[0, 1.4, 0]}
-// //       enableDamping={true}
-// //       dampingFactor={0.02}
-// //       maxTargetRadius={4}
-// //     />
-// //   );
-// // };
-
-// // const Ceiling: React.FC<{
-// //   width: number;
-// //   depth: number;
-// //   height: number;
-// // }> = ({ width, depth, height }) => {
-// //   return (
-// //     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
-// //       <planeGeometry args={[width, depth]} />
-// //       <meshStandardMaterial color="#fefefe" roughness={0.9} metalness={0} />
-// //     </mesh>
-// //   );
-// // };
-
-// // // ============================================
-// // // 🔥 PREMIUM LUXURY KITCHEN SCENE
-// // // ============================================
-
-// // const PremiumKitchenScene: React.FC<{ 
-// //   floorTexture: THREE.Texture | null;
-// //   floorTileSize: { width: number; height: number };
-// //   wallTexture: THREE.Texture | null;
-// //   wallTileSize: { width: number; height: number };
-// //   showWallTiles: boolean;
-// //   quality: QualityLevel;
-// // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
-
-// //   return (
-// //     <group>
-// //       {/* Floor with Tiles */}
-// //       <TiledFloor 
-// //         baseTexture={floorTexture} 
-// //         tileSize={floorTileSize} 
-// //         roomWidth={W} 
-// //         roomDepth={D} 
-// //         position={[0, 0, 0]} 
-// //         quality={quality} 
-// //       />
-
-// //       {/* Ceiling - Bright White */}
-// //       <Ceiling width={W} depth={D} height={H} />
-
-// //       {/* Back Wall - Premium Cream/Beige with Tiles */}
-// //       <TiledWall
-// //         baseTexture={showWallTiles ? wallTexture : null}
-// //         tileSize={wallTileSize}
-// //         width={W}
-// //         height={H}
-// //         position={[0, H/2, -D/2]}
-// //         quality={quality}
-// //       />
-
-// //       {/* Front Wall - Soft Warm White */}
-// //       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
-// //         <planeGeometry args={[W, H]} />
-// //         <meshStandardMaterial color="#fef8f0" roughness={0.85} />
-// //       </mesh>
-
-// //       {/* Left Wall - Light Cream */}
-// //       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
-// //         <planeGeometry args={[D, H]} />
-// //         <meshStandardMaterial color="#f5efe6" roughness={0.85} />
-// //       </mesh>
-
-// //       {/* Right Wall - Light Beige */}
-// //       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
-// //         <planeGeometry args={[D, H]} />
-// //         <meshStandardMaterial color="#f7f1e8" roughness={0.85} />
-// //       </mesh>
-
-// //       {/* ========== PREMIUM KITCHEN ELEMENTS ========== */}
-
-// //       {/* Main Counter Unit - Rich Dark Wood */}
-// //       <group position={[0, 0, -2.35]}>
-// //         {/* Lower Cabinets - Premium Dark Walnut */}
-// //         <mesh position={[0, 0.45, 0]} castShadow>
-// //           <boxGeometry args={[3.8, 0.9, 0.65]} />
-// //           <meshStandardMaterial color="#3e2723" roughness={0.4} metalness={0.2} />
-// //         </mesh>
-
-// //         {/* Marble Countertop - Luxury Black/Gold Veined */}
-// //         <mesh position={[0, 0.92, 0]} castShadow>
-// //           <boxGeometry args={[3.9, 0.05, 0.7]} />
-// //           <meshStandardMaterial 
-// //             color="#1a1816" 
-// //             roughness={0.15} 
-// //             metalness={0.7}
-// //             emissive="#332211"
-// //             emissiveIntensity={0.1}
-// //           />
-// //         </mesh>
-
-// //         {/* Upper Cabinets - Modern Espresso */}
-// //         <mesh position={[0, 1.9, -0.25]} castShadow>
-// //           <boxGeometry args={[3.8, 0.9, 0.4]} />
-// //           <meshStandardMaterial color="#4a3428" roughness={0.35} metalness={0.15} />
-// //         </mesh>
-
-// //         {/* Cabinet Handles - Brushed Gold */}
-// //         {[-1.5, -0.5, 0.5, 1.5].map((x, i) => (
-// //           <mesh key={`handle-${i}`} position={[x, 0.45, 0.35]}>
-// //             <boxGeometry args={[0.15, 0.03, 0.02]} />
-// //             <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.9} />
-// //           </mesh>
-// //         ))}
-// //       </group>
-
-// //       {/* Island Counter - Modern White with Dark Top */}
-// //       <group position={[0, 0, 0.8]}>
-// //         {/* Island Base - Premium White */}
-// //         <mesh position={[0, 0.45, 0]} castShadow>
-// //           <boxGeometry args={[2.2, 0.9, 1.2]} />
-// //           <meshStandardMaterial color="#ffffff" roughness={0.3} metalness={0.1} />
-// //         </mesh>
-
-// //         {/* Island Countertop - Dark Granite */}
-// //         <mesh position={[0, 0.92, 0]} castShadow>
-// //           <boxGeometry args={[2.3, 0.05, 1.25]} />
-// //           <meshStandardMaterial 
-// //             color="#2c2c2c" 
-// //             roughness={0.2} 
-// //             metalness={0.6}
-// //           />
-// //         </mesh>
-
-// //         {/* Gold Accent Strip */}
-// //         <mesh position={[0, 0.45, 0.62]}>
-// //           <boxGeometry args={[2.2, 0.02, 0.01]} />
-// //           <meshStandardMaterial color="#c9a961" roughness={0.2} metalness={0.85} />
-// //         </mesh>
-// //       </group>
-
-// //       {/* Premium Refrigerator - Stainless Steel */}
-// //       <mesh position={[1.85, 1.15, -2.25]} castShadow>
-// //         <boxGeometry args={[0.8, 2.3, 0.75]} />
-// //         <meshStandardMaterial 
-// //           color="#d4d4d4" 
-// //           roughness={0.12} 
-// //           metalness={0.85}
-// //           envMapIntensity={1.2}
-// //         />
-// //       </mesh>
-
-// //       {/* Fridge Handles - Chrome */}
-// //       <mesh position={[1.45, 1.6, -1.85]}>
-// //         <boxGeometry args={[0.03, 0.4, 0.03]} />
-// //         <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.95} />
-// //       </mesh>
-// //       <mesh position={[1.45, 0.7, -1.85]}>
-// //         <boxGeometry args={[0.03, 0.4, 0.03]} />
-// //         <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.95} />
-// //       </mesh>
-
-// //       {/* Built-in Oven - Premium Black */}
-// //       <mesh position={[-1.6, 1.2, -2.3]} castShadow>
-// //         <boxGeometry args={[0.6, 0.6, 0.1]} />
-// //         <meshStandardMaterial color="#1a1a1a" roughness={0.3} metalness={0.4} />
-// //       </mesh>
-
-// //       {/* Oven Glass */}
-// //       <mesh position={[-1.6, 1.2, -2.25]}>
-// //         <boxGeometry args={[0.5, 0.5, 0.05]} />
-// //         <meshStandardMaterial 
-// //           color="#000000" 
-// //           roughness={0.05} 
-// //           metalness={0.9}
-// //           transparent={true}
-// //           opacity={0.8}
-// //         />
-// //       </mesh>
-
-// //       {/* Range Hood - Brushed Steel */}
-// //       <group position={[0, 2.2, -2.45]}>
-// //         <mesh castShadow>
-// //           <boxGeometry args={[1.2, 0.4, 0.5]} />
-// //           <meshStandardMaterial color="#b8b8b8" roughness={0.25} metalness={0.75} />
-// //         </mesh>
-// //         {/* Hood Lights */}
-// //         <pointLight position={[0, -0.15, 0.1]} intensity={0.8} color="#fff8e1" distance={2} />
-// //       </group>
-
-// //       {/* Sink - Undermount Stainless */}
-// //       <group position={[0.8, 0.88, -2.15]}>
-// //         <mesh>
-// //           <boxGeometry args={[0.6, 0.08, 0.45]} />
-// //           <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.9} />
-// //         </mesh>
-        
-// //         {/* Faucet - Modern Chrome */}
-// //         <group position={[0, 0.15, -0.1]}>
-// //           <mesh position={[0, 0.2, 0]}>
-// //             <cylinderGeometry args={[0.02, 0.02, 0.4, 16]} />
-// //             <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.95} />
-// //           </mesh>
-// //           <mesh position={[0, 0.4, 0.08]} rotation={[Math.PI / 4, 0, 0]}>
-// //             <cylinderGeometry args={[0.015, 0.015, 0.15, 16]} />
-// //             <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.95} />
-// //           </mesh>
-// //         </group>
-// //       </group>
-
-// //       {/* Pendant Lights over Island - Modern Gold */}
-// //       {[-0.6, 0, 0.6].map((x, i) => (
-// //         <group key={`pendant-${i}`} position={[x, 2.5, 0.8]}>
-// //           {/* Wire */}
-// //           <mesh>
-// //             <cylinderGeometry args={[0.005, 0.005, 0.5, 8]} />
-// //             <meshStandardMaterial color="#333333" />
-// //           </mesh>
-// //           {/* Shade - Gold */}
-// //           <mesh position={[0, -0.3, 0]}>
-// //             <coneGeometry args={[0.12, 0.2, 16]} />
-// //             <meshStandardMaterial 
-// //               color="#d4af37" 
-// //               roughness={0.3} 
-// //               metalness={0.8}
-// //               emissive="#ffcc66"
-// //               emissiveIntensity={0.2}
-// //             />
-// //           </mesh>
-// //           {/* Light */}
-// //           <pointLight position={[0, -0.35, 0]} intensity={1.2} color="#fff8e1" distance={3} />
-// //         </group>
-// //       ))}
-
-// //       {/* Under-Cabinet LED Strips */}
-// //       <rectAreaLight
-// //         position={[0, 1.45, -2.35]}
-// //         width={3.6}
-// //         height={0.05}
-// //         intensity={2}
-// //         color="#fff8e1"
-// //       />
-
-// //       {/* Decorative Items */}
-// //       {/* Fruit Bowl on Island */}
-// //       <mesh position={[-0.6, 0.95, 0.8]} castShadow>
-// //         <cylinderGeometry args={[0.15, 0.12, 0.08, 16]} />
-// //         <meshStandardMaterial color="#8b4513" roughness={0.4} metalness={0.1} />
-// //       </mesh>
-
-// //       {/* Coffee Machine - Chrome/Black */}
-// //       <group position={[-0.8, 0.92, -2.15]}>
-// //         <mesh castShadow>
-// //           <boxGeometry args={[0.25, 0.3, 0.3]} />
-// //           <meshStandardMaterial color="#1a1a1a" roughness={0.2} metalness={0.7} />
-// //         </mesh>
-// //         <mesh position={[0, 0.18, 0]} castShadow>
-// //           <cylinderGeometry args={[0.08, 0.08, 0.05, 16]} />
-// //           <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.9} />
-// //         </mesh>
-// //       </group>
-// //     </group>
-// //   );
-// // };
-
-// // // ============================================
-// // // 🔥 PREMIUM LUXURY BATHROOM SCENE
-// // // ============================================
-
-// // const PremiumBathroomScene: React.FC<{ 
-// //   floorTexture: THREE.Texture | null;
-// //   floorTileSize: { width: number; height: number };
-// //   wallTexture: THREE.Texture | null;
-// //   wallTileSize: { width: number; height: number };
-// //   showWallTiles: boolean;
-// //   quality: QualityLevel;
-// // }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-// //   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
-
-// //   return (
-// //     <group>
-// //       {/* Floor with Tiles */}
-// //       <TiledFloor 
-// //         baseTexture={floorTexture} 
-// //         tileSize={floorTileSize} 
-// //         roomWidth={W} 
-// //         roomDepth={D} 
-// //         position={[0, 0, 0]} 
-// //         quality={quality} 
-// //       />
-
-// //       {/* Ceiling - Bright White */}
-// //       <Ceiling width={W} depth={D} height={H} />
-
-// //       {/* All Walls with Tiles or Premium Colors */}
-// //       {/* Back Wall */}
-// //       <TiledWall
-// //         baseTexture={showWallTiles ? wallTexture : null}
-// //         tileSize={wallTileSize}
-// //         width={W}
-// //         height={H}
-// //         position={[0, H/2, -D/2]}
-// //         quality={quality}
-// //       />
-
-// //       {/* Front Wall - Soft Cream */}
-// //       <TiledWall
-// //         baseTexture={showWallTiles ? wallTexture : null}
-// //         tileSize={wallTileSize}
-// //         width={W}
-// //         height={H}
-// //         position={[0, H/2, D/2]}
-// //         rotation={[0, Math.PI, 0]}
-// //         quality={quality}
-// //       />
-
-// //       {/* Left Wall - Light Spa Blue/Green */}
-// //       <TiledWall
-// //         baseTexture={showWallTiles ? wallTexture : null}
-// //         tileSize={wallTileSize}
-// //         width={D}
-// //         height={H}
-// //         position={[-W/2, H/2, 0]}
-// //         rotation={[0, Math.PI/2, 0]}
-// //         quality={quality}
-// //       />
-
-// //       {/* Right Wall */}
-// //       <TiledWall
-// //         baseTexture={showWallTiles ? wallTexture : null}
-// //         tileSize={wallTileSize}
-// //         width={D}
-// //         height={H}
-// //         position={[W/2, H/2, 0]}
-// //         rotation={[0, -Math.PI/2, 0]}
-// //         quality={quality}
-// //       />
-
-// //       {/* ========== PREMIUM BATHROOM ELEMENTS ========== */}
-
-// //       {/* Luxury Vanity Unit - Double Sink */}
-// //       <group position={[0, 0, -1.5]}>
-// //         {/* Vanity Cabinet - Rich Dark Wood */}
-// //         <mesh position={[0, 0.45, 0]} castShadow>
-// //           <boxGeometry args={[2.2, 0.9, 0.5]} />
-// //           <meshStandardMaterial color="#3e2723" roughness={0.35} metalness={0.15} />
-// //         </mesh>
-
-// //         {/* Marble Countertop - White with Gold Veins */}
-// //         <mesh position={[0, 0.92, 0]} castShadow>
-// //           <boxGeometry args={[2.3, 0.05, 0.55]} />
-// //           <meshStandardMaterial 
-// //             color="#f5f5f0" 
-// //             roughness={0.15} 
-// //             metalness={0.4}
-// //             emissive="#d4af37"
-// //             emissiveIntensity={0.05}
-// //           />
-// //         </mesh>
-
-// //         {/* Double Sinks - Undermount White Ceramic */}
-// //         <group position={[-0.6, 0.88, -0.05]}>
-// //           <mesh>
-// //             <cylinderGeometry args={[0.2, 0.18, 0.12, 20]} />
-// //             <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} />
-// //           </mesh>
-// //         </group>
-// //         <group position={[0.6, 0.88, -0.05]}>
-// //           <mesh>
-// //             <cylinderGeometry args={[0.2, 0.18, 0.12, 20]} />
-// //             <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} />
-// //           </mesh>
-// //         </group>
-
-// //         {/* Modern Faucets - Chrome */}
-// //         {[-0.6, 0.6].map((x, i) => (
-// //           <group key={`faucet-${i}`} position={[x, 0.95, -0.2]}>
-// //             <mesh position={[0, 0.15, 0]}>
-// //               <cylinderGeometry args={[0.015, 0.015, 0.3, 12]} />
-// //               <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.95} />
-// //             </mesh>
-// //             <mesh position={[0, 0.3, 0.06]} rotation={[Math.PI / 3, 0, 0]}>
-// //               <cylinderGeometry args={[0.012, 0.012, 0.12, 12]} />
-// //               <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.95} />
-// //             </mesh>
-// //           </group>
-// //         ))}
-
-// //         {/* Gold Hardware Accents */}
-// //         {[-0.8, -0.4, 0.4, 0.8].map((x, i) => (
-// //           <mesh key={`handle-${i}`} position={[x, 0.45, 0.28]}>
-// //             <cylinderGeometry args={[0.015, 0.015, 0.15, 12]} />
-// //             <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.9} />
-// //           </mesh>
-// //         ))}
-// //       </group>
-
-// //       {/* Large Modern Mirror - Backlit */}
-// //       <group position={[0, 1.6, -1.72]}>
-// //         {/* Mirror Frame - Brushed Gold */}
-// //         <mesh>
-// //           <boxGeometry args={[2.0, 0.9, 0.02]} />
-// //           <meshStandardMaterial color="#c9a961" roughness={0.25} metalness={0.85} />
-// //         </mesh>
-
-// //         {/* Mirror Glass */}
-// //         <mesh position={[0, 0, 0.015]}>
-// //           <boxGeometry args={[1.9, 0.8, 0.01]} />
-// //           <meshStandardMaterial 
-// //             color="#ffffff" 
-// //             roughness={0.05} 
-// //             metalness={0.98}
-// //             envMapIntensity={1.5}
-// //           />
-// //         </mesh>
-
-// //         {/* Backlight */}
-// //         <rectAreaLight
-// //           position={[0, 0, -0.02]}
-// //           width={2.0}
-// //           height={0.9}
-// //           intensity={1.5}
-// //           color="#fff8e1"
-// //         />
-// //       </group>
-
-// //       {/* Wall-Mounted Sconces - Modern Gold */}
-// //       {[-1.1, 1.1].map((x, i) => (
-// //         <group key={`sconce-${i}`} position={[x, 1.6, -1.68]}>
-// //           <mesh>
-// //             <cylinderGeometry args={[0.06, 0.06, 0.25, 16]} />
-// //             <meshStandardMaterial 
-// //               color="#d4af37" 
-// //               roughness={0.25} 
-// //               metalness={0.85}
-// //               emissive="#ffcc66"
-// //               emissiveIntensity={0.3}
-// //             />
-// //           </mesh>
-// //           <pointLight position={[0, 0, 0.1]} intensity={1} color="#fff8e1" distance={2} />
-// //         </group>
-// //       ))}
-
-// //       {/* Freestanding Bathtub - Luxury White */}
-// //       <group position={[-0.85, 0.35, -0.8]}>
-// //         {/* Tub Body */}
-// //         <mesh castShadow>
-// //           <boxGeometry args={[0.85, 0.7, 1.6]} />
-// //           <meshStandardMaterial 
-// //             color="#fafafa" 
-// //             roughness={0.08} 
-// //             metalness={0.15}
-// //             clearcoat={0.3}
-// //             clearcoatRoughness={0.1}
-// //           />
-// //         </mesh>
-
-// //         {/* Tub Feet - Gold Claw Feet */}
-// //         {[
-// //           [-0.35, -0.38, 0.7],
-// //           [0.35, -0.38, 0.7],
-// //           [-0.35, -0.38, -0.7],
-// //           [0.35, -0.38, -0.7]
-// //         ].map((pos, i) => (
-// //           <mesh key={`foot-${i}`} position={pos as [number, number, number]}>
-// //             <sphereGeometry args={[0.05, 12, 12]} />
-// //             <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.9} />
-// //           </mesh>
-// //         ))}
-
-// //         {/* Tub Faucet - Wall-Mounted Gold */}
-// //         <group position={[0, 0.25, -0.85]}>
-// //           <mesh rotation={[0, 0, Math.PI / 2]}>
-// //             <cylinderGeometry args={[0.02, 0.02, 0.4, 12]} />
-// //             <meshStandardMaterial color="#c9a961" roughness={0.2} metalness={0.9} />
-// //           </mesh>
-// //           <mesh position={[0.2, 0, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
-// //             <cylinderGeometry args={[0.018, 0.018, 0.15, 12]} />
-// //             <meshStandardMaterial color="#c9a961" roughness={0.2} metalness={0.9} />
-// //           </mesh>
-// //         </group>
-// //       </group>
-
-// //       {/* Glass Shower Enclosure - Modern Frameless */}
-// //       <group position={[0.8, 1.2, -0.8]}>
-// //         {/* Glass Panels */}
-// //         <mesh position={[0, 0, 0.6]}>
-// //           <boxGeometry args={[0.02, 2.4, 1.2]} />
-// //           <meshStandardMaterial 
-// //             color="#ffffff" 
-// //             transparent={true} 
-// //             opacity={0.25}
-// //             roughness={0.05}
-// //             metalness={0.1}
-// //           />
-// //         </mesh>
-
-// //         {/* Chrome Frame */}
-// //         <mesh position={[0, 1.2, 0.6]}>
-// //           <boxGeometry args={[0.03, 0.02, 1.2]} />
-// //           <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.95} />
-// //         </mesh>
-
-// //         {/* Rainfall Showerhead - Chrome */}
-// //         <group position={[0, 1.1, 0]}>
-// //           <mesh>
-// //             <cylinderGeometry args={[0.15, 0.15, 0.03, 20]} />
-// //             <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.9} />
-// //           </mesh>
-// //           {/* Shower Arm */}
-// //           <mesh position={[0, 0.1, -0.3]} rotation={[Math.PI / 4, 0, 0]}>
-// //             <cylinderGeometry args={[0.015, 0.015, 0.4, 12]} />
-// //             <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.9} />
-// //           </mesh>
-// //         </group>
-// //       </group>
-
-// //       {/* Toilet - Modern Wall-Hung */}
-// //       <group position={[0.9, 0.25, 1.0]}>
-// //         {/* Bowl */}
-// //         <mesh castShadow>
-// //           <boxGeometry args={[0.45, 0.5, 0.6]} />
-// //           <meshStandardMaterial 
-// //             color="#ffffff" 
-// //             roughness={0.05} 
-// //             metalness={0.1}
-// //             clearcoat={0.4}
-// //           />
-// //         </mesh>
-        
-// //         {/* Tank - Concealed/Modern */}
-// //         <mesh position={[0, 0.5, -0.2]}>
-// //           <boxGeometry args={[0.4, 0.3, 0.15]} />
-// //           <meshStandardMaterial color="#f5f5f5" roughness={0.3} />
-// //         </mesh>
-
-// //         {/* Flush Button - Chrome Circle */}
-// //         <mesh position={[0, 0.6, -0.12]}>
-// //           <cylinderGeometry args={[0.06, 0.06, 0.02, 20]} />
-// //           <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.95} />
-// //         </mesh>
-// //       </group>
-
-// //       {/* Towel Rack - Heated Gold */}
-// //       <group position={[-1.35, 1.2, 0.5]}>
-// //         {[0, 0.15, 0.3, 0.45].map((y, i) => (
-// //           <mesh key={`towel-bar-${i}`} position={[0, y, 0]} rotation={[0, 0, Math.PI / 2]}>
-// //             <cylinderGeometry args={[0.015, 0.015, 0.5, 12]} />
-// //             <meshStandardMaterial 
-// //               color="#d4af37" 
-// //               roughness={0.2} 
-// //               metalness={0.9}
-// //               emissive="#ffcc66"
-// //               emissiveIntensity={0.1}
-// //             />
-// //           </mesh>
-// //         ))}
-// //       </group>
-
-// //       {/* Decorative Plants */}
-// //       <group position={[0.5, 0.95, -1.5]}>
-// //         <mesh>
-// //           <cylinderGeometry args={[0.08, 0.06, 0.12, 16]} />
-// //           <meshStandardMaterial color="#8b7355" roughness={0.6} />
-// //         </mesh>
-// //         <mesh position={[0, 0.15, 0]}>
-// //           <sphereGeometry args={[0.1, 8, 8]} />
-// //           <meshStandardMaterial color="#2d5016" roughness={0.8} />
-// //         </mesh>
-// //       </group>
-
-// //       {/* Ambient Ceiling Light */}
-// //       <pointLight position={[0, 2.5, 0]} intensity={1.5} color="#fff8e1" distance={6} />
-
-// //       {/* Accent Down Lights */}
-// //       <spotLight 
-// //         position={[0, 2.6, -1.5]} 
-// //         angle={0.3} 
-// //         penumbra={0.5} 
-// //         intensity={1.2} 
-// //         color="#ffffff"
-// //         target-position={[0, 0.9, -1.5]}
-// //       />
-// //     </group>
-// //   );
-// // };
-
-// // const SceneLoader: React.FC = () => (
-// //   <mesh>
-// //     <boxGeometry args={[1, 1, 1]} />
-// //     <meshStandardMaterial color="#3b82f6" />
-// //   </mesh>
-// // );
-
-// // export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
-// //   roomType,
-// //   floorTile,
-// //   wallTile,
-// //   activeSurface,
-// // }) => {
-// //   const [isFullscreen, setIsFullscreen] = useState(false);
-// //   const [showControls, setShowControls] = useState(true);
-// //   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
-// //   const [quality, setQuality] = useState<QualityLevel>('high');
-// //   const [showSettings, setShowSettings] = useState(false);
-
-// //   const autoQuality = useDeviceQuality();
-
-// //   useEffect(() => {
-// //     setQuality(autoQuality);
-// //   }, [autoQuality]);
-
-// //   const floorTexture = useHighQualityTexture(
-// //     floorTile?.texture,
-// //     floorTile?.size.width || 60,
-// //     floorTile?.size.height || 60
-// //   );
-
-// //   const wallTexture = useHighQualityTexture(
-// //     wallTile?.texture,
-// //     wallTile?.size.width || 30,
-// //     wallTile?.size.height || 45
-// //   );
-
-// //   const handleReset = useCallback(() => {
-// //     setSelectedPreset(null);
-// //   }, []);
-
-// //   const handleTransitionComplete = useCallback(() => {
-// //     setSelectedPreset(null);
-// //   }, []);
-
-// //   const toggleFullscreen = () => {
-// //     if (!document.fullscreenElement) {
-// //       document.documentElement.requestFullscreen();
-// //       setIsFullscreen(true);
-// //     } else {
-// //       document.exitFullscreen();
-// //       setIsFullscreen(false);
-// //     }
-// //   };
-
-// //   const renderScene = () => {
-// //     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
-// //     const showFloorTiles = activeSurface === 'floor' || activeSurface === 'both';
-
-// //     const defaultFloorSize = { width: 60, height: 60 };
-// //     const defaultWallSize = { width: 30, height: 45 };
-
-// //     switch (roomType) {
-// //       case 'drawing':
-// //         return (
-// //           <LuxuryDrawingRoomScene 
-// //             floorTexture={showFloorTiles ? floorTexture : null}
-// //             floorTileSize={floorTile?.size || defaultFloorSize}
-// //             quality={quality}
-// //           />
-// //         );
-// //       case 'kitchen':
-// //         return (
-// //           <PremiumKitchenScene
-// //             floorTexture={showFloorTiles ? floorTexture : null}
-// //             floorTileSize={floorTile?.size || defaultFloorSize}
-// //             wallTexture={showWallTiles ? wallTexture : null}
-// //             wallTileSize={wallTile?.size || defaultWallSize}
-// //             showWallTiles={showWallTiles}
-// //             quality={quality}
-// //           />
-// //         );
-// //       case 'bathroom':
-// //         return (
-// //           <PremiumBathroomScene
-// //             floorTexture={showFloorTiles ? floorTexture : null}
-// //             floorTileSize={floorTile?.size || defaultFloorSize}
-// //             wallTexture={showWallTiles ? wallTexture : null}
-// //             wallTileSize={wallTile?.size || defaultWallSize}
-// //             showWallTiles={showWallTiles}
-// //             quality={quality}
-// //           />
-// //         );
-// //     }
-// //   };
-
-// //   const presets = CAMERA_PRESETS[roomType] || [];
-// //   const hasFloorTile = !!floorTile?.texture;
-// //   const hasWallTile = !!wallTile?.texture;
-
-// //   return (
-// //     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
-// //       <Canvas
-// //         gl={{ 
-// //           antialias: true,
-// //           toneMapping: THREE.NoToneMapping,
-// //           outputColorSpace: THREE.SRGBColorSpace,
-// //           powerPreference: 'high-performance',
-// //         }}
-// //         camera={{
-// //           position: [0, 1.6, 3],
-// //           fov: 50,
-// //           near: 0.1,
-// //           far: 1000
-// //         }}
-// //       >
-// //         <Suspense fallback={<SceneLoader />}>
-// //           <color attach="background" args={['#e8f4f8']} />
-// //           <MinimalLighting />
-// //           {renderScene()}
-// //           <CameraController preset={selectedPreset} onTransitionComplete={handleTransitionComplete} />
-// //         </Suspense>
-// //       </Canvas>
-
-// //       {showControls && (
-// //         <div className="absolute top-2 left-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 max-w-[180px]">
-// //           <p className="font-semibold mb-0.5 flex items-center gap-1.5 text-[11px]">
-// //             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-// //             {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-// //           </p>
-// //           <p className="text-[9px] opacity-75">Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span></p>
-// //           {floorTile && <p className="text-[9px] opacity-75 mt-0.5">Floor: {floorTile.size.width}×{floorTile.size.height} cm</p>}
-// //           {wallTile && <p className="text-[9px] opacity-75">Wall: {wallTile.size.width}×{wallTile.size.height} cm</p>}
-// //         </div>
-// //       )}
-
-// //       <div className="absolute top-2 right-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-// //         <p className="text-[9px] font-medium mb-0.5">Applied:</p>
-// //         <p className="text-[11px] font-bold capitalize">{activeSurface}</p>
-// //         {hasFloorTile && <p className="text-[9px] opacity-75 mt-0.5 text-green-400">✓ Floor</p>}
-// //         {hasWallTile && <p className="text-[9px] opacity-75 text-blue-400">✓ Wall</p>}
-// //       </div>
-
-// //       <div className="absolute top-14 right-2 bg-black/80 text-white p-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-// //         <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-// //           <Camera className="w-2.5 h-2.5" />
-// //           Camera
-// //         </p>
-// //         <div className="flex flex-col gap-1">
-// //           {presets.map((preset, index) => (
-// //             <button
-// //               key={index}
-// //               onClick={() => setSelectedPreset(preset)}
-// //               className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[9px] transition-all"
-// //             >
-// //               {preset.name}
-// //             </button>
-// //           ))}
-// //         </div>
-// //       </div>
-
-// //       {showSettings && (
-// //         <div className="absolute bottom-12 right-2 bg-black/90 text-white p-2.5 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 min-w-[140px]">
-// //           <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-// //             <Settings className="w-2.5 h-2.5" />
-// //             Settings
-// //           </p>
-// //           <div className="space-y-1.5">
-// //             <div>
-// //               <p className="text-[9px] mb-1 opacity-75">Quality</p>
-// //               <div className="flex flex-col gap-0.5">
-// //                 {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-// //                   <button
-// //                     key={q}
-// //                     onClick={() => setQuality(q)}
-// //                     className={`px-1.5 py-0.5 rounded text-[9px] capitalize transition-all ${
-// //                       quality === q ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'
-// //                     }`}
-// //                   >
-// //                     {q}
-// //                   </button>
-// //                 ))}
-// //               </div>
-// //             </div>
-// //           </div>
-// //         </div>
-// //       )}
-
-// //       <div className="absolute bottom-2 right-2 flex gap-1.5">
-// //         <button
-// //           onClick={() => setShowControls(!showControls)}
-// //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// //           title="Info"
-// //         >
-// //           <Info className="w-3.5 h-3.5" />
-// //         </button>
-// //         <button
-// //           onClick={() => setShowSettings(!showSettings)}
-// //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// //           title="Settings"
-// //         >
-// //           <Settings className="w-3.5 h-3.5" />
-// //         </button>
-// //         <button
-// //           onClick={handleReset}
-// //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// //           title="Reset"
-// //         >
-// //           <RotateCcw className="w-3.5 h-3.5" />
-// //         </button>
-// //         <button
-// //           onClick={toggleFullscreen}
-// //           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-// //           title="Fullscreen"
-// //         >
-// //           {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-// //         </button>
-// //       </div>
-
-// //       {(!hasFloorTile && !hasWallTile) && (
-// //         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
-// //           <div className="bg-white rounded-xl p-5 text-center shadow-2xl max-w-[280px] mx-4">
-// //             <Package className="w-10 h-10 mx-auto mb-2.5 text-blue-600" />
-// //             <p className="text-gray-800 font-semibold text-sm mb-1">No Tiles Applied</p>
-// //             <p className="text-gray-500 text-xs">Upload tiles to visualize</p>
-// //           </div>
-// //         </div>
-// //       )}
-// //     </div>
-// //   );
-// // };
-
-// // export default Enhanced3DViewer; 
-// // src/components/Enhanced3DViewer.tsx - BRIGHT HOTEL KITCHEN VERSION
-// import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
-// import { Canvas, useThree } from '@react-three/fiber';
-// import { OrbitControls } from '@react-three/drei';
-// import * as THREE from 'three';
-// import { 
-//   Maximize2, 
-//   Minimize2, 
-//   RotateCcw, 
-//   Info, 
-//   Camera, 
-//   Settings,
-//   Package
-// } from 'lucide-react';
-
-// import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
-
-// interface Enhanced3DViewerProps {
-//   roomType: 'drawing' | 'kitchen' | 'bathroom';
-//   floorTile?: {
-//     texture?: string;
-//     size: { width: number; height: number };
-//   };
-//   wallTile?: {
-//     texture?: string;
-//     size: { width: number; height: number };
-//   };
-//   activeSurface: 'floor' | 'wall' | 'both';
-//   onSurfaceChange?: (surface: 'floor' | 'wall' | 'both') => void;
-// }
-
-// interface CameraPreset {
-//   position: [number, number, number];
-//   target: [number, number, number];
-//   name: string;
-//   fov: number;
-// }
-
-// type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
-
-// const ROOM_CONFIGS = {
-//   drawing: { width: 5, depth: 6, height: 3 },
-//   kitchen: { width: 12, depth: 10, height: 3.2 },
-//   bathroom: { width: 6, depth: 3.5, height: 2.8 }
-// } as const;
-
-// const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
-//   drawing: [
-//     { name: 'Luxury View', position: [5, 2, 6], target: [0, 1.2, 0], fov: 45 },
-//     { name: 'TV Wall Focus', position: [2, 1.5, 4], target: [0, 1.5, -4.5], fov: 50 },
-//     { name: 'Sofa Area', position: [-3, 1.8, 4], target: [0, 1, 2], fov: 48 },
-//     { name: 'Full Room', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-//   ],
-//   kitchen: [
-//     { name: 'Hotel View', position: [5, 2.5, 6], target: [0, 1.2, 0], fov: 50 },
-//     { name: 'Island Focus', position: [0, 2, 4.5], target: [0, 1, 0], fov: 48 },
-//     { name: 'Counter View', position: [-4, 2.2, 4], target: [0, 1, -2], fov: 50 },
-//     { name: 'Full Kitchen', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
-//   ],
-//   bathroom: [
-//     { name: 'Luxury Overview', position: [2.2, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-//     { name: 'Vanity View', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-//     { name: 'Floor Tiles', position: [1, 1.6, 1.5], target: [0, 0, 0], fov: 45 },
-//     { name: 'Shower Area', position: [1.2, 1.4, 0.8], target: [-1, 1.2, -1], fov: 40 },
-//   ],
-// };
-
-// const useHighQualityTexture = (
-//   textureUrl: string | undefined,
-//   tileWidth: number,
-//   tileHeight: number
-// ) => {
-//   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-//   const textureRef = useRef<THREE.Texture | null>(null);
-
-//   useEffect(() => {
-//     if (!textureUrl) {
-//       if (textureRef.current) {
-//         textureRef.current.dispose();
-//         textureRef.current = null;
-//       }
-//       setTexture(null);
-//       return;
-//     }
-
-//     let isCancelled = false;
-//     const loader = new THREE.TextureLoader();
-    
-//     loader.load(
-//       textureUrl,
-//       (loadedTexture) => {
-//         if (isCancelled) {
-//           loadedTexture.dispose();
-//           return;
-//         }
-
-//         if (textureRef.current) {
-//           textureRef.current.dispose();
-//         }
-
-//         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-//         loadedTexture.wrapS = THREE.RepeatWrapping;
-//         loadedTexture.wrapT = THREE.RepeatWrapping;
-//         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-//         loadedTexture.magFilter = THREE.LinearFilter;
-//         loadedTexture.anisotropy = 16;
-//         loadedTexture.needsUpdate = true;
-        
-//         textureRef.current = loadedTexture;
-//         setTexture(loadedTexture);
-//       },
-//       undefined,
-//       (error) => {
-//         if (!isCancelled) {
-//           console.error('Texture loading error:', error);
-//           setTexture(null);
-//         }
-//       }
-//     );
-    
-//     return () => {
-//       isCancelled = true;
-//       if (textureRef.current) {
-//         textureRef.current.dispose();
-//         textureRef.current = null;
-//       }
-//     };
-//   }, [textureUrl, tileWidth, tileHeight]);
-
-//   return texture;
-// };
-
-// const useDeviceQuality = (): QualityLevel => {
-//   const [quality, setQuality] = useState<QualityLevel>('high');
-
-//   useEffect(() => {
-//     const canvas = document.createElement('canvas');
-//     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-//     if (!gl) {
-//       setQuality('low');
-//       return;
-//     }
-
-//     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-//     const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
-    
-//     const isMobile = /mobile|android|iphone|ipad/i.test(navigator.userAgent);
-//     const isHighEnd = /apple gpu|adreno 6|mali-g|nvidia|amd/i.test(renderer.toLowerCase());
-    
-//     if (isMobile) {
-//       setQuality(isHighEnd ? 'medium' : 'low');
-//     } else {
-//       setQuality(isHighEnd ? 'ultra' : 'high');
-//     }
-//   }, []);
-
-//   return quality;
-// };
-
-// const MinimalLighting: React.FC = () => {
-//   return (
-//     <>
-//       <ambientLight intensity={0.7} color="#ffffff" />
-//       <directionalLight position={[5, 5, 5]} intensity={0.6} color="#ffffff" />
-//       <pointLight position={[3, 2, 3]} intensity={0.4} color="#ffffff" />
-//       <pointLight position={[-3, 2, -3]} intensity={0.4} color="#ffffff" />
-//     </>
-//   );
-// };
-
-// const TiledFloor: React.FC<{
-//   baseTexture: THREE.Texture | null;
-//   tileSize: { width: number; height: number };
-//   roomWidth: number;
-//   roomDepth: number;
-//   position: [number, number, number];
-//   quality: QualityLevel;
-// }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position }) => {
-  
-//   const material = useMemo(() => {
-//     if (!baseTexture) {
-//       return new THREE.MeshBasicMaterial({ color: '#e8e8e8' });
-//     }
-
-//     const clonedTexture = baseTexture.clone();
-//     clonedTexture.needsUpdate = true;
-//     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-//     clonedTexture.wrapS = THREE.RepeatWrapping;
-//     clonedTexture.wrapT = THREE.RepeatWrapping;
-//     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-//     clonedTexture.magFilter = THREE.LinearFilter;
-    
-//     const tileSizeM = {
-//       width: tileSize.width / 100,
-//       height: tileSize.height / 100
-//     };
-    
-//     const repeatX = roomWidth / tileSizeM.width;
-//     const repeatY = roomDepth / tileSizeM.height;
-    
-//     clonedTexture.repeat.set(repeatX, repeatY);
-
-//     const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
-//     (mat as any)._customTexture = clonedTexture;
-//     return mat;
-//   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
-
-//   useEffect(() => {
-//     return () => {
-//       if ((material as any)._customTexture) {
-//         (material as any)._customTexture.dispose();
-//       }
-//       material.dispose();
-//     };
-//   }, [material]);
-
-//   return (
-//     <mesh rotation={[-Math.PI / 2, 0, 0]} position={position}>
-//       <planeGeometry args={[roomWidth, roomDepth]} />
-//       <primitive object={material} attach="material" />
-//     </mesh>
-//   );
-// };
-
-// const TiledWall: React.FC<{
-//   baseTexture: THREE.Texture | null;
-//   tileSize: { width: number; height: number };
-//   width: number;
-//   height: number;
-//   position: [number, number, number];
-//   rotation?: [number, number, number];
-//   quality: QualityLevel;
-// }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0] }) => {
-  
-//   const material = useMemo(() => {
-//     if (!baseTexture) {
-//       return new THREE.MeshBasicMaterial({ color: '#f5f5f5' });
-//     }
-
-//     const clonedTexture = baseTexture.clone();
-//     clonedTexture.needsUpdate = true;
-//     clonedTexture.colorSpace = THREE.SRGBColorSpace;
-//     clonedTexture.wrapS = THREE.RepeatWrapping;
-//     clonedTexture.wrapT = THREE.RepeatWrapping;
-//     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
-//     clonedTexture.magFilter = THREE.LinearFilter;
-    
-//     const tileSizeM = {
-//       width: tileSize.width / 100,
-//       height: tileSize.height / 100
-//     };
-    
-//     const repeatX = width / tileSizeM.width;
-//     const repeatY = height / tileSizeM.height;
-    
-//     clonedTexture.repeat.set(repeatX, repeatY);
-
-//     const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
-//     (mat as any)._customTexture = clonedTexture;
-//     return mat;
-//   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
-
-//   useEffect(() => {
-//     return () => {
-//       if ((material as any)._customTexture) {
-//         (material as any)._customTexture.dispose();
-//       }
-//       material.dispose();
-//     };
-//   }, [material]);
-
-//   return (
-//     <mesh position={position} rotation={rotation}>
-//       <planeGeometry args={[width, height]} />
-//       <primitive object={material} attach="material" />
-//     </mesh>
-//   );
-// };
-
-// const CameraController: React.FC<{
-//   preset: CameraPreset | null;
-//   onTransitionComplete?: () => void;
-// }> = ({ preset, onTransitionComplete }) => {
-//   const { camera } = useThree();
-//   const controlsRef = useRef<any>();
-
-//   useEffect(() => {
-//     if (!preset || !controlsRef.current) return;
-
-//     camera.position.set(...preset.position);
-//     controlsRef.current.target.set(...preset.target);
-//     camera.fov = preset.fov;
-//     camera.updateProjectionMatrix();
-    
-//     onTransitionComplete?.();
-//   }, [preset, camera, onTransitionComplete]);
-
-//   return (
-//     <OrbitControls
-//       ref={controlsRef}
-//       enablePan={true}
-//       enableZoom={true}
-//       enableRotate={true}
-//       autoRotate={false}
-//       maxPolarAngle={Math.PI * 0.95}
-//       minPolarAngle={Math.PI * 0.05}
-//       minDistance={1}
-//       maxDistance={14}
-//       minAzimuthAngle={-Math.PI / 2}
-//       maxAzimuthAngle={Math.PI / 2}
-//       target={[0, 1.4, 0]}
-//       enableDamping={true}
-//       dampingFactor={0.02}
-//       maxTargetRadius={5}
-//     />
-//   );
-// };
-
-// const Ceiling: React.FC<{
-//   width: number;
-//   depth: number;
-//   height: number;
-// }> = ({ width, depth, height }) => {
-//   return (
-//     <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
-//       <planeGeometry args={[width, depth]} />
-//       <meshStandardMaterial color="#ffffff" roughness={0.9} metalness={0} />
-//     </mesh>
-//   );
-// };
-
-// // ============================================
-// // 🏨 BRIGHT HOTEL-STYLE PREMIUM KITCHEN
-// // ============================================
-
-// const BrightHotelKitchenScene: React.FC<{ 
-//   floorTexture: THREE.Texture | null;
-//   floorTileSize: { width: number; height: number };
-//   wallTexture: THREE.Texture | null;
-//   wallTileSize: { width: number; height: number };
-//   showWallTiles: boolean;
-//   quality: QualityLevel;
-// }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-//   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
-
-//   return (
-//     <group>
-//       {/* Floor with Tiles */}
-//       <TiledFloor 
-//         baseTexture={floorTexture} 
-//         tileSize={floorTileSize} 
-//         roomWidth={W} 
-//         roomDepth={D} 
-//         position={[0, 0, 0]} 
-//         quality={quality} 
-//       />
-
-//       {/* Pure White Ceiling */}
-//       <Ceiling width={W} depth={D} height={H} />
-
-//       {/* ✅ ALL WALLS - BRIGHT COLORS ONLY */}
-      
-//       {/* Back Wall with Tiles - Soft Ivory Fallback */}
-//       <TiledWall
-//         baseTexture={showWallTiles ? wallTexture : null}
-//         tileSize={wallTileSize}
-//         width={W}
-//         height={H}
-//         position={[0, H/2, -D/2]}
-//         quality={quality}
-//       />
-
-//       {/* Front Wall - Pure White */}
-//       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
-//         <planeGeometry args={[W, H]} />
-//         <meshStandardMaterial color="#ffffff" roughness={0.85} />
-//       </mesh>
-
-//       {/* Left Wall - Light Warm Cream */}
-//       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
-//         <planeGeometry args={[D, H]} />
-//         <meshStandardMaterial color="#fef9f3" roughness={0.85} />
-//       </mesh>
-
-//       {/* Right Wall - Soft Beige */}
-//       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
-//         <planeGeometry args={[D, H]} />
-//         <meshStandardMaterial color="#faf5ed" roughness={0.85} />
-//       </mesh>
-
-//       {/* ========== MAIN COUNTER UNIT - BRIGHT WHITE ========== */}
-
-//       <group position={[0, 0, -3.2]}>
-//         {/* Lower Cabinets - Pure Glossy White */}
-//         <mesh position={[0, 0.5, 0]} castShadow>
-//           <boxGeometry args={[5.2, 1.0, 0.6]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.15} />
-//         </mesh>
-
-//         {/* Countertop - Light Marble Beige */}
-//         <mesh position={[0, 1.02, 0]} castShadow>
-//           <boxGeometry args={[5.3, 0.06, 0.65]} />
-//           <meshStandardMaterial 
-//             color="#faf6f0" 
-//             roughness={0.1} 
-//             metalness={0.45}
-//           />
-//         </mesh>
-
-//         {/* Upper Cabinets - Soft Cream White */}
-//         <mesh position={[0, 2.1, -0.25]} castShadow>
-//           <boxGeometry args={[5.2, 1.0, 0.35]} />
-//           <meshStandardMaterial color="#fffbf5" roughness={0.2} metalness={0.1} />
-//         </mesh>
-
-//         {/* Cabinet Handles - Polished Chrome */}
-//         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
-//           <mesh key={`handle-lower-${i}`} position={[x, 0.5, 0.32]}>
-//             <boxGeometry args={[0.15, 0.025, 0.025]} />
-//             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
-//           </mesh>
-//         ))}
-
-//         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
-//           <mesh key={`handle-upper-${i}`} position={[x, 2.1, -0.05]}>
-//             <boxGeometry args={[0.15, 0.025, 0.025]} />
-//             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
-//           </mesh>
-//         ))}
-
-//         {/* Bright LED Under-Cabinet Lighting */}
-//         <rectAreaLight
-//           position={[0, 1.6, -0.38]}
-//           width={5.0}
-//           height={0.05}
-//           intensity={3.5}
-//           color="#fffef8"
-//         />
-//       </group>
-
-//       {/* ========== LARGE KITCHEN ISLAND - BRIGHT ========== */}
-
-//       <group position={[0, 0, 0.5]}>
-//         {/* Island Base - Light Natural Wood/Cream */}
-//         <mesh position={[0, 0.5, 0]} castShadow>
-//           <boxGeometry args={[3.0, 1.0, 1.5]} />
-//           <meshStandardMaterial color="#f5ead5" roughness={0.28} metalness={0.08} />
-//         </mesh>
-
-//         {/* Island Countertop - Bright White Quartz */}
-//         <mesh position={[0, 1.02, 0]} castShadow>
-//           <boxGeometry args={[3.1, 0.06, 1.55]} />
-//           <meshStandardMaterial 
-//             color="#fefefe" 
-//             roughness={0.12} 
-//             metalness={0.38}
-//           />
-//         </mesh>
-
-//         {/* Decorative Light Wood Strip */}
-//         <mesh position={[0, 0.5, 0.8]}>
-//           <boxGeometry args={[3.0, 0.025, 0.015]} />
-//           <meshStandardMaterial color="#f0e6d2" roughness={0.32} metalness={0.05} />
-//         </mesh>
-
-//         {/* Modern Bar Stools - White Seats, Chrome Legs */}
-//         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-//           <group key={`stool-${i}`} position={[x, 0.4, 1.1]}>
-//             {/* White Leather Seat */}
-//             <mesh position={[0, 0.35, 0]} castShadow>
-//               <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
-//               <meshStandardMaterial color="#fefefe" roughness={0.32} metalness={0.05} />
-//             </mesh>
-//             {/* Chrome Pedestal */}
-//             <mesh position={[0, 0, 0]}>
-//               <cylinderGeometry args={[0.022, 0.022, 0.7, 16]} />
-//               <meshStandardMaterial color="#e0e0e0" roughness={0.08} metalness={0.92} />
-//             </mesh>
-//             {/* Chrome Base */}
-//             <mesh position={[0, -0.35, 0]}>
-//               <cylinderGeometry args={[0.15, 0.15, 0.03, 20]} />
-//               <meshStandardMaterial color="#d8d8d8" roughness={0.1} metalness={0.9} />
-//             </mesh>
-//           </group>
-//         ))}
-//       </group>
-
-//       {/* ========== SIDE COUNTER - BRIGHT ========== */}
-
-//       <group position={[-2.7, 0, -1.2]}>
-//         {/* Side Cabinet - White */}
-//         <mesh position={[0, 0.5, 0]} castShadow>
-//           <boxGeometry args={[0.6, 1.0, 2.6]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.15} />
-//         </mesh>
-
-//         {/* Side Countertop - Light Beige */}
-//         <mesh position={[0, 1.02, 0]} castShadow>
-//           <boxGeometry args={[0.65, 0.06, 2.7]} />
-//           <meshStandardMaterial 
-//             color="#faf6f0" 
-//             roughness={0.1} 
-//             metalness={0.45}
-//           />
-//         </mesh>
-//       </group>
-
-//       {/* ========== PREMIUM APPLIANCES - STAINLESS STEEL ========== */}
-
-//       {/* Large Refrigerator - Bright Stainless Steel */}
-//       <mesh position={[2.5, 1.3, -3.15]} castShadow>
-//         <boxGeometry args={[0.9, 2.6, 0.75]} />
-//         <meshStandardMaterial 
-//           color="#e8e8e8" 
-//           roughness={0.12} 
-//           metalness={0.88}
-//         />
-//       </mesh>
-
-//       {/* Fridge Handles - Polished Chrome */}
-//       <mesh position={[2.05, 1.9, -2.75]}>
-//         <boxGeometry args={[0.035, 0.6, 0.045]} />
-//         <meshStandardMaterial color="#f0f0f0" roughness={0.08} metalness={0.95} />
-//       </mesh>
-//       <mesh position={[2.05, 0.7, -2.75]}>
-//         <boxGeometry args={[0.035, 0.6, 0.045]} />
-//         <meshStandardMaterial color="#f0f0f0" roughness={0.08} metalness={0.95} />
-//       </mesh>
-
-//       {/* Built-in Double Oven - Stainless Steel */}
-//       <mesh position={[-2.1, 1.4, -3.15]} castShadow>
-//         <boxGeometry args={[0.7, 1.4, 0.12]} />
-//         <meshStandardMaterial color="#e0e0e0" roughness={0.18} metalness={0.8} />
-//       </mesh>
-
-//       {/* Oven Glass Doors - Dark Tinted Glass */}
-//       <mesh position={[-2.1, 1.75, -3.1]}>
-//         <boxGeometry args={[0.6, 0.55, 0.05]} />
-//         <meshStandardMaterial 
-//           color="#2a2a2a" 
-//           roughness={0.04} 
-//           metalness={0.85}
-//           transparent={true}
-//           opacity={0.6}
-//         />
-//       </mesh>
-//       <mesh position={[-2.1, 1.05, -3.1]}>
-//         <boxGeometry args={[0.6, 0.55, 0.05]} />
-//         <meshStandardMaterial 
-//           color="#2a2a2a" 
-//           roughness={0.04} 
-//           metalness={0.85}
-//           transparent={true}
-//           opacity={0.6}
-//         />
-//       </mesh>
-
-//       {/* Induction Cooktop - Modern Dark Glass */}
-//       <mesh position={[0.8, 1.03, -3.1]} castShadow>
-//         <boxGeometry args={[0.9, 0.02, 0.55]} />
-//         <meshStandardMaterial 
-//           color="#1a1a1a" 
-//           roughness={0.05} 
-//           metalness={0.9}
-//         />
-//       </mesh>
-
-//       {/* Professional Range Hood - Bright Stainless */}
-//       <group position={[0.8, 2.5, -3.3]}>
-//         <mesh castShadow>
-//           <boxGeometry args={[1.5, 0.5, 0.55]} />
-//           <meshStandardMaterial color="#e8e8e8" roughness={0.15} metalness={0.88} />
-//         </mesh>
-//         {/* Hood LED Lights */}
-//         <pointLight position={[-0.5, -0.2, 0.1]} intensity={1.8} color="#fffef5" distance={3} />
-//         <pointLight position={[0.5, -0.2, 0.1]} intensity={1.8} color="#fffef5" distance={3} />
-//       </group>
-
-//       {/* Large Kitchen Sink - Undermount Stainless */}
-//       <group position={[-0.6, 1.0, -3.05]}>
-//         <mesh>
-//           <boxGeometry args={[0.85, 0.14, 0.55]} />
-//           <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
-//         </mesh>
-        
-//         {/* Professional Pull-Down Faucet - Chrome */}
-//         <group position={[0, 0.25, -0.2]}>
-//           <mesh position={[0, 0.3, 0]}>
-//             <cylinderGeometry args={[0.025, 0.025, 0.6, 18]} />
-//             <meshStandardMaterial color="#f0f0f0" roughness={0.05} metalness={0.95} />
-//           </mesh>
-//           <mesh position={[0, 0.6, 0.12]} rotation={[Math.PI / 3.2, 0, 0]}>
-//             <cylinderGeometry args={[0.02, 0.02, 0.25, 18]} />
-//             <meshStandardMaterial color="#f0f0f0" roughness={0.05} metalness={0.95} />
-//           </mesh>
-//           {/* Spray Head */}
-//           <mesh position={[0, 0.75, 0.22]}>
-//             <sphereGeometry args={[0.035, 16, 16]} />
-//             <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
-//           </mesh>
-//         </group>
-
-//         {/* Soap Dispenser - Chrome */}
-//         <group position={[0.35, 0.08, -0.15]}>
-//           <mesh>
-//             <cylinderGeometry args={[0.022, 0.025, 0.08, 16]} />
-//             <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.9} />
-//           </mesh>
-//         </group>
-//       </group>
-
-//       {/* ========== MODERN LIGHTING - BRIGHT ========== */}
-
-//       {/* Glass Pendant Lights over Island - Clear Glass, Chrome */}
-//       {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-//         <group key={`pendant-${i}`} position={[x, 2.85, 0.5]}>
-//           {/* Chrome Wire */}
-//           <mesh>
-//             <cylinderGeometry args={[0.005, 0.005, 0.7, 10]} />
-//             <meshStandardMaterial color="#d8d8d8" roughness={0.1} metalness={0.9} />
-//           </mesh>
-//           {/* Clear Glass Globe Shade */}
-//           <mesh position={[0, -0.4, 0]}>
-//             <sphereGeometry args={[0.18, 20, 20]} />
-//             <meshStandardMaterial 
-//               color="#ffffff" 
-//               transparent={true}
-//               opacity={0.35}
-//               roughness={0.02}
-//               metalness={0.05}
-//             />
-//           </mesh>
-//           {/* Chrome Mount */}
-//           <mesh position={[0, -0.22, 0]}>
-//             <cylinderGeometry args={[0.1, 0.1, 0.06, 20]} />
-//             <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
-//           </mesh>
-//           {/* Bright LED Bulb */}
-//           <pointLight position={[0, -0.45, 0]} intensity={2.2} color="#fffef8" distance={3.5} />
-//         </group>
-//       ))}
-
-//       {/* Recessed Ceiling Lights - Bright White LEDs */}
-//       <pointLight position={[2, 3.1, -2]} intensity={2.0} color="#ffffff" distance={5} />
-//       <pointLight position={[-2, 3.1, -2]} intensity={2.0} color="#ffffff" distance={5} />
-//       <pointLight position={[2, 3.1, 1.5]} intensity={2.0} color="#ffffff" distance={5} />
-//       <pointLight position={[-2, 3.1, 1.5]} intensity={2.0} color="#ffffff" distance={5} />
-//       <pointLight position={[0, 3.1, 0]} intensity={2.2} color="#ffffff" distance={5} />
-
-//       {/* ========== DECORATIVE ACCESSORIES ========== */}
-
-//       {/* Fruit Bowl - White Ceramic */}
-//       <group position={[0, 1.05, 0.5]}>
-//         <mesh castShadow>
-//           <cylinderGeometry args={[0.22, 0.18, 0.12, 24]} />
-//           <meshStandardMaterial color="#fefefe" roughness={0.22} metalness={0.05} />
-//         </mesh>
-//       </group>
-
-//       {/* Modern Coffee Machine - Stainless/White */}
-//       <group position={[-1.3, 1.02, -3.0]}>
-//         <mesh castShadow>
-//           <boxGeometry args={[0.32, 0.4, 0.35]} />
-//           <meshStandardMaterial color="#e8e8e8" roughness={0.15} metalness={0.85} />
-//         </mesh>
-//         <mesh position={[0, 0.25, 0.1]} castShadow>
-//           <cylinderGeometry args={[0.05, 0.05, 0.08, 16]} />
-//           <meshStandardMaterial color="#fefefe" roughness={0.28} metalness={0.05} />
-//         </mesh>
-//       </group>
-
-//       {/* Utensil Holder - White Ceramic */}
-//       <group position={[0.4, 1.02, -3.0]}>
-//         <mesh castShadow>
-//           <cylinderGeometry args={[0.09, 0.09, 0.18, 20]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.32} metalness={0.05} />
-//         </mesh>
-//       </group>
-
-//       {/* Cutting Board - Light Bamboo/Wood */}
-//       <mesh position={[-0.2, 1.05, -3.0]} rotation={[-Math.PI / 2, 0, 0]}>
-//         <boxGeometry args={[0.35, 0.25, 0.02]} />
-//         <meshStandardMaterial color="#f5e6d3" roughness={0.4} metalness={0.02} />
-//       </mesh>
-
-//       {/* Kitchen Towel - White/Cream */}
-//       <mesh position={[1.5, 1.05, -3.0]}>
-//         <boxGeometry args={[0.15, 0.02, 0.25]} />
-//         <meshStandardMaterial color="#fefefe" roughness={0.6} metalness={0.01} />
-//       </mesh>
-
-//       {/* Wall Clock - Modern White/Chrome */}
-//       <group position={[0, 2.5, -3.48]}>
-//         <mesh>
-//           <cylinderGeometry args={[0.22, 0.22, 0.05, 32]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.28} metalness={0.1} />
-//         </mesh>
-//         <mesh position={[0, 0, 0.03]}>
-//           <cylinderGeometry args={[0.2, 0.2, 0.01, 32]} />
-//           <meshStandardMaterial color="#f8f8f8" roughness={0.18} metalness={0.05} />
-//         </mesh>
-//       </group>
-
-//       {/* Open Shelving - Light Natural Wood */}
-//       <group position={[2.2, 2.0, -3.35]}>
-//         <mesh>
-//           <boxGeometry args={[0.8, 0.03, 0.25]} />
-//           <meshStandardMaterial color="#f5e6d3" roughness={0.32} metalness={0.02} />
-//         </mesh>
-//         {/* White Decorative Items on Shelf */}
-//         <mesh position={[-0.2, 0.08, 0]}>
-//           <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.28} metalness={0.05} />
-//         </mesh>
-//         <mesh position={[0.2, 0.06, 0]}>
-//           <boxGeometry args={[0.08, 0.12, 0.08]} />
-//           <meshStandardMaterial color="#fefefe" roughness={0.32} metalness={0.05} />
-//         </mesh>
-//       </group>
-
-//       {/* Decorative Window - White Frame */}
-//       <group position={[-2.85, 1.8, 0]}>
-//         <mesh rotation={[0, Math.PI / 2, 0]}>
-//           <boxGeometry args={[1.8, 1.4, 0.08]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.05} />
-//         </mesh>
-//         {/* Window "Glass" - Light Blue Sky Tint */}
-//         <mesh position={[0, 0, -0.05]} rotation={[0, Math.PI / 2, 0]}>
-//           <boxGeometry args={[1.7, 1.3, 0.02]} />
-//           <meshStandardMaterial 
-//             color="#e6f2ff" 
-//             transparent={true}
-//             opacity={0.4}
-//             roughness={0.05}
-//             metalness={0.02}
-//           />
-//         </mesh>
-//       </group>
-
-//       {/* Small Green Plant - Natural Touch */}
-//       <group position={[0.8, 1.05, 0.5]}>
-//         <mesh>
-//           <cylinderGeometry args={[0.08, 0.07, 0.12, 16]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.05} />
-//         </mesh>
-//         <mesh position={[0, 0.15, 0]}>
-//           <sphereGeometry args={[0.12, 8, 8]} />
-//           <meshStandardMaterial color="#4a7c59" roughness={0.7} metalness={0.01} />
-//         </mesh>
-//       </group>
-//     </group>
-//   );
-// };
-
-// // ============================================
-// // 🛁 PREMIUM BATHROOM SCENE (Unchanged)
-// // ============================================
-
-// const PremiumBathroomScene: React.FC<{ 
-//   floorTexture: THREE.Texture | null;
-//   floorTileSize: { width: number; height: number };
-//   wallTexture: THREE.Texture | null;
-//   wallTileSize: { width: number; height: number };
-//   showWallTiles: boolean;
-//   quality: QualityLevel;
-// }> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
-//   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
-
-//   return (
-//     <group>
-//       <TiledFloor 
-//         baseTexture={floorTexture} 
-//         tileSize={floorTileSize} 
-//         roomWidth={W} 
-//         roomDepth={D} 
-//         position={[0, 0, 0]} 
-//         quality={quality} 
-//       />
-//       <Ceiling width={W} depth={D} height={H} />
-
-//       <TiledWall
-//         baseTexture={showWallTiles ? wallTexture : null}
-//         tileSize={wallTileSize}
-//         width={W}
-//         height={H}
-//         position={[0, H/2, -D/2]}
-//         quality={quality}
-//       />
-//       <TiledWall
-//         baseTexture={showWallTiles ? wallTexture : null}
-//         tileSize={wallTileSize}
-//         width={W}
-//         height={H}
-//         position={[0, H/2, D/2]}
-//         rotation={[0, Math.PI, 0]}
-//         quality={quality}
-//       />
-//       <TiledWall
-//         baseTexture={showWallTiles ? wallTexture : null}
-//         tileSize={wallTileSize}
-//         width={D}
-//         height={H}
-//         position={[-W/2, H/2, 0]}
-//         rotation={[0, Math.PI/2, 0]}
-//         quality={quality}
-//       />
-//       <TiledWall
-//         baseTexture={showWallTiles ? wallTexture : null}
-//         tileSize={wallTileSize}
-//         width={D}
-//         height={H}
-//         position={[W/2, H/2, 0]}
-//         rotation={[0, -Math.PI/2, 0]}
-//         quality={quality}
-//       />
-
-//       <group position={[0, 0, -1.5]}>
-//         <mesh position={[0, 0.45, 0]} castShadow>
-//           <boxGeometry args={[2.2, 0.9, 0.5]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.1} />
-//         </mesh>
-//         <mesh position={[0, 0.92, 0]} castShadow>
-//           <boxGeometry args={[2.3, 0.05, 0.55]} />
-//           <meshStandardMaterial color="#f5f5f0" roughness={0.15} metalness={0.4} />
-//         </mesh>
-//         <group position={[-0.6, 0.88, -0.05]}>
-//           <mesh>
-//             <cylinderGeometry args={[0.2, 0.18, 0.12, 20]} />
-//             <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} />
-//           </mesh>
-//         </group>
-//         <group position={[0.6, 0.88, -0.05]}>
-//           <mesh>
-//             <cylinderGeometry args={[0.2, 0.18, 0.12, 20]} />
-//             <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} />
-//           </mesh>
-//         </group>
-//         {[-0.6, 0.6].map((x, i) => (
-//           <group key={`faucet-${i}`} position={[x, 0.95, -0.2]}>
-//             <mesh position={[0, 0.15, 0]}>
-//               <cylinderGeometry args={[0.015, 0.015, 0.3, 12]} />
-//               <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.95} />
-//             </mesh>
-//             <mesh position={[0, 0.3, 0.06]} rotation={[Math.PI / 3, 0, 0]}>
-//               <cylinderGeometry args={[0.012, 0.012, 0.12, 12]} />
-//               <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.95} />
-//             </mesh>
-//           </group>
-//         ))}
-//       </group>
-
-//       <group position={[0, 1.6, -1.72]}>
-//         <mesh>
-//           <boxGeometry args={[2.0, 0.9, 0.02]} />
-//           <meshStandardMaterial color="#d0d0d0" roughness={0.25} metalness={0.85} />
-//         </mesh>
-//         <mesh position={[0, 0, 0.015]}>
-//           <boxGeometry args={[1.9, 0.8, 0.01]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.98} />
-//         </mesh>
-//         <rectAreaLight position={[0, 0, -0.02]} width={2.0} height={0.9} intensity={1.5} color="#fff8e1" />
-//       </group>
-
-//       {[-1.1, 1.1].map((x, i) => (
-//         <group key={`sconce-${i}`} position={[x, 1.6, -1.68]}>
-//           <mesh>
-//             <cylinderGeometry args={[0.06, 0.06, 0.25, 16]} />
-//             <meshStandardMaterial color="#e8e8e8" roughness={0.25} metalness={0.85} />
-//           </mesh>
-//           <pointLight position={[0, 0, 0.1]} intensity={1} color="#fff8e1" distance={2} />
-//         </group>
-//       ))}
-
-//       <group position={[-0.85, 0.35, -0.8]}>
-//         <mesh castShadow>
-//           <boxGeometry args={[0.85, 0.7, 1.6]} />
-//           <meshStandardMaterial color="#fafafa" roughness={0.08} metalness={0.15} />
-//         </mesh>
-//       </group>
-
-//       <group position={[0.8, 1.2, -0.8]}>
-//         <mesh position={[0, 0, 0.6]}>
-//           <boxGeometry args={[0.02, 2.4, 1.2]} />
-//           <meshStandardMaterial color="#ffffff" transparent={true} opacity={0.25} roughness={0.05} />
-//         </mesh>
-//         <group position={[0, 1.1, 0]}>
-//           <mesh>
-//             <cylinderGeometry args={[0.15, 0.15, 0.03, 20]} />
-//             <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.9} />
-//           </mesh>
-//         </group>
-//       </group>
-
-//       <group position={[0.9, 0.25, 1.0]}>
-//         <mesh castShadow>
-//           <boxGeometry args={[0.45, 0.5, 0.6]} />
-//           <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.1} />
-//         </mesh>
-//       </group>
-
-//       <pointLight position={[0, 2.5, 0]} intensity={1.5} color="#fff8e1" distance={6} />
-//     </group>
-//   );
-// };
-
-// const SceneLoader: React.FC = () => (
-//   <mesh>
-//     <boxGeometry args={[1, 1, 1]} />
-//     <meshStandardMaterial color="#3b82f6" />
-//   </mesh>
-// );
-
-// export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
-//   roomType,
-//   floorTile,
-//   wallTile,
-//   activeSurface,
-// }) => {
-//   const [isFullscreen, setIsFullscreen] = useState(false);
-//   const [showControls, setShowControls] = useState(true);
-//   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
-//   const [quality, setQuality] = useState<QualityLevel>('high');
-//   const [showSettings, setShowSettings] = useState(false);
-
-//   const autoQuality = useDeviceQuality();
-
-//   useEffect(() => {
-//     setQuality(autoQuality);
-//   }, [autoQuality]);
-
-//   const floorTexture = useHighQualityTexture(
-//     floorTile?.texture,
-//     floorTile?.size.width || 60,
-//     floorTile?.size.height || 60
-//   );
-
-//   const wallTexture = useHighQualityTexture(
-//     wallTile?.texture,
-//     wallTile?.size.width || 30,
-//     wallTile?.size.height || 45
-//   );
-
-//   const handleReset = useCallback(() => {
-//     setSelectedPreset(null);
-//   }, []);
-
-//   const handleTransitionComplete = useCallback(() => {
-//     setSelectedPreset(null);
-//   }, []);
-
-//   const toggleFullscreen = () => {
-//     if (!document.fullscreenElement) {
-//       document.documentElement.requestFullscreen();
-//       setIsFullscreen(true);
-//     } else {
-//       document.exitFullscreen();
-//       setIsFullscreen(false);
-//     }
-//   };
-
-//   const renderScene = () => {
-//     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
-//     const showFloorTiles = activeSurface === 'floor' || activeSurface === 'both';
-
-//     const defaultFloorSize = { width: 60, height: 60 };
-//     const defaultWallSize = { width: 30, height: 45 };
-
-//     switch (roomType) {
-//       case 'drawing':
-//         return (
-//           <LuxuryDrawingRoomScene 
-//             floorTexture={showFloorTiles ? floorTexture : null}
-//             floorTileSize={floorTile?.size || defaultFloorSize}
-//             quality={quality}
-//           />
-//         );
-//       case 'kitchen':
-//         return (
-//           <BrightHotelKitchenScene
-//             floorTexture={showFloorTiles ? floorTexture : null}
-//             floorTileSize={floorTile?.size || defaultFloorSize}
-//             wallTexture={showWallTiles ? wallTexture : null}
-//             wallTileSize={wallTile?.size || defaultWallSize}
-//             showWallTiles={showWallTiles}
-//             quality={quality}
-//           />
-//         );
-//       case 'bathroom':
-//         return (
-//           <PremiumBathroomScene
-//             floorTexture={showFloorTiles ? floorTexture : null}
-//             floorTileSize={floorTile?.size || defaultFloorSize}
-//             wallTexture={showWallTiles ? wallTexture : null}
-//             wallTileSize={wallTile?.size || defaultWallSize}
-//             showWallTiles={showWallTiles}
-//             quality={quality}
-//           />
-//         );
-//     }
-//   };
-
-//   const presets = CAMERA_PRESETS[roomType] || [];
-//   const hasFloorTile = !!floorTile?.texture;
-//   const hasWallTile = !!wallTile?.texture;
-
-//   return (
-//     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
-//       <Canvas
-//         gl={{ 
-//           antialias: true,
-//           toneMapping: THREE.NoToneMapping,
-//           outputColorSpace: THREE.SRGBColorSpace,
-//           powerPreference: 'high-performance',
-//         }}
-//         camera={{
-//           position: [0, 1.6, 3],
-//           fov: 50,
-//           near: 0.1,
-//           far: 1000
-//         }}
-//       >
-//         <Suspense fallback={<SceneLoader />}>
-//           <color attach="background" args={['#e8f4f8']} />
-//           <MinimalLighting />
-//           {renderScene()}
-//           <CameraController preset={selectedPreset} onTransitionComplete={handleTransitionComplete} />
-//         </Suspense>
-//       </Canvas>
-
-//       {showControls && (
-//         <div className="absolute top-2 left-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 max-w-[180px]">
-//           <p className="font-semibold mb-0.5 flex items-center gap-1.5 text-[11px]">
-//             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-//             {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-//           </p>
-//           <p className="text-[9px] opacity-75">Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span></p>
-//           {floorTile && <p className="text-[9px] opacity-75 mt-0.5">Floor: {floorTile.size.width}×{floorTile.size.height} cm</p>}
-//           {wallTile && <p className="text-[9px] opacity-75">Wall: {wallTile.size.width}×{wallTile.size.height} cm</p>}
-//         </div>
-//       )}
-
-//       <div className="absolute top-2 right-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-//         <p className="text-[9px] font-medium mb-0.5">Applied:</p>
-//         <p className="text-[11px] font-bold capitalize">{activeSurface}</p>
-//         {hasFloorTile && <p className="text-[9px] opacity-75 mt-0.5 text-green-400">✓ Floor</p>}
-//         {hasWallTile && <p className="text-[9px] opacity-75 text-blue-400">✓ Wall</p>}
-//       </div>
-
-//       <div className="absolute top-14 right-2 bg-black/80 text-white p-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-//         <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-//           <Camera className="w-2.5 h-2.5" />
-//           Camera
-//         </p>
-//         <div className="flex flex-col gap-1">
-//           {presets.map((preset, index) => (
-//             <button
-//               key={index}
-//               onClick={() => setSelectedPreset(preset)}
-//               className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[9px] transition-all"
-//             >
-//               {preset.name}
-//             </button>
-//           ))}
-//         </div>
-//       </div>
-
-//       {showSettings && (
-//         <div className="absolute bottom-12 right-2 bg-black/90 text-white p-2.5 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 min-w-[140px]">
-//           <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-//             <Settings className="w-2.5 h-2.5" />
-//             Settings
-//           </p>
-//           <div className="space-y-1.5">
-//             <div>
-//               <p className="text-[9px] mb-1 opacity-75">Quality</p>
-//               <div className="flex flex-col gap-0.5">
-//                 {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-//                   <button
-//                     key={q}
-//                     onClick={() => setQuality(q)}
-//                     className={`px-1.5 py-0.5 rounded text-[9px] capitalize transition-all ${
-//                       quality === q ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'
-//                     }`}
-//                   >
-//                     {q}
-//                   </button>
-//                 ))}
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       <div className="absolute bottom-2 right-2 flex gap-1.5">
-//         <button
-//           onClick={() => setShowControls(!showControls)}
-//           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-//           title="Info"
-//         >
-//           <Info className="w-3.5 h-3.5" />
-//         </button>
-//         <button
-//           onClick={() => setShowSettings(!showSettings)}
-//           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-//           title="Settings"
-//         >
-//           <Settings className="w-3.5 h-3.5" />
-//         </button>
-//         <button
-//           onClick={handleReset}
-//           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-//           title="Reset"
-//         >
-//           <RotateCcw className="w-3.5 h-3.5" />
-//         </button>
-//         <button
-//           onClick={toggleFullscreen}
-//           className="bg-black/80 text-white p-1.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10"
-//           title="Fullscreen"
-//         >
-//           {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-//         </button>
-//       </div>
-
-//       {(!hasFloorTile && !hasWallTile) && (
-//         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
-//           <div className="bg-white rounded-xl p-5 text-center shadow-2xl max-w-[280px] mx-4">
-//             <Package className="w-10 h-10 mx-auto mb-2.5 text-blue-600" />
-//             <p className="text-gray-800 font-semibold text-sm mb-1">No Tiles Applied</p>
-//             <p className="text-gray-500 text-xs">Upload tiles to visualize</p>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default Enhanced3DViewer;  
-// src/components/Enhanced3DViewer.tsx - PROFESSIONAL HOTEL BATHROOM
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
   Maximize2, 
@@ -5610,10 +10,28 @@ import {
   Info, 
   Camera, 
   Settings,
-  Package
+  Package,
+  Highlighter,
+  Grid3x3,
+  QrCode,
+  Check,
+  X,
+  Upload,
+  Layers,
+  Shuffle,
+  Hash,
+  Loader,
+  AlertCircle,
+  ImageIcon
 } from 'lucide-react';
 
 import { LuxuryDrawingRoomScene } from './LuxuryDrawingRoomScene';
+import { QRScanner } from './QRScanner';
+import { getTileById, getTileByCode } from '../lib/firebaseutils';
+
+// ═══════════════════════════════════════════════════════════════
+// INTERFACES & TYPES
+// ═══════════════════════════════════════════════════════════════
 
 interface Enhanced3DViewerProps {
   roomType: 'drawing' | 'kitchen' | 'bathroom';
@@ -5636,7 +54,43 @@ interface CameraPreset {
   fov: number;
 }
 
+interface TileData {
+  index: number;
+  row: number;
+  col: number;
+  position: [number, number, number];
+  texture: string | null;
+  isCustom: boolean;
+}
+
+interface QRScanResult {
+  tileId: string;
+  tileName: string;
+  imageUrl: string;
+  size: { width: number; height: number };
+}
+
 type QualityLevel = 'ultra' | 'high' | 'medium' | 'low';
+type WallType = 'back' | 'front' | 'left' | 'right';
+type UploadMode = 'select' | 'upload' | 'qr' | 'manual';
+
+interface WallCustomTiles {
+  back: Map<number, THREE.Texture>;
+  front: Map<number, THREE.Texture>;
+  left: Map<number, THREE.Texture>;
+  right: Map<number, THREE.Texture>;
+}
+
+interface TileUploadData {
+  imageUrl: string;
+  tileId: string;
+  tileName: string;
+  size: { width: number; height: number };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════
 
 const ROOM_CONFIGS = {
   drawing: { width: 5, depth: 6, height: 3 },
@@ -5663,6 +117,30 @@ const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
     { name: 'Toilet Area', position: [1.8, 1.2, 0.8], target: [0.9, 0.5, 1.2], fov: 48 },
   ],
 };
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+const generateVerticalStripesPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
+  const selectedIndices: number[] = [];
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const index = (row * cols) + col + 1;
+      const pattern = (col + randomOffset) % 3;
+      if (pattern === 0 || pattern === 1) {
+        selectedIndices.push(index);
+      }
+    }
+  }
+  
+  return selectedIndices;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM HOOKS
+// ═══════════════════════════════════════════════════════════════
 
 const useHighQualityTexture = (
   textureUrl: string | undefined,
@@ -5703,6 +181,8 @@ const useHighQualityTexture = (
         loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
         loadedTexture.magFilter = THREE.LinearFilter;
         loadedTexture.anisotropy = 16;
+        loadedTexture.generateMipmaps = true;
+        loadedTexture.premultiplyAlpha = false;
         loadedTexture.needsUpdate = true;
         
         textureRef.current = loadedTexture;
@@ -5757,6 +237,10 @@ const useDeviceQuality = (): QualityLevel => {
   return quality;
 };
 
+// ═══════════════════════════════════════════════════════════════
+// 3D SCENE COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+
 const MinimalLighting: React.FC = () => {
   return (
     <>
@@ -5779,7 +263,10 @@ const TiledFloor: React.FC<{
   
   const material = useMemo(() => {
     if (!baseTexture) {
-      return new THREE.MeshBasicMaterial({ color: '#e8e8e8' });
+      return new THREE.MeshBasicMaterial({ 
+        color: '#e8e8e8',
+        side: THREE.DoubleSide
+      });
     }
 
     const clonedTexture = baseTexture.clone();
@@ -5789,6 +276,7 @@ const TiledFloor: React.FC<{
     clonedTexture.wrapT = THREE.RepeatWrapping;
     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
     clonedTexture.magFilter = THREE.LinearFilter;
+    clonedTexture.anisotropy = 16;
     
     const tileSizeM = {
       width: tileSize.width / 100,
@@ -5800,7 +288,11 @@ const TiledFloor: React.FC<{
     
     clonedTexture.repeat.set(repeatX, repeatY);
 
-    const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
+    const mat = new THREE.MeshBasicMaterial({ 
+      map: clonedTexture,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
     (mat as any)._customTexture = clonedTexture;
     return mat;
   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
@@ -5834,7 +326,10 @@ const TiledWall: React.FC<{
   
   const material = useMemo(() => {
     if (!baseTexture) {
-      return new THREE.MeshBasicMaterial({ color: '#f5f5f5' });
+      return new THREE.MeshBasicMaterial({ 
+        color: '#f5f5f5',
+        side: THREE.DoubleSide
+      });
     }
 
     const clonedTexture = baseTexture.clone();
@@ -5844,6 +339,7 @@ const TiledWall: React.FC<{
     clonedTexture.wrapT = THREE.RepeatWrapping;
     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
     clonedTexture.magFilter = THREE.LinearFilter;
+    clonedTexture.anisotropy = 16;
     
     const tileSizeM = {
       width: tileSize.width / 100,
@@ -5855,7 +351,11 @@ const TiledWall: React.FC<{
     
     clonedTexture.repeat.set(repeatX, repeatY);
 
-    const mat = new THREE.MeshBasicMaterial({ map: clonedTexture });
+    const mat = new THREE.MeshBasicMaterial({ 
+      map: clonedTexture,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
     (mat as any)._customTexture = clonedTexture;
     return mat;
   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
@@ -5877,42 +377,207 @@ const TiledWall: React.FC<{
   );
 };
 
-const CameraController: React.FC<{
-  preset: CameraPreset | null;
-  onTransitionComplete?: () => void;
-}> = ({ preset, onTransitionComplete }) => {
-  const { camera } = useThree();
-  const controlsRef = useRef<any>();
+const IndividualTile: React.FC<{
+  tileData: TileData;
+  baseTexture: THREE.Texture | null;
+  customTexture: THREE.Texture | null;
+  tileSize: { width: number; height: number };
+  isSelected: boolean;
+  isGridMode: boolean;
+  onTileClick: (index: number) => void;
+}> = ({ tileData, baseTexture, customTexture, tileSize, isSelected, isGridMode, onTileClick }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  const material = useMemo(() => {
+    const textureToUse = customTexture || baseTexture;
+    
+    if (!textureToUse) {
+      return new THREE.MeshBasicMaterial({ 
+        color: '#f5f5f5',
+        side: THREE.DoubleSide,
+        toneMapped: false
+      });
+    }
+
+    return new THREE.MeshBasicMaterial({ 
+      map: textureToUse,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
+  }, [baseTexture, customTexture]);
 
   useEffect(() => {
-    if (!preset || !controlsRef.current) return;
+    return () => {
+      material.dispose();
+    };
+  }, [material]);
 
-    camera.position.set(...preset.position);
-    controlsRef.current.target.set(...preset.target);
-    camera.fov = preset.fov;
-    camera.updateProjectionMatrix();
-    
-    onTransitionComplete?.();
-  }, [preset, camera, onTransitionComplete]);
+  const tileSizeM = {
+    width: tileSize.width / 100,
+    height: tileSize.height / 100
+  };
 
   return (
-    <OrbitControls
-      ref={controlsRef}
-      enablePan={true}
-      enableZoom={true}
-      enableRotate={true}
-      autoRotate={false}
-      maxPolarAngle={Math.PI * 0.95}
-      minPolarAngle={Math.PI * 0.05}
-      minDistance={1}
-      maxDistance={14}
-      minAzimuthAngle={-Math.PI / 2}
-      maxAzimuthAngle={Math.PI / 2}
-      target={[0, 1.4, 0]}
-      enableDamping={true}
-      dampingFactor={0.02}
-      maxTargetRadius={5}
-    />
+    <group position={tileData.position}>
+      <mesh 
+        ref={meshRef}
+        userData={{ tileIndex: tileData.index }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isGridMode) {
+            onTileClick(tileData.index);
+          }
+        }}
+      >
+        <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+        <primitive object={material} attach="material" />
+      </mesh>
+
+      {isGridMode && (
+        <lineSegments position={[0, 0, 0.001]}>
+          <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
+          <lineBasicMaterial 
+            color={isSelected ? "#10b981" : "#666666"}
+            opacity={1}
+            transparent={false}
+          />
+        </lineSegments>
+      )}
+
+      {isGridMode && (
+        <Text
+          position={[0, 0, 0.002]}
+          fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
+          color="#000000"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.005}
+          outlineColor="#ffffff"
+        >
+          {tileData.index}
+        </Text>
+      )}
+
+      {isSelected && (
+        <>
+          <lineSegments position={[0, 0, 0.003]}>
+            <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
+            <lineBasicMaterial 
+              color="#10b981" 
+              linewidth={4}
+              opacity={1}
+              transparent={false}
+            />
+          </lineSegments>
+          
+          <lineSegments position={[0, 0, 0.004]}>
+            <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
+            <lineBasicMaterial 
+              color="#22c55e" 
+              linewidth={3}
+              opacity={1}
+              transparent={false}
+            />
+          </lineSegments>
+
+          <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+            <circleGeometry args={[0.03, 16]} />
+            <meshBasicMaterial color="#10b981" />
+          </mesh>
+          <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+            <circleGeometry args={[0.03, 16]} />
+            <meshBasicMaterial color="#10b981" />
+          </mesh>
+          <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+            <circleGeometry args={[0.03, 16]} />
+            <meshBasicMaterial color="#10b981" />
+          </mesh>
+          <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+            <circleGeometry args={[0.03, 16]} />
+            <meshBasicMaterial color="#10b981" />
+          </mesh>
+        </>
+      )}
+    </group>
+  );
+};
+
+const GridWall: React.FC<{
+  baseTexture: THREE.Texture | null;
+  tileSize: { width: number; height: number };
+  width: number;
+  height: number;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  isGridMode: boolean;
+  selectedTiles: number[];
+  onTileClick: (index: number) => void;
+  customTilesMap: Map<number, THREE.Texture>;
+}> = ({ 
+  baseTexture, 
+  tileSize, 
+  width, 
+  height, 
+  position, 
+  rotation = [0, 0, 0],
+  isGridMode,
+  selectedTiles,
+  onTileClick,
+  customTilesMap
+}) => {
+  
+  const tilesData = useMemo(() => {
+    const tileSizeM = {
+      width: tileSize.width / 100,
+      height: tileSize.height / 100
+    };
+    
+    const cols = Math.ceil(width / tileSizeM.width);
+    const rows = Math.ceil(height / tileSizeM.height);
+    
+    const tiles: TileData[] = [];
+    let index = 1;
+    
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = (col - cols / 2 + 0.5) * tileSizeM.width;
+        const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+        
+        tiles.push({
+          index,
+          row,
+          col,
+          position: [x, y, 0],
+          texture: null,
+          isCustom: customTilesMap.has(index)
+        });
+        
+        index++;
+      }
+    }
+    
+    return tiles;
+  }, [width, height, tileSize, customTilesMap]);
+
+  return (
+    <group position={position} rotation={rotation}>
+      {tilesData.map((tile) => {
+        const customTexture = customTilesMap.get(tile.index) || null;
+        
+        return (
+          <IndividualTile
+            key={tile.index}
+            tileData={tile}
+            baseTexture={baseTexture}
+            customTexture={customTexture}
+            tileSize={tileSize}
+            isSelected={selectedTiles.includes(tile.index)}
+            isGridMode={isGridMode}
+            onTileClick={onTileClick}
+          />
+        );
+      })}
+    </group>
   );
 };
 
@@ -5929,9 +594,275 @@ const Ceiling: React.FC<{
   );
 };
 
-// ============================================
-// 🏨 BRIGHT HOTEL KITCHEN (Unchanged)
-// ============================================
+// ═══════════════════════════════════════════════════════════════
+// ROOM SCENES (Kitchen & Bathroom) - Continue karta hun...
+// ═══════════════════════════════════════════════════════════════
+
+// const BrightHotelKitchenScene: React.FC<{ 
+//   floorTexture: THREE.Texture | null;
+//   floorTileSize: { width: number; height: number };
+//   wallTexture: THREE.Texture | null;
+//   wallTileSize: { width: number; height: number };
+//   showWallTiles: boolean;
+//   quality: QualityLevel;
+//   isGridMode: boolean;
+//   activeWall: WallType | null;
+//   selectedTiles: number[];
+//   onTileClick: (index: number) => void;
+//   customTiles: WallCustomTiles;
+// }> = ({ 
+//   floorTexture, 
+//   floorTileSize, 
+//   wallTexture, 
+//   wallTileSize, 
+//   showWallTiles, 
+//   quality,
+//   isGridMode,
+//   activeWall,
+//   selectedTiles,
+//   onTileClick,
+//   customTiles
+// }) => {
+//   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
+
+//   const shouldUseGridWall = (wall: WallType) => {
+//     return (isGridMode && activeWall === wall) || customTiles[wall].size > 0;
+//   };
+
+//   return (
+//     <group>
+//       <TiledFloor 
+//         baseTexture={floorTexture} 
+//         tileSize={floorTileSize} 
+//         roomWidth={W} 
+//         roomDepth={D} 
+//         position={[0, 0, 0]} 
+//         quality={quality} 
+//       />
+//       <Ceiling width={W} depth={D} height={H} />
+
+//       {showWallTiles && shouldUseGridWall('back') ? (
+//         <GridWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={W}
+//           height={H}
+//           position={[0, H/2, -D/2]}
+//           isGridMode={isGridMode && activeWall === 'back'}
+//           selectedTiles={activeWall === 'back' ? selectedTiles : []}
+//           onTileClick={onTileClick}
+//           customTilesMap={customTiles.back}
+//         />
+//       ) : showWallTiles ? (
+//         <TiledWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={W}
+//           height={H}
+//           position={[0, H/2, -D/2]}
+//           quality={quality}
+//         />
+//       ) : (
+//         <mesh position={[0, H/2, -D/2]}>
+//           <planeGeometry args={[W, H]} />
+//           <meshStandardMaterial color="#f5f5f5" roughness={0.85} />
+//         </mesh>
+//       )}
+
+//       {showWallTiles && shouldUseGridWall('front') ? (
+//         <GridWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={W}
+//           height={H}
+//           position={[0, H/2, D/2]}
+//           rotation={[0, Math.PI, 0]}
+//           isGridMode={isGridMode && activeWall === 'front'}
+//           selectedTiles={activeWall === 'front' ? selectedTiles : []}
+//           onTileClick={onTileClick}
+//           customTilesMap={customTiles.front}
+//         />
+//       ) : showWallTiles ? (
+//         <TiledWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={W}
+//           height={H}
+//           position={[0, H/2, D/2]}
+//           rotation={[0, Math.PI, 0]}
+//           quality={quality}
+//         />
+//       ) : (
+//         <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
+//           <planeGeometry args={[W, H]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.85} />
+//         </mesh>
+//       )}
+
+//       {showWallTiles && shouldUseGridWall('left') ? (
+//         <GridWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={D}
+//           height={H}
+//           position={[-W/2, H/2, 0]}
+//           rotation={[0, Math.PI/2, 0]}
+//           isGridMode={isGridMode && activeWall === 'left'}
+//           selectedTiles={activeWall === 'left' ? selectedTiles : []}
+//           onTileClick={onTileClick}
+//           customTilesMap={customTiles.left}
+//         />
+//       ) : showWallTiles ? (
+//         <TiledWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={D}
+//           height={H}
+//           position={[-W/2, H/2, 0]}
+//           rotation={[0, Math.PI/2, 0]}
+//           quality={quality}
+//         />
+//       ) : (
+//         <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
+//           <planeGeometry args={[D, H]} />
+//           <meshStandardMaterial color="#fef9f3" roughness={0.85} />
+//         </mesh>
+//       )}
+
+//       {showWallTiles && shouldUseGridWall('right') ? (
+//         <GridWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={D}
+//           height={H}
+//           position={[W/2, H/2, 0]}
+//           rotation={[0, -Math.PI/2, 0]}
+//           isGridMode={isGridMode && activeWall === 'right'}
+//           selectedTiles={activeWall === 'right' ? selectedTiles : []}
+//           onTileClick={onTileClick}
+//           customTilesMap={customTiles.right}
+//         />
+//       ) : showWallTiles ? (
+//         <TiledWall
+//           baseTexture={wallTexture}
+//           tileSize={wallTileSize}
+//           width={D}
+//           height={H}
+//           position={[W/2, H/2, 0]}
+//           rotation={[0, -Math.PI/2, 0]}
+//           quality={quality}
+//         />
+//       ) : (
+//         <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
+//           <planeGeometry args={[D, H]} />
+//           <meshStandardMaterial color="#faf5ed" roughness={0.85} />
+//         </mesh>
+//       )}
+
+//       {/* Kitchen Furniture - Keeping original detailed scene */}
+//       <group position={[0, 0, -3.2]}>
+//         <mesh position={[0, 0.5, 0]} castShadow>
+//           <boxGeometry args={[5.2, 1.0, 0.6]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.15} />
+//         </mesh>
+//         <mesh position={[0, 1.02, 0]} castShadow>
+//           <boxGeometry args={[5.3, 0.06, 0.65]} />
+//           <meshStandardMaterial color="#faf6f0" roughness={0.1} metalness={0.45} />
+//         </mesh>
+//         <mesh position={[0, 2.1, -0.25]} castShadow>
+//           <boxGeometry args={[5.2, 1.0, 0.35]} />
+//           <meshStandardMaterial color="#fffbf5" roughness={0.2} metalness={0.1} />
+//         </mesh>
+//         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
+//           <mesh key={`handle-lower-${i}`} position={[x, 0.5, 0.32]}>
+//             <boxGeometry args={[0.15, 0.025, 0.025]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
+//           </mesh>
+//         ))}
+//         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
+//           <mesh key={`handle-upper-${i}`} position={[x, 2.1, -0.05]}>
+//             <boxGeometry args={[0.15, 0.025, 0.025]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
+//           </mesh>
+//         ))}
+//         <rectAreaLight position={[0, 1.6, -0.38]} width={5.0} height={0.05} intensity={3.5} color="#fffef8" />
+//       </group>
+
+//       <group position={[0, 0, 0.5]}>
+//         <mesh position={[0, 0.5, 0]} castShadow>
+//           <boxGeometry args={[3.0, 1.0, 1.5]} />
+//           <meshStandardMaterial color="#f5ead5" roughness={0.28} metalness={0.08} />
+//         </mesh>
+//         <mesh position={[0, 1.02, 0]} castShadow>
+//           <boxGeometry args={[3.1, 0.06, 1.55]} />
+//           <meshStandardMaterial color="#fefefe" roughness={0.12} metalness={0.38} />
+//         </mesh>
+//         <mesh position={[0, 0.5, 0.8]}>
+//           <boxGeometry args={[3.0, 0.025, 0.015]} />
+//           <meshStandardMaterial color="#f0e6d2" roughness={0.32} metalness={0.05} />
+//         </mesh>
+//         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
+//           <group key={`stool-${i}`} position={[x, 0.4, 1.1]}>
+//             <mesh position={[0, 0.35, 0]} castShadow>
+//               <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
+//               <meshStandardMaterial color="#fefefe" roughness={0.32} metalness={0.05} />
+//             </mesh>
+//             <mesh position={[0, 0, 0]}>
+//               <cylinderGeometry args={[0.022, 0.022, 0.7, 16]} />
+//               <meshStandardMaterial color="#e0e0e0" roughness={0.08} metalness={0.92} />
+//             </mesh>
+//             <mesh position={[0, -0.35, 0]}>
+//               <cylinderGeometry args={[0.15, 0.15, 0.03, 20]} />
+//               <meshStandardMaterial color="#d8d8d8" roughness={0.1} metalness={0.9} />
+//             </mesh>
+//           </group>
+//         ))}
+//       </group>
+
+//       <group position={[-2.7, 0, -1.2]}>
+//         <mesh position={[0, 0.5, 0]} castShadow>
+//           <boxGeometry args={[0.6, 1.0, 2.6]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.15} />
+//         </mesh>
+//         <mesh position={[0, 1.02, 0]} castShadow>
+//           <boxGeometry args={[0.65, 0.06, 2.7]} />
+//           <meshStandardMaterial color="#faf6f0" roughness={0.1} metalness={0.45} />
+//         </mesh>
+//       </group>
+
+//       <mesh position={[2.5, 1.3, -3.15]} castShadow>
+//         <boxGeometry args={[0.9, 2.6, 0.75]} />
+//         <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.88} />
+//       </mesh>
+
+//       <mesh position={[-2.1, 1.4, -3.15]} castShadow>
+//         <boxGeometry args={[0.7, 1.4, 0.12]} />
+//         <meshStandardMaterial color="#e0e0e0" roughness={0.18} metalness={0.8} />
+//       </mesh>
+
+//       {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
+//         <group key={`pendant-${i}`} position={[x, 2.85, 0.5]}>
+//           <mesh>
+//             <cylinderGeometry args={[0.005, 0.005, 0.7, 10]} />
+//             <meshStandardMaterial color="#d8d8d8" roughness={0.1} metalness={0.9} />
+//           </mesh>
+//           <mesh position={[0, -0.4, 0]}>
+//             <sphereGeometry args={[0.18, 20, 20]} />
+//             <meshStandardMaterial color="#ffffff" transparent={true} opacity={0.35} roughness={0.02} metalness={0.05} />
+//           </mesh>
+//           <pointLight position={[0, -0.45, 0]} intensity={2.2} color="#fffef8" distance={3.5} />
+//         </group>
+//       ))}
+
+//       <pointLight position={[2, 3.1, -2]} intensity={2.0} color="#ffffff" distance={5} />
+//       <pointLight position={[-2, 3.1, -2]} intensity={2.0} color="#ffffff" distance={5} />
+//       <pointLight position={[2, 3.1, 1.5]} intensity={2.0} color="#ffffff" distance={5} />
+//       <pointLight position={[-2, 3.1, 1.5]} intensity={2.0} color="#ffffff" distance={5} />
+//       <pointLight position={[0, 3.1, 0]} intensity={2.2} color="#ffffff" distance={5} />
+//     </group>
+//   );
+// };
+
 
 const BrightHotelKitchenScene: React.FC<{ 
   floorTexture: THREE.Texture | null;
@@ -5940,11 +871,36 @@ const BrightHotelKitchenScene: React.FC<{
   wallTileSize: { width: number; height: number };
   showWallTiles: boolean;
   quality: QualityLevel;
-}> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
+  isGridMode: boolean;
+  activeWall: WallType | null;
+  selectedTiles: number[];
+  onTileClick: (index: number) => void;
+  customTiles: WallCustomTiles;
+}> = ({ 
+  floorTexture, 
+  floorTileSize, 
+  wallTexture, 
+  wallTileSize, 
+  showWallTiles, 
+  quality,
+  isGridMode,
+  activeWall,
+  selectedTiles,
+  onTileClick,
+  customTiles
+}) => {
   const { width: W, depth: D, height: H } = ROOM_CONFIGS.kitchen;
+
+  // ✅ Kitchen mein SIRF back wall par tiles, baaki walls plain color
+  const shouldUseGridWall = (wall: WallType) => {
+    // Kitchen ke liye SIRF back wall allow karo
+    if (wall !== 'back') return false;
+    return (isGridMode && activeWall === wall) || customTiles[wall].size > 0;
+  };
 
   return (
     <group>
+      {/* Floor */}
       <TiledFloor 
         baseTexture={floorTexture} 
         tileSize={floorTileSize} 
@@ -5955,67 +911,80 @@ const BrightHotelKitchenScene: React.FC<{
       />
       <Ceiling width={W} depth={D} height={H} />
 
-      <TiledWall
-        baseTexture={showWallTiles ? wallTexture : null}
-        tileSize={wallTileSize}
-        width={W}
-        height={H}
-        position={[0, H/2, -D/2]}
-        quality={quality}
-      />
+      {/* ✅ BACK WALL - Tiles allowed (fridge ke piche) */}
+      {showWallTiles && shouldUseGridWall('back') ? (
+        <GridWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={W}
+          height={H}
+          position={[0, H/2, -D/2]}
+          isGridMode={isGridMode && activeWall === 'back'}
+          selectedTiles={activeWall === 'back' ? selectedTiles : []}
+          onTileClick={onTileClick}
+          customTilesMap={customTiles.back}
+        />
+      ) : showWallTiles ? (
+        <TiledWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={W}
+          height={H}
+          position={[0, H/2, -D/2]}
+          quality={quality}
+        />
+      ) : (
+        <mesh position={[0, H/2, -D/2]}>
+          <planeGeometry args={[W, H]} />
+          <meshStandardMaterial color="#f5f5f5" roughness={0.85} />
+        </mesh>
+      )}
 
+      {/* ❌ FRONT WALL - No tiles, only color */}
       <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[W, H]} />
         <meshStandardMaterial color="#ffffff" roughness={0.85} />
       </mesh>
 
+      {/* ❌ LEFT WALL - No tiles, only color */}
       <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
         <planeGeometry args={[D, H]} />
         <meshStandardMaterial color="#fef9f3" roughness={0.85} />
       </mesh>
 
+      {/* ❌ RIGHT WALL - No tiles, only color */}
       <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
         <planeGeometry args={[D, H]} />
         <meshStandardMaterial color="#faf5ed" roughness={0.85} />
       </mesh>
 
+      {/* Kitchen Furniture - Rest remains same... */}
       <group position={[0, 0, -3.2]}>
         <mesh position={[0, 0.5, 0]} castShadow>
           <boxGeometry args={[5.2, 1.0, 0.6]} />
           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.15} />
         </mesh>
-
         <mesh position={[0, 1.02, 0]} castShadow>
           <boxGeometry args={[5.3, 0.06, 0.65]} />
           <meshStandardMaterial color="#faf6f0" roughness={0.1} metalness={0.45} />
         </mesh>
-
         <mesh position={[0, 2.1, -0.25]} castShadow>
           <boxGeometry args={[5.2, 1.0, 0.35]} />
           <meshStandardMaterial color="#fffbf5" roughness={0.2} metalness={0.1} />
         </mesh>
-
         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
           <mesh key={`handle-lower-${i}`} position={[x, 0.5, 0.32]}>
             <boxGeometry args={[0.15, 0.025, 0.025]} />
             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
           </mesh>
         ))}
-
         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
           <mesh key={`handle-upper-${i}`} position={[x, 2.1, -0.05]}>
             <boxGeometry args={[0.15, 0.025, 0.025]} />
             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
           </mesh>
         ))}
-
-        <rectAreaLight
-          position={[0, 1.6, -0.38]}
-          width={5.0}
-          height={0.05}
-          intensity={3.5}
-          color="#fffef8"
-        />
+        <rectAreaLight position={[0, 1.6, -0.38]} width={5.0} height={0.05} intensity={3.5} color="#fffef8" />
       </group>
 
       <group position={[0, 0, 0.5]}>
@@ -6023,17 +992,14 @@ const BrightHotelKitchenScene: React.FC<{
           <boxGeometry args={[3.0, 1.0, 1.5]} />
           <meshStandardMaterial color="#f5ead5" roughness={0.28} metalness={0.08} />
         </mesh>
-
         <mesh position={[0, 1.02, 0]} castShadow>
           <boxGeometry args={[3.1, 0.06, 1.55]} />
           <meshStandardMaterial color="#fefefe" roughness={0.12} metalness={0.38} />
         </mesh>
-
         <mesh position={[0, 0.5, 0.8]}>
           <boxGeometry args={[3.0, 0.025, 0.015]} />
           <meshStandardMaterial color="#f0e6d2" roughness={0.32} metalness={0.05} />
         </mesh>
-
         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
           <group key={`stool-${i}`} position={[x, 0.4, 1.1]}>
             <mesh position={[0, 0.35, 0]} castShadow>
@@ -6057,7 +1023,6 @@ const BrightHotelKitchenScene: React.FC<{
           <boxGeometry args={[0.6, 1.0, 2.6]} />
           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.15} />
         </mesh>
-
         <mesh position={[0, 1.02, 0]} castShadow>
           <boxGeometry args={[0.65, 0.06, 2.7]} />
           <meshStandardMaterial color="#faf6f0" roughness={0.1} metalness={0.45} />
@@ -6069,83 +1034,10 @@ const BrightHotelKitchenScene: React.FC<{
         <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.88} />
       </mesh>
 
-      <mesh position={[2.05, 1.9, -2.75]}>
-        <boxGeometry args={[0.035, 0.6, 0.045]} />
-        <meshStandardMaterial color="#f0f0f0" roughness={0.08} metalness={0.95} />
-      </mesh>
-      <mesh position={[2.05, 0.7, -2.75]}>
-        <boxGeometry args={[0.035, 0.6, 0.045]} />
-        <meshStandardMaterial color="#f0f0f0" roughness={0.08} metalness={0.95} />
-      </mesh>
-
       <mesh position={[-2.1, 1.4, -3.15]} castShadow>
         <boxGeometry args={[0.7, 1.4, 0.12]} />
         <meshStandardMaterial color="#e0e0e0" roughness={0.18} metalness={0.8} />
       </mesh>
-
-      <mesh position={[-2.1, 1.75, -3.1]}>
-        <boxGeometry args={[0.6, 0.55, 0.05]} />
-        <meshStandardMaterial 
-          color="#2a2a2a" 
-          roughness={0.04} 
-          metalness={0.85}
-          transparent={true}
-          opacity={0.6}
-        />
-      </mesh>
-      <mesh position={[-2.1, 1.05, -3.1]}>
-        <boxGeometry args={[0.6, 0.55, 0.05]} />
-        <meshStandardMaterial 
-          color="#2a2a2a" 
-          roughness={0.04} 
-          metalness={0.85}
-          transparent={true}
-          opacity={0.6}
-        />
-      </mesh>
-
-      <mesh position={[0.8, 1.03, -3.1]} castShadow>
-        <boxGeometry args={[0.9, 0.02, 0.55]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.05} metalness={0.9} />
-      </mesh>
-
-      <group position={[0.8, 2.5, -3.3]}>
-        <mesh castShadow>
-          <boxGeometry args={[1.5, 0.5, 0.55]} />
-          <meshStandardMaterial color="#e8e8e8" roughness={0.15} metalness={0.88} />
-        </mesh>
-        <pointLight position={[-0.5, -0.2, 0.1]} intensity={1.8} color="#fffef5" distance={3} />
-        <pointLight position={[0.5, -0.2, 0.1]} intensity={1.8} color="#fffef5" distance={3} />
-      </group>
-
-      <group position={[-0.6, 1.0, -3.05]}>
-        <mesh>
-          <boxGeometry args={[0.85, 0.14, 0.55]} />
-          <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
-        </mesh>
-        
-        <group position={[0, 0.25, -0.2]}>
-          <mesh position={[0, 0.3, 0]}>
-            <cylinderGeometry args={[0.025, 0.025, 0.6, 18]} />
-            <meshStandardMaterial color="#f0f0f0" roughness={0.05} metalness={0.95} />
-          </mesh>
-          <mesh position={[0, 0.6, 0.12]} rotation={[Math.PI / 3.2, 0, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.25, 18]} />
-            <meshStandardMaterial color="#f0f0f0" roughness={0.05} metalness={0.95} />
-          </mesh>
-          <mesh position={[0, 0.75, 0.22]}>
-            <sphereGeometry args={[0.035, 16, 16]} />
-            <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
-          </mesh>
-        </group>
-
-        <group position={[0.35, 0.08, -0.15]}>
-          <mesh>
-            <cylinderGeometry args={[0.022, 0.025, 0.08, 16]} />
-            <meshStandardMaterial color="#e8e8e8" roughness={0.1} metalness={0.9} />
-          </mesh>
-        </group>
-      </group>
 
       {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
         <group key={`pendant-${i}`} position={[x, 2.85, 0.5]}>
@@ -6155,17 +1047,7 @@ const BrightHotelKitchenScene: React.FC<{
           </mesh>
           <mesh position={[0, -0.4, 0]}>
             <sphereGeometry args={[0.18, 20, 20]} />
-            <meshStandardMaterial 
-              color="#ffffff" 
-              transparent={true}
-              opacity={0.35}
-              roughness={0.02}
-              metalness={0.05}
-            />
-          </mesh>
-          <mesh position={[0, -0.22, 0]}>
-            <cylinderGeometry args={[0.1, 0.1, 0.06, 20]} />
-            <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
+            <meshStandardMaterial color="#ffffff" transparent={true} opacity={0.35} roughness={0.02} metalness={0.05} />
           </mesh>
           <pointLight position={[0, -0.45, 0]} intensity={2.2} color="#fffef8" distance={3.5} />
         </group>
@@ -6176,102 +1058,9 @@ const BrightHotelKitchenScene: React.FC<{
       <pointLight position={[2, 3.1, 1.5]} intensity={2.0} color="#ffffff" distance={5} />
       <pointLight position={[-2, 3.1, 1.5]} intensity={2.0} color="#ffffff" distance={5} />
       <pointLight position={[0, 3.1, 0]} intensity={2.2} color="#ffffff" distance={5} />
-
-      <group position={[0, 1.05, 0.5]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.22, 0.18, 0.12, 24]} />
-          <meshStandardMaterial color="#fefefe" roughness={0.22} metalness={0.05} />
-        </mesh>
-      </group>
-
-      <group position={[-1.3, 1.02, -3.0]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.32, 0.4, 0.35]} />
-          <meshStandardMaterial color="#e8e8e8" roughness={0.15} metalness={0.85} />
-        </mesh>
-        <mesh position={[0, 0.25, 0.1]} castShadow>
-          <cylinderGeometry args={[0.05, 0.05, 0.08, 16]} />
-          <meshStandardMaterial color="#fefefe" roughness={0.28} metalness={0.05} />
-        </mesh>
-      </group>
-
-      <group position={[0.4, 1.02, -3.0]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.09, 0.09, 0.18, 20]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.32} metalness={0.05} />
-        </mesh>
-      </group>
-
-      <mesh position={[-0.2, 1.05, -3.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <boxGeometry args={[0.35, 0.25, 0.02]} />
-        <meshStandardMaterial color="#f5e6d3" roughness={0.4} metalness={0.02} />
-      </mesh>
-
-      <mesh position={[1.5, 1.05, -3.0]}>
-        <boxGeometry args={[0.15, 0.02, 0.25]} />
-        <meshStandardMaterial color="#fefefe" roughness={0.6} metalness={0.01} />
-      </mesh>
-
-      <group position={[0, 2.5, -3.48]}>
-        <mesh>
-          <cylinderGeometry args={[0.22, 0.22, 0.05, 32]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.28} metalness={0.1} />
-        </mesh>
-        <mesh position={[0, 0, 0.03]}>
-          <cylinderGeometry args={[0.2, 0.2, 0.01, 32]} />
-          <meshStandardMaterial color="#f8f8f8" roughness={0.18} metalness={0.05} />
-        </mesh>
-      </group>
-
-      <group position={[2.2, 2.0, -3.35]}>
-        <mesh>
-          <boxGeometry args={[0.8, 0.03, 0.25]} />
-          <meshStandardMaterial color="#f5e6d3" roughness={0.32} metalness={0.02} />
-        </mesh>
-        <mesh position={[-0.2, 0.08, 0]}>
-          <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.28} metalness={0.05} />
-        </mesh>
-        <mesh position={[0.2, 0.06, 0]}>
-          <boxGeometry args={[0.08, 0.12, 0.08]} />
-          <meshStandardMaterial color="#fefefe" roughness={0.32} metalness={0.05} />
-        </mesh>
-      </group>
-
-      <group position={[-2.85, 1.8, 0]}>
-        <mesh rotation={[0, Math.PI / 2, 0]}>
-          <boxGeometry args={[1.8, 1.4, 0.08]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.05} />
-        </mesh>
-        <mesh position={[0, 0, -0.05]} rotation={[0, Math.PI / 2, 0]}>
-          <boxGeometry args={[1.7, 1.3, 0.02]} />
-          <meshStandardMaterial 
-            color="#e6f2ff" 
-            transparent={true}
-            opacity={0.4}
-            roughness={0.05}
-            metalness={0.02}
-          />
-        </mesh>
-      </group>
-
-      <group position={[0.8, 1.05, 0.5]}>
-        <mesh>
-          <cylinderGeometry args={[0.08, 0.07, 0.12, 16]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.05} />
-        </mesh>
-        <mesh position={[0, 0.15, 0]}>
-          <sphereGeometry args={[0.12, 8, 8]} />
-          <meshStandardMaterial color="#4a7c59" roughness={0.7} metalness={0.01} />
-        </mesh>
-      </group>
     </group>
   );
 };
-
-// ============================================
-// 🛁 PROFESSIONAL BATHROOM - CLEAN & SIMPLE
-// ============================================
 
 const PremiumBathroomScene: React.FC<{ 
   floorTexture: THREE.Texture | null;
@@ -6280,12 +1069,32 @@ const PremiumBathroomScene: React.FC<{
   wallTileSize: { width: number; height: number };
   showWallTiles: boolean;
   quality: QualityLevel;
-}> = ({ floorTexture, floorTileSize, wallTexture, wallTileSize, showWallTiles, quality }) => {
+  isGridMode: boolean;
+  activeWall: WallType | null;
+  selectedTiles: number[];
+  onTileClick: (index: number) => void;
+  customTiles: WallCustomTiles;
+}> = ({ 
+  floorTexture, 
+  floorTileSize, 
+  wallTexture, 
+  wallTileSize, 
+  showWallTiles, 
+  quality,
+  isGridMode,
+  activeWall,
+  selectedTiles,
+  onTileClick,
+  customTiles
+}) => {
   const { width: W, depth: D, height: H } = ROOM_CONFIGS.bathroom;
+
+  const shouldUseGridWall = (wall: WallType) => {
+    return (isGridMode && activeWall === wall) || customTiles[wall].size > 0;
+  };
 
   return (
     <group>
-      {/* ========== FLOOR & CEILING ========== */}
       <TiledFloor 
         baseTexture={floorTexture} 
         tileSize={floorTileSize} 
@@ -6294,67 +1103,140 @@ const PremiumBathroomScene: React.FC<{
         position={[0, 0, 0]} 
         quality={quality} 
       />
-      
       <Ceiling width={W} depth={D} height={H} />
 
-      {/* ========== WALLS ========== */}
-      <TiledWall
-        baseTexture={showWallTiles ? wallTexture : null}
-        tileSize={wallTileSize}
-        width={W}
-        height={H}
-        position={[0, H/2, -D/2]}
-        quality={quality}
-      />
-      <TiledWall
-        baseTexture={showWallTiles ? wallTexture : null}
-        tileSize={wallTileSize}
-        width={W}
-        height={H}
-        position={[0, H/2, D/2]}
-        rotation={[0, Math.PI, 0]}
-        quality={quality}
-      />
-      <TiledWall
-        baseTexture={showWallTiles ? wallTexture : null}
-        tileSize={wallTileSize}
-        width={D}
-        height={H}
-        position={[-W/2, H/2, 0]}
-        rotation={[0, Math.PI/2, 0]}
-        quality={quality}
-      />
-      <TiledWall
-        baseTexture={showWallTiles ? wallTexture : null}
-        tileSize={wallTileSize}
-        width={D}
-        height={H}
-        position={[W/2, H/2, 0]}
-        rotation={[0, -Math.PI/2, 0]}
-        quality={quality}
-      />
+      {showWallTiles && shouldUseGridWall('back') ? (
+        <GridWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={W}
+          height={H}
+          position={[0, H/2, -D/2]}
+          isGridMode={isGridMode && activeWall === 'back'}
+          selectedTiles={activeWall === 'back' ? selectedTiles : []}
+          onTileClick={onTileClick}
+          customTilesMap={customTiles.back}
+        />
+      ) : showWallTiles ? (
+        <TiledWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={W}
+          height={H}
+          position={[0, H/2, -D/2]}
+          quality={quality}
+        />
+      ) : (
+        <mesh position={[0, H/2, -D/2]}>
+          <planeGeometry args={[W, H]} />
+          <meshStandardMaterial color="#f5f5f5" roughness={0.85} />
+        </mesh>
+      )}
 
-      {/* ========== VANITY WITH SINK ========== */}
+      {showWallTiles && shouldUseGridWall('front') ? (
+        <GridWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={W}
+          height={H}
+          position={[0, H/2, D/2]}
+          rotation={[0, Math.PI, 0]}
+          isGridMode={isGridMode && activeWall === 'front'}
+          selectedTiles={activeWall === 'front' ? selectedTiles : []}
+          onTileClick={onTileClick}
+          customTilesMap={customTiles.front}
+        />
+      ) : showWallTiles ? (
+        <TiledWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={W}
+          height={H}
+          position={[0, H/2, D/2]}
+          rotation={[0, Math.PI, 0]}
+          quality={quality}
+        />
+      ) : (
+        <mesh position={[0, H/2, D/2]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[W, H]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.85} />
+        </mesh>
+      )}
+
+      {showWallTiles && shouldUseGridWall('left') ? (
+        <GridWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={D}
+          height={H}
+          position={[-W/2, H/2, 0]}
+          rotation={[0, Math.PI/2, 0]}
+          isGridMode={isGridMode && activeWall === 'left'}
+          selectedTiles={activeWall === 'left' ? selectedTiles : []}
+          onTileClick={onTileClick}
+          customTilesMap={customTiles.left}
+        />
+      ) : showWallTiles ? (
+        <TiledWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={D}
+          height={H}
+          position={[-W/2, H/2, 0]}
+          rotation={[0, Math.PI/2, 0]}
+          quality={quality}
+        />
+      ) : (
+        <mesh position={[-W/2, H/2, 0]} rotation={[0, Math.PI/2, 0]}>
+          <planeGeometry args={[D, H]} />
+          <meshStandardMaterial color="#fef9f3" roughness={0.85} />
+        </mesh>
+      )}
+
+      {showWallTiles && shouldUseGridWall('right') ? (
+        <GridWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={D}
+          height={H}
+          position={[W/2, H/2, 0]}
+          rotation={[0, -Math.PI/2, 0]}
+          isGridMode={isGridMode && activeWall === 'right'}
+          selectedTiles={activeWall === 'right' ? selectedTiles : []}
+          onTileClick={onTileClick}
+          customTilesMap={customTiles.right}
+        />
+      ) : showWallTiles ? (
+        <TiledWall
+          baseTexture={wallTexture}
+          tileSize={wallTileSize}
+          width={D}
+          height={H}
+          position={[W/2, H/2, 0]}
+          rotation={[0, -Math.PI/2, 0]}
+          quality={quality}
+        />
+      ) : (
+        <mesh position={[W/2, H/2, 0]} rotation={[0, -Math.PI/2, 0]}>
+          <planeGeometry args={[D, H]} />
+          <meshStandardMaterial color="#faf5ed" roughness={0.85} />
+        </mesh>
+      )}
+
+      {/* Bathroom Fixtures */}
       <group position={[-1.2, 0, -1.5]}>
-        {/* Vanity Cabinet - White */}
         <mesh position={[0, 0.45, 0]} castShadow>
           <boxGeometry args={[1.4, 0.9, 0.5]} />
           <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.1} />
         </mesh>
-        
-        {/* Countertop - Light Gray Marble */}
         <mesh position={[0, 0.92, 0]} castShadow>
           <boxGeometry args={[1.5, 0.05, 0.55]} />
           <meshStandardMaterial color="#f5f5f0" roughness={0.15} metalness={0.4} />
         </mesh>
-        
-        {/* Washbasin - Ceramic White */}
         <mesh position={[0, 0.88, -0.05]} castShadow>
           <cylinderGeometry args={[0.22, 0.2, 0.12, 24]} />
           <meshStandardMaterial color="#ffffff" roughness={0.08} metalness={0.2} />
         </mesh>
-        
-        {/* Faucet - Chrome */}
         <group position={[0, 0.95, -0.2]}>
           <mesh position={[0, 0.15, 0]}>
             <cylinderGeometry args={[0.015, 0.015, 0.3, 12]} />
@@ -6369,164 +1251,1542 @@ const PremiumBathroomScene: React.FC<{
             <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.95} />
           </mesh>
         </group>
-
-        {/* Cabinet Handles */}
-        <mesh position={[-0.35, 0.45, 0.28]}>
-          <cylinderGeometry args={[0.012, 0.012, 0.15, 12]} />
-          <meshStandardMaterial color="#d0d0d0" roughness={0.1} metalness={0.9} />
-        </mesh>
-        <mesh position={[0.35, 0.45, 0.28]}>
-          <cylinderGeometry args={[0.012, 0.012, 0.15, 12]} />
-          <meshStandardMaterial color="#d0d0d0" roughness={0.1} metalness={0.9} />
-        </mesh>
       </group>
 
-      {/* ========== MIRROR ========== */}
       <group position={[-1.2, 1.6, -1.72]}>
-        {/* Mirror Frame - Chrome */}
         <mesh>
           <boxGeometry args={[1.3, 0.9, 0.02]} />
           <meshStandardMaterial color="#d0d0d0" roughness={0.25} metalness={0.85} />
         </mesh>
-        {/* Mirror Glass - Reflective */}
         <mesh position={[0, 0, 0.015]}>
           <boxGeometry args={[1.2, 0.8, 0.01]} />
           <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.98} />
         </mesh>
-        {/* Backlight */}
         <rectAreaLight position={[0, 0, -0.02]} width={1.3} height={0.9} intensity={1.2} color="#fff8e1" />
       </group>
 
-      {/* ========== TOILET (WHITE POT) ========== */}
       <group position={[0.9, 0, 1.2]}>
-        {/* Toilet Bowl - Glossy White Ceramic */}
         <mesh position={[0, 0.2, 0]} castShadow>
           <cylinderGeometry args={[0.24, 0.26, 0.4, 28]} />
-          <meshStandardMaterial 
-            color="#ffffff" 
-            roughness={0.05} 
-            metalness={0.1}
-          />
+          <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.1} />
         </mesh>
-
-        {/* Inner Bowl - Slightly darker */}
         <mesh position={[0, 0.38, 0]} castShadow>
           <cylinderGeometry args={[0.18, 0.2, 0.08, 24]} />
-          <meshStandardMaterial 
-            color="#f8f8f8" 
-            roughness={0.08} 
-            metalness={0.05}
-          />
-        </mesh>
-
-        {/* Toilet Seat - White */}
-        <mesh position={[0, 0.42, 0]} rotation={[-0.1, 0, 0]}>
-          <torusGeometry args={[0.22, 0.03, 16, 28]} />
-          <meshStandardMaterial 
-            color="#fefefe" 
-            roughness={0.15} 
-            metalness={0.05}
-          />
-        </mesh>
-
-        {/* Toilet Tank - White Ceramic */}
-        <mesh position={[0, 0.6, -0.2]} castShadow>
-          <boxGeometry args={[0.42, 0.5, 0.18]} />
-          <meshStandardMaterial 
-            color="#ffffff" 
-            roughness={0.08} 
-            metalness={0.12}
-          />
-        </mesh>
-
-        {/* Tank Lid */}
-        <mesh position={[0, 0.87, -0.2]}>
-          <boxGeometry args={[0.44, 0.04, 0.2]} />
-          <meshStandardMaterial 
-            color="#fefefe" 
-            roughness={0.12} 
-            metalness={0.08}
-          />
-        </mesh>
-
-        {/* Flush Button - Chrome */}
-        <mesh position={[0, 0.75, -0.1]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.02, 20]} />
-          <meshStandardMaterial 
-            color="#e8e8e8" 
-            roughness={0.1} 
-            metalness={0.9}
-          />
-        </mesh>
-
-        {/* Flush Handle (alternative) */}
-        <mesh position={[0.18, 0.7, -0.15]}>
-          <boxGeometry args={[0.08, 0.03, 0.02]} />
-          <meshStandardMaterial 
-            color="#d8d8d8" 
-            roughness={0.12} 
-            metalness={0.88}
-          />
+          <meshStandardMaterial color="#f8f8f8" roughness={0.08} metalness={0.05} />
         </mesh>
       </group>
 
-      {/* ========== SHOWER AREA ========== */}
       <group position={[1.2, 0, -1.0]}>
-        {/* Shower Glass Panel */}
         <mesh position={[0, 1.2, 0.4]}>
           <boxGeometry args={[0.02, 2.4, 1.0]} />
-          <meshStandardMaterial 
-            color="#ffffff" 
-            transparent={true} 
-            opacity={0.25} 
-            roughness={0.05} 
-          />
+          <meshStandardMaterial color="#ffffff" transparent={true} opacity={0.25} roughness={0.05} />
         </mesh>
-
-        {/* Shower Base - White Ceramic */}
         <mesh position={[0, 0.02, 0]}>
           <boxGeometry args={[0.9, 0.04, 1.0]} />
           <meshStandardMaterial color="#fafafa" roughness={0.2} metalness={0.1} />
         </mesh>
-        
-        {/* Shower Head - Chrome */}
-        <group position={[0.35, 2.0, -0.3]}>
-          <mesh>
-            <cylinderGeometry args={[0.15, 0.15, 0.03, 24]} />
-            <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.9} />
-          </mesh>
-          <mesh position={[0, 0.05, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.3, 12]} />
-            <meshStandardMaterial color="#d0d0d0" roughness={0.12} metalness={0.88} />
-          </mesh>
-        </group>
-
-        {/* Shower Controls - Chrome */}
-        <group position={[0.35, 1.2, -0.3]}>
-          <mesh>
-            <cylinderGeometry args={[0.05, 0.05, 0.03, 20]} />
-            <meshStandardMaterial color="#d8d8d8" roughness={0.1} metalness={0.9} />
-          </mesh>
-          <mesh position={[0, -0.15, 0]}>
-            <cylinderGeometry args={[0.04, 0.04, 0.03, 20]} />
-            <meshStandardMaterial color="#d8d8d8" roughness={0.1} metalness={0.9} />
-          </mesh>
-        </group>
       </group>
 
-      {/* ========== LIGHTING ========== */}
-      
-      {/* Main Ceiling Light */}
       <pointLight position={[0, 2.6, 0]} intensity={1.8} color="#fff8e1" distance={6} />
-
-      {/* Recessed Lights */}
       <pointLight position={[1.5, 2.6, 0]} intensity={1.2} color="#ffffff" distance={4} />
       <pointLight position={[-1.5, 2.6, 0]} intensity={1.2} color="#ffffff" distance={4} />
-      <pointLight position={[0, 2.6, -1.2]} intensity={1.2} color="#ffffff" distance={4} />
-
-      {/* Vanity Light Above Mirror */}
-      <pointLight position={[-1.2, 2.2, -1.5]} intensity={1.0} color="#fff8e1" distance={2.5} />
     </group>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+
+// const WallSelectorModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onSelectWall: (wall: WallType) => void;
+//   roomType: string;
+// }> = ({ isOpen, onClose, onSelectWall, roomType }) => {
+//   if (!isOpen) return null;
+
+//   const roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
+  
+//   const getWallInfo = (wall: WallType) => {
+//     const wallTileSize = { width: 30, height: 45 };
+//     const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+    
+//     if (wall === 'back' || wall === 'front') {
+//       const cols = Math.ceil(roomConfig.width / tileSizeM.width);
+//       const rows = Math.ceil(roomConfig.height / tileSizeM.height);
+//       return { cols, rows, total: cols * rows };
+//     } else {
+//       const cols = Math.ceil(roomConfig.depth / tileSizeM.width);
+//       const rows = Math.ceil(roomConfig.height / tileSizeM.height);
+//       return { cols, rows, total: cols * rows };
+//     }
+//   };
+
+//   const walls: { type: WallType; label: string; icon: string }[] = [
+//     { type: 'back', label: 'Back Wall', icon: '🔲' },
+//     { type: 'front', label: 'Front Wall', icon: '🔳' },
+//     { type: 'left', label: 'Left Wall', icon: '◀️' },
+//     { type: 'right', label: 'Right Wall', icon: '▶️' },
+//   ];
+
+//   return (
+//     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+//       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//             <Layers className="w-6 h-6 text-blue-600" />
+//             Select Wall to Edit
+//           </h3>
+//           <button
+//             onClick={onClose}
+//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//           >
+//             <X className="w-5 h-5 text-gray-600" />
+//           </button>
+//         </div>
+
+//         <p className="text-sm text-gray-600 mb-4">
+//           Choose which wall you want to customize with individual tile selection
+//         </p>
+
+//         <div className="space-y-3">
+//           {walls.map((wall) => {
+//             const info = getWallInfo(wall.type);
+//             return (
+//               <button
+//                 key={wall.type}
+//                 onClick={() => onSelectWall(wall.type)}
+//                 className="w-full p-4 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-xl transition-all border-2 border-transparent hover:border-blue-400 text-left group"
+//               >
+//                 <div className="flex items-center justify-between">
+//                   <div className="flex items-center gap-3">
+//                     <span className="text-2xl">{wall.icon}</span>
+//                     <div>
+//                       <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+//                         {wall.label}
+//                       </h4>
+//                       <p className="text-xs text-gray-500">
+//                         {info.cols}W × {info.rows}H = {info.total} tiles
+//                       </p>
+//                     </div>
+//                   </div>
+//                   <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+//                     →
+//                   </div>
+//                 </div>
+//               </button>
+//             );
+//           })}
+//         </div>
+
+//         <button
+//           onClick={onClose}
+//           className="w-full mt-4 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+//         >
+//           Cancel
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+const WallSelectorModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectWall: (wall: WallType) => void;
+  roomType: string;
+}> = ({ isOpen, onClose, onSelectWall, roomType }) => {
+  if (!isOpen) return null;
+
+  const roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
+  
+  const getWallInfo = (wall: WallType) => {
+    const wallTileSize = { width: 30, height: 45 };
+    const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+    
+    if (wall === 'back' || wall === 'front') {
+      const cols = Math.ceil(roomConfig.width / tileSizeM.width);
+      const rows = Math.ceil(roomConfig.height / tileSizeM.height);
+      return { cols, rows, total: cols * rows };
+    } else {
+      const cols = Math.ceil(roomConfig.depth / tileSizeM.width);
+      const rows = Math.ceil(roomConfig.height / tileSizeM.height);
+      return { cols, rows, total: cols * rows };
+    }
+  };
+
+  // ✅ Kitchen ke liye SIRF back wall, bathroom ke liye all 4 walls
+  const walls: { type: WallType; label: string; icon: string }[] = roomType === 'kitchen' 
+    ? [
+        { type: 'back', label: 'Back Wall (Fridge Area)', icon: '🔲' }
+      ]
+    : [
+        { type: 'back', label: 'Back Wall', icon: '🔲' },
+        { type: 'front', label: 'Front Wall', icon: '🔳' },
+        { type: 'left', label: 'Left Wall', icon: '◀️' },
+        { type: 'right', label: 'Right Wall', icon: '▶️' },
+      ];
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Layers className="w-6 h-6 text-blue-600" />
+            {roomType === 'kitchen' ? 'Select Wall to Edit' : 'Select Wall to Edit'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          {roomType === 'kitchen' 
+            ? 'Only back wall tiles can be customized in kitchen view'
+            : 'Choose which wall you want to customize with individual tile selection'
+          }
+        </p>
+
+        <div className="space-y-3">
+          {walls.map((wall) => {
+            const info = getWallInfo(wall.type);
+            return (
+              <button
+                key={wall.type}
+                onClick={() => onSelectWall(wall.type)}
+                className="w-full p-4 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-xl transition-all border-2 border-transparent hover:border-blue-400 text-left group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{wall.icon}</span>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+                        {wall.label}
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        {info.cols}W × {info.rows}H = {info.total} tiles
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    →
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-4 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+// const RandomPatternModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onApplyPattern: (result: QRScanResult) => void;
+//   roomType: string;
+// }> = ({ isOpen, onClose, onApplyPattern, roomType }) => {
+//   const [scanError, setScanError] = useState<string>('');
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [patternOffset, setPatternOffset] = useState(0);
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+
+//   const roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
+//   const wallTileSize = { width: 30, height: 45 };
+//   const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+
+//   const getWallDimensions = (wall: WallType) => {
+//     if (wall === 'back' || wall === 'front') {
+//       return {
+//         cols: Math.ceil(roomConfig.width / tileSizeM.width),
+//         rows: Math.ceil(roomConfig.height / tileSizeM.height)
+//       };
+//     } else {
+//       return {
+//         cols: Math.ceil(roomConfig.depth / tileSizeM.width),
+//         rows: Math.ceil(roomConfig.height / tileSizeM.height)
+//       };
+//     }
+//   };
+
+//   const backWallDims = getWallDimensions('back');
+//   const frontWallDims = getWallDimensions('front');
+//   const leftWallDims = getWallDimensions('left');
+//   const rightWallDims = getWallDimensions('right');
+
+//   const patternTilesCount = 
+//     generateVerticalStripesPattern(backWallDims.cols, backWallDims.rows, patternOffset).length +
+//     generateVerticalStripesPattern(frontWallDims.cols, frontWallDims.rows, patternOffset).length +
+//     generateVerticalStripesPattern(leftWallDims.cols, leftWallDims.rows, patternOffset).length +
+//     generateVerticalStripesPattern(rightWallDims.cols, rightWallDims.rows, patternOffset).length;
+
+//   const handleShuffle = () => {
+//     setPatternOffset(Math.floor(Math.random() * 3));
+//   };
+
+//   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = event.target.files?.[0];
+//     if (!file) return;
+
+//     setIsProcessing(true);
+//     setScanError('');
+
+//     try {
+//       await new Promise(resolve => setTimeout(resolve, 800));
+
+//       const imageUrl = URL.createObjectURL(file);
+
+//       const mockQRData: QRScanResult = {
+//         tileId: 'PATTERN_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+//         tileName: file.name.split('.')[0],
+//         imageUrl: imageUrl,
+//         size: { width: 30, height: 45 }
+//       };
+
+//       onApplyPattern(mockQRData);
+//       onClose();
+//     } catch (error) {
+//       setScanError('Failed to process image. Please try again.');
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
+
+//   if (!isOpen) return null;
+
+//   return (
+//     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+//       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//             <Shuffle className="w-6 h-6 text-purple-600" />
+//             Random Pattern
+//           </h3>
+//           <button
+//             onClick={onClose}
+//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//           >
+//             <X className="w-5 h-5 text-gray-600" />
+//           </button>
+//         </div>
+
+//         <div className="space-y-4">
+//           <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+//             <p className="text-sm font-semibold text-gray-700 mb-2">Vertical Stripes Pattern</p>
+//             <div className="bg-white rounded-lg p-3 mb-3">
+//               <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
+//                 {Array.from({ length: 30 }).map((_, i) => {
+//                   const row = Math.floor(i / 10);
+//                   const col = i % 10;
+//                   const pattern = (col + patternOffset) % 3;
+//                   const isSelected = pattern === 0 || pattern === 1;
+//                   return (
+//                     <div
+//                       key={i}
+//                       className={`aspect-square rounded-sm ${
+//                         isSelected ? 'bg-purple-500' : 'bg-gray-200'
+//                       }`}
+//                     />
+//                   );
+//                 })}
+//               </div>
+//             </div>
+//             <div className="flex items-center justify-between text-xs text-gray-600">
+//               <span>Coverage: ~65%</span>
+//               <span>{patternTilesCount} tiles</span>
+//             </div>
+//           </div>
+
+//           <button
+//             onClick={handleShuffle}
+//             className="w-full bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+//           >
+//             <Shuffle className="w-5 h-5" />
+//             Shuffle Pattern
+//           </button>
+
+//           <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+//             <div className="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
+//               <Upload className="w-10 h-10 text-white" />
+//             </div>
+//             <p className="text-sm text-gray-600 mb-3">
+//               Upload tile image to apply pattern
+//             </p>
+
+//             <input
+//               ref={fileInputRef}
+//               type="file"
+//               accept="image/*"
+//               onChange={handleFileUpload}
+//               className="hidden"
+//             />
+
+//             <button
+//               onClick={() => fileInputRef.current?.click()}
+//               disabled={isProcessing}
+//               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+//             >
+//               {isProcessing ? (
+//                 <>
+//                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+//                   Processing...
+//                 </>
+//               ) : (
+//                 <>
+//                   <Upload className="w-5 h-5" />
+//                   Choose Tile Image
+//                 </>
+//               )}
+//             </button>
+//           </div>
+
+//           {scanError && (
+//             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+//               {scanError}
+//             </div>
+//           )}
+
+//           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+//             <p className="text-xs text-blue-800">
+//               <strong>Note:</strong> Pattern will be applied to all 4 walls automatically with vertical stripes design.
+//             </p>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 NEW: TILE UPLOAD OPTIONS MODAL (3 Options)
+// ═══════════════════════════════════════════════════════════════
+
+// const RandomPatternModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onApplyPattern: (result: QRScanResult) => void;
+//   roomType: string;
+// }> = ({ isOpen, onClose, onApplyPattern, roomType }) => {
+  
+//   // 🆕 State for upload mode
+//   const [uploadMode, setUploadMode] = useState<UploadMode>('select');
+//   const [manualCode, setManualCode] = useState('');
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [scanError, setScanError] = useState<string>('');
+//   const [patternOffset, setPatternOffset] = useState(0);
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+
+//   const roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
+//   const wallTileSize = { width: 30, height: 45 };
+//   const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+
+//   // Pattern calculation (same as before)
+//   const getWallDimensions = (wall: WallType) => {
+//     if (wall === 'back' || wall === 'front') {
+//       return {
+//         cols: Math.ceil(roomConfig.width / tileSizeM.width),
+//         rows: Math.ceil(roomConfig.height / tileSizeM.height)
+//       };
+//     } else {
+//       return {
+//         cols: Math.ceil(roomConfig.depth / tileSizeM.width),
+//         rows: Math.ceil(roomConfig.height / tileSizeM.height)
+//       };
+//     }
+//   };
+
+//   const backWallDims = getWallDimensions('back');
+//   const frontWallDims = getWallDimensions('front');
+//   const leftWallDims = getWallDimensions('left');
+//   const rightWallDims = getWallDimensions('right');
+
+const RandomPatternModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onApplyPattern: (result: QRScanResult) => void;
+  roomType: string;
+}> = ({ isOpen, onClose, onApplyPattern, roomType }) => {
+  
+  const [uploadMode, setUploadMode] = useState<UploadMode>('select');
+  const [manualCode, setManualCode] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scanError, setScanError] = useState<string>('');
+  const [patternOffset, setPatternOffset] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
+  const wallTileSize = { width: 30, height: 45 };
+  const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+
+  const getWallDimensions = (wall: WallType) => {
+    if (wall === 'back' || wall === 'front') {
+      return {
+        cols: Math.ceil(roomConfig.width / tileSizeM.width),
+        rows: Math.ceil(roomConfig.height / tileSizeM.height)
+      };
+    } else {
+      return {
+        cols: Math.ceil(roomConfig.depth / tileSizeM.width),
+        rows: Math.ceil(roomConfig.height / tileSizeM.height)
+      };
+    }
+  };
+
+  // ✅ Kitchen ke liye SIRF back wall pattern
+  const backWallDims = getWallDimensions('back');
+  
+  const patternTilesCount = roomType === 'kitchen'
+    ? generateVerticalStripesPattern(backWallDims.cols, backWallDims.rows, patternOffset).length
+    : generateVerticalStripesPattern(backWallDims.cols, backWallDims.rows, patternOffset).length +
+      generateVerticalStripesPattern(getWallDimensions('front').cols, getWallDimensions('front').rows, patternOffset).length +
+      generateVerticalStripesPattern(getWallDimensions('left').cols, getWallDimensions('left').rows, patternOffset).length +
+      generateVerticalStripesPattern(getWallDimensions('right').cols, getWallDimensions('right').rows, patternOffset).length;
+
+  const handleShuffle = () => {
+    setPatternOffset(Math.floor(Math.random() * 3));
+  };
+
+  // 🆕 File Upload Handler
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setScanError('Please select a valid image file (JPG, PNG, WebP)');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setScanError('Image size must be less than 10MB');
+      return;
+    }
+
+    setIsProcessing(true);
+    setScanError('');
+
+    try {
+      const imageUrl = URL.createObjectURL(file);
+
+      const mockQRData: QRScanResult = {
+        tileId: 'PATTERN_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+        tileName: file.name.split('.')[0],
+        imageUrl: imageUrl,
+        size: { width: 30, height: 45 }
+      };
+
+      onApplyPattern(mockQRData);
+      setUploadMode('select');
+      onClose();
+      
+      console.log('✅ Pattern applied from uploaded image:', file.name);
+    } catch (error) {
+      setScanError('Failed to process image. Please try again.');
+      console.error('Upload error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 🆕 Manual Tile Code Handler
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!manualCode.trim()) {
+      setScanError('Please enter a tile code');
+      return;
+    }
+
+    setIsProcessing(true);
+    setScanError('');
+
+    try {
+      console.log('🔍 Searching tile for pattern:', manualCode.trim());
+      
+      const result = await getTileByCode(manualCode.trim().toUpperCase());
+      
+      if (result.success && result.tile) {
+        const tileData = result.tile;
+        const imageUrl = tileData.imageUrl || tileData.image_url;
+        
+        if (!imageUrl) {
+          setScanError('Tile found but no image available');
+          setIsProcessing(false);
+          return;
+        }
+
+        const qrData: QRScanResult = {
+          tileId: tileData.id,
+          tileName: tileData.name,
+          imageUrl: imageUrl,
+          size: { 
+            width: tileData.size_width || 30, 
+            height: tileData.size_height || 45 
+          }
+        };
+
+        onApplyPattern(qrData);
+        setUploadMode('select');
+        setManualCode('');
+        onClose();
+        
+        console.log('✅ Pattern applied from tile code:', tileData.name);
+      } else {
+        setScanError(result.error || 'Tile not found. Please check the code.');
+        console.error('❌ Tile code search failed:', result.error);
+      }
+      
+    } catch (err) {
+      console.error('❌ Manual search error:', err);
+      setScanError('Failed to search tile. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 🆕 QR Scan Success Handler
+  const handleQRScanSuccess = async (qrData: any) => {
+    console.log('🎯 QR Scanned for pattern:', qrData);
+    
+    setIsProcessing(true);
+    setScanError('');
+
+    try {
+      let tileData: any = null;
+      
+      if (qrData.tileId) {
+        tileData = await getTileById(qrData.tileId.trim());
+        
+        if (!tileData) {
+          const result = await getTileByCode(qrData.tileId.trim());
+          if (result.success && result.tile) {
+            tileData = result.tile;
+          }
+        }
+      }
+      
+      if (tileData && (tileData.imageUrl || tileData.image_url)) {
+        const imageUrl = tileData.imageUrl || tileData.image_url;
+        
+        const qrResult: QRScanResult = {
+          tileId: tileData.id,
+          tileName: tileData.name,
+          imageUrl: imageUrl,
+          size: { 
+            width: tileData.size_width || 30, 
+            height: tileData.size_height || 45 
+          }
+        };
+
+        onApplyPattern(qrResult);
+        setUploadMode('select');
+        onClose();
+        
+        console.log('✅ Pattern applied from QR scan:', tileData.name);
+      } else {
+        setScanError('Tile not found or no image available');
+      }
+      
+    } catch (err) {
+      console.error('❌ QR scan error:', err);
+      setScanError('Failed to load tile from QR code');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  // ═══════════════════════════════════════════════════════════
+  // QR SCANNER MODE
+  // ═══════════════════════════════════════════════════════════
+  if (uploadMode === 'qr') {
+    return (
+      <QRScanner
+        onScanSuccess={handleQRScanSuccess}
+        onClose={() => {
+          setUploadMode('select');
+          setScanError('');
+        }}
+      />
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // MANUAL TILE CODE MODE
+  // ═══════════════════════════════════════════════════════════
+  if (uploadMode === 'manual') {
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Hash className="w-6 h-6 text-purple-600" />
+              Pattern Tile Code
+            </h3>
+            <button 
+              onClick={() => {
+                setUploadMode('select');
+                setScanError('');
+                setManualCode('');
+              }} 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {scanError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-700 text-sm">{scanError}</p>
+            </div>
+          )}
+
+          {/* Pattern Preview */}
+          <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Vertical Stripes Pattern</p>
+            <div className="bg-white rounded-lg p-3 mb-3">
+              <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
+                {Array.from({ length: 30 }).map((_, i) => {
+                  const row = Math.floor(i / 10);
+                  const col = i % 10;
+                  const pattern = (col + patternOffset) % 3;
+                  const isSelected = pattern === 0 || pattern === 1;
+                  return (
+                    <div
+                      key={i}
+                      className={`aspect-square rounded-sm ${
+                        isSelected ? 'bg-purple-500' : 'bg-gray-200'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span>Coverage: ~65%</span>
+              <span>{patternTilesCount} tiles</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleManualSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter Tile Code for Pattern
+              </label>
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                placeholder="e.g., MAR60X60WH"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+                autoFocus
+                disabled={isProcessing}
+                autoComplete="off"
+                autoCapitalize="characters"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={!manualCode.trim() || isProcessing}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Applying Pattern...
+                </>
+              ) : (
+                <>
+                  <Shuffle className="w-5 h-5" />
+                  Apply Pattern
+                </>
+              )}
+            </button>
+          </form>
+
+          <button
+            onClick={handleShuffle}
+            className="w-full mt-3 bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+          >
+            <Shuffle className="w-5 h-5" />
+            Shuffle Pattern Preview
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // UPLOAD IMAGE MODE
+  // ═══════════════════════════════════════════════════════════
+  if (uploadMode === 'upload') {
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Upload className="w-6 h-6 text-blue-600" />
+              Upload Pattern Tile
+            </h3>
+            <button 
+              onClick={() => {
+                setUploadMode('select');
+                setScanError('');
+              }} 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {scanError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-700 text-sm">{scanError}</p>
+            </div>
+          )}
+
+          {/* Pattern Preview */}
+          <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Vertical Stripes Pattern</p>
+            <div className="bg-white rounded-lg p-3 mb-3">
+              <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
+                {Array.from({ length: 30 }).map((_, i) => {
+                  const row = Math.floor(i / 10);
+                  const col = i % 10;
+                  const pattern = (col + patternOffset) % 3;
+                  const isSelected = pattern === 0 || pattern === 1;
+                  return (
+                    <div
+                      key={i}
+                      className={`aspect-square rounded-sm ${
+                        isSelected ? 'bg-purple-500' : 'bg-gray-200'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span>Coverage: ~65%</span>
+              <span>{patternTilesCount} tiles</span>
+            </div>
+          </div>
+
+          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center">
+              <Upload className="w-10 h-10 text-white" />
+            </div>
+            
+            <p className="text-gray-700 font-medium mb-2">
+              Upload tile image for pattern
+            </p>
+            <p className="text-gray-500 text-sm mb-4">
+              JPG, PNG, or WebP (Max 10MB)
+            </p>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isProcessing}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-5 h-5" />
+                  Choose Image
+                </>
+              )}
+            </button>
+          </div>
+
+          <button
+            onClick={handleShuffle}
+            disabled={isProcessing}
+            className="w-full mt-3 bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+          >
+            <Shuffle className="w-5 h-5" />
+            Shuffle Pattern Preview
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DEFAULT: OPTION SELECTOR (3 Options)
+  // ═══════════════════════════════════════════════════════════
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Shuffle className="w-6 h-6 text-purple-600" />
+            Random Pattern Options
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          Choose how you want to add tiles for the vertical stripes pattern ({patternTilesCount} tiles)
+        </p>
+
+        {/* Pattern Preview */}
+        <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+          <p className="text-sm font-semibold text-gray-700 mb-2">Pattern Preview</p>
+          <div className="bg-white rounded-lg p-3 mb-2">
+            <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
+              {Array.from({ length: 30 }).map((_, i) => {
+                const row = Math.floor(i / 10);
+                const col = i % 10;
+                const pattern = (col + patternOffset) % 3;
+                const isSelected = pattern === 0 || pattern === 1;
+                return (
+                  <div
+                    key={i}
+                    className={`aspect-square rounded-sm ${
+                      isSelected ? 'bg-purple-500' : 'bg-gray-200'
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+          <button
+            onClick={handleShuffle}
+            className="w-full bg-white/50 hover:bg-white/80 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1"
+          >
+            <Shuffle className="w-3 h-3" />
+            Shuffle Preview
+          </button>
+        </div>
+
+        {/* 3 Options */}
+        <div className="space-y-3">
+          {/* Option 1: Upload Image */}
+          <button
+            onClick={() => {
+              setUploadMode('upload');
+              setScanError('');
+            }}
+            className="w-full p-4 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  📤 Upload Image
+                </h4>
+                <p className="text-xs text-gray-500">Choose tile image from device</p>
+              </div>
+              <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                →
+              </div>
+            </div>
+          </button>
+
+          {/* Option 2: Scan QR Code */}
+          <button
+            onClick={() => {
+              setUploadMode('qr');
+              setScanError('');
+            }}
+            className="w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                <QrCode className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors">
+                  🔲 Scan QR Code
+                </h4>
+                <p className="text-xs text-gray-500">Use camera or upload QR image</p>
+              </div>
+              <div className="text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                →
+              </div>
+            </div>
+          </button>
+
+          {/* Option 3: Enter Tile Code */}
+          <button
+            onClick={() => {
+              setUploadMode('manual');
+              setScanError('');
+            }}
+            className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl border-2 border-green-200 hover:border-green-400 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Hash className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors">
+                  🔢 Enter Tile Code
+                </h4>
+                <p className="text-xs text-gray-500">Manual SKU/product code entry</p>
+              </div>
+              <div className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                →
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+          <p><strong>ℹ️ Note:</strong> Pattern will be applied to all 4 walls automatically with ~65% coverage.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const TileUploadOptionsModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onTileSelected: (tileData: TileUploadData) => void;
+}> = ({ isOpen, onClose, onTileSelected }) => {
+  
+  const [mode, setMode] = useState<UploadMode>('select');
+  const [manualCode, setManualCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(/mobile|android|iphone|ipad/i.test(navigator.userAgent));
+  }, []);
+
+  if (!isOpen) return null;
+
+  // ═══════════════════════════════════════════════════════════
+  // MODE 1: QR SCANNER
+  // ═══════════════════════════════════════════════════════════
+  if (mode === 'qr') {
+    return (
+      <QRScanner
+        onScanSuccess={async (qrData) => {
+          console.log('🎯 QR Scanned in 3D Viewer:', qrData);
+          
+          try {
+            setIsLoading(true);
+            setError(null);
+            
+            let tileData: any = null;
+            
+            // QR se tile ID mila
+            if (qrData.tileId) {
+              const tileId = qrData.tileId.trim();
+              console.log('📦 Fetching tile by ID:', tileId);
+              
+              tileData = await getTileById(tileId);
+              
+              // Fallback: tile code search
+              if (!tileData) {
+                console.warn('⚠️ getTileById failed, trying getTileByCode...');
+                const result = await getTileByCode(tileId);
+                if (result.success && result.tile) {
+                  tileData = result.tile;
+                  console.log('✅ Found via tile_code fallback');
+                }
+              }
+            }
+            // Manual entry se tile code mila
+            else if (qrData.type === 'manual_entry' && qrData.tileCode) {
+              console.log('📝 Manual tile code:', qrData.tileCode);
+              const result = await getTileByCode(qrData.tileCode.trim().toUpperCase());
+              if (result.success && result.tile) {
+                tileData = result.tile;
+              }
+            }
+            
+            if (tileData && (tileData.imageUrl || tileData.image_url)) {
+              const imageUrl = tileData.imageUrl || tileData.image_url;
+              
+              onTileSelected({
+                imageUrl: imageUrl,
+                tileId: tileData.id,
+                tileName: tileData.name,
+                size: { 
+                  width: tileData.size_width || 30, 
+                  height: tileData.size_height || 45 
+                }
+              });
+              
+              setMode('select');
+              onClose();
+              
+              console.log('✅ Tile applied from QR scan:', tileData.name);
+            } else {
+              console.error('❌ Tile not found or no image');
+              setError('Tile image not found. Please try another QR code.');
+            }
+            
+          } catch (err) {
+            console.error('❌ QR scan error:', err);
+            setError('Failed to load tile from QR code');
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+        onClose={() => {
+          setMode('select');
+          setError(null);
+        }}
+      />
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // MODE 2: MANUAL TILE CODE ENTRY
+  // ═══════════════════════════════════════════════════════════
+  if (mode === 'manual') {
+    const handleManualSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (!manualCode.trim()) {
+        setError('Please enter a tile code');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        console.log('🔍 Searching tile by code:', manualCode.trim());
+        
+        const result = await getTileByCode(manualCode.trim().toUpperCase());
+        
+        if (result.success && result.tile) {
+          const tileData = result.tile;
+          const imageUrl = tileData.imageUrl || tileData.image_url;
+          
+          if (imageUrl) {
+            onTileSelected({
+              imageUrl: imageUrl,
+              tileId: tileData.id,
+              tileName: tileData.name,
+              size: { 
+                width: tileData.size_width || 30, 
+                height: tileData.size_height || 45 
+              }
+            });
+            
+            setMode('select');
+            setManualCode('');
+            onClose();
+            
+            console.log('✅ Tile applied from manual code:', tileData.name);
+          } else {
+            setError('Tile found but no image available');
+          }
+        } else {
+          setError(result.error || 'Tile not found. Please check the code and try again.');
+        }
+        
+      } catch (err) {
+        console.error('❌ Manual search error:', err);
+        setError('Failed to search tile. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Hash className="w-6 h-6 text-purple-600" />
+              Enter Tile Code
+            </h3>
+            <button 
+              onClick={() => {
+                setMode('select');
+                setError(null);
+                setManualCode('');
+              }} 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleManualSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tile Code / SKU / Product ID
+              </label>
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                placeholder="e.g., MAR60X60WH, TILE-001"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+                autoFocus
+                disabled={isLoading}
+                autoComplete="off"
+                autoCapitalize="characters"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Enter the unique code printed on the tile or box
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!manualCode.trim() || isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Hash className="w-5 h-5" />
+                  Search Tile
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
+            <p className="font-semibold mb-1">💡 Where to find tile code?</p>
+            <ul className="space-y-0.5 ml-4 list-disc">
+              <li>Check the label on the tile box</li>
+              <li>Look for code near the QR sticker</li>
+              <li>Ask showroom staff for the code</li>
+              <li>Usually format: ABC123 or TILE-001</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // MODE 3: IMAGE UPLOAD
+  // ═══════════════════════════════════════════════════════════
+  if (mode === 'upload') {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image size must be less than 10MB');
+        return;
+      }
+
+      const imageUrl = URL.createObjectURL(file);
+      
+      onTileSelected({
+        imageUrl: imageUrl,
+        tileId: 'CUSTOM_' + Date.now(),
+        tileName: file.name.split('.')[0],
+        size: { width: 30, height: 45 }
+      });
+      
+      setMode('select');
+      onClose();
+      
+      console.log('✅ Custom image uploaded:', file.name);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Upload className="w-6 h-6 text-blue-600" />
+              Upload Tile Image
+            </h3>
+            <button 
+              onClick={() => {
+                setMode('select');
+                setError(null);
+              }} 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
+
+          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+              <Upload className="w-10 h-10 text-white" />
+            </div>
+            
+            <p className="text-gray-700 font-medium mb-2">
+              {isMobile ? 'Tap to upload tile image' : 'Click to upload tile image'}
+            </p>
+            <p className="text-gray-500 text-sm mb-4">
+              JPG, PNG, or WebP (Max 10MB)
+            </p>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 mx-auto"
+            >
+              <ImageIcon className="w-5 h-5" />
+              Choose Image
+            </button>
+          </div>
+
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+            <p><strong>💡 Tip:</strong> Use high-quality images for best 3D visualization results.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DEFAULT: OPTION SELECTOR (3 Cards)
+  // ═══════════════════════════════════════════════════════════
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-800">Choose Tile Source</h3>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          Select how you want to add tiles to your selection
+        </p>
+
+        <div className="space-y-3">
+          {/* Option 1: Upload Image */}
+          <button
+            onClick={() => {
+              setMode('upload');
+              setError(null);
+            }}
+            className="w-full p-4 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  📤 Upload Image
+                </h4>
+                <p className="text-xs text-gray-500">Choose custom tile image from device</p>
+              </div>
+              <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                →
+              </div>
+            </div>
+          </button>
+
+          {/* Option 2: Scan QR Code */}
+          <button
+            onClick={() => {
+              setMode('qr');
+              setError(null);
+            }}
+            className="w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                <QrCode className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors">
+                  🔲 Scan QR Code
+                </h4>
+                <p className="text-xs text-gray-500">Use camera or upload QR image</p>
+              </div>
+              <div className="text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                →
+              </div>
+            </div>
+          </button>
+
+          {/* Option 3: Enter Tile Code */}
+          <button
+            onClick={() => {
+              setMode('manual');
+              setError(null);
+            }}
+            className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl border-2 border-green-200 hover:border-green-400 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Hash className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors">
+                  🔢 Enter Tile Code
+                </h4>
+                <p className="text-xs text-gray-500">Manual SKU/product code entry</p>
+              </div>
+              <div className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+                →
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
+          <p className="font-semibold mb-1">ℹ️ Quick Guide:</p>
+          <ul className="space-y-0.5 ml-4 list-disc">
+            <li><strong>Upload:</strong> For custom or downloaded tile images</li>
+            <li><strong>QR Scan:</strong> For tiles with QR codes (fastest)</li>
+            <li><strong>Tile Code:</strong> When you know the product code/SKU</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// CAMERA CONTROLLER
+// ═══════════════════════════════════════════════════════════════
+
+const CameraController: React.FC<{
+  preset: CameraPreset | null;
+  onTransitionComplete?: () => void;
+  roomType: 'drawing' | 'kitchen' | 'bathroom';
+}> = ({ preset, onTransitionComplete, roomType }) => {
+  const { camera } = useThree();
+  const controlsRef = useRef<any>();
+
+  const roomConfig = ROOM_CONFIGS[roomType];
+  const bounds = useMemo(() => {
+    const padding = 0.3;
+    return {
+      minX: -roomConfig.width / 2 + padding,
+      maxX: roomConfig.width / 2 - padding,
+      minY: 0.5,
+      maxY: roomConfig.height - 0.3,
+      minZ: -roomConfig.depth / 2 + padding,
+      maxZ: roomConfig.depth / 2 - padding,
+    };
+  }, [roomType]);
+
+  useEffect(() => {
+    if (!preset || !controlsRef.current) return;
+
+    camera.position.set(...preset.position);
+    controlsRef.current.target.set(...preset.target);
+    camera.fov = preset.fov;
+    camera.updateProjectionMatrix();
+    
+    onTransitionComplete?.();
+  }, [preset, camera, onTransitionComplete]);
+
+  useEffect(() => {
+    if (!controlsRef.current) return;
+
+    const handleChange = () => {
+      camera.position.x = Math.max(bounds.minX, Math.min(bounds.maxX, camera.position.x));
+      camera.position.y = Math.max(bounds.minY, Math.min(bounds.maxY, camera.position.y));
+      camera.position.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, camera.position.z));
+
+      const target = controlsRef.current.target;
+      target.x = Math.max(bounds.minX, Math.min(bounds.maxX, target.x));
+      target.y = Math.max(bounds.minY, Math.min(bounds.maxY, target.y));
+      target.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, target.z));
+    };
+
+    controlsRef.current.addEventListener('change', handleChange);
+
+    return () => {
+      controlsRef.current?.removeEventListener('change', handleChange);
+    };
+  }, [camera, bounds]);
+
+  const minDistance = Math.min(roomConfig.width, roomConfig.depth) * 0.15;
+  const maxDistance = Math.max(roomConfig.width, roomConfig.depth) * 0.9;
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enablePan={true}
+      enableZoom={true}
+      enableRotate={true}
+      autoRotate={false}
+      maxPolarAngle={Math.PI * 0.85}
+      minPolarAngle={Math.PI * 0.15}
+      minDistance={minDistance}
+      maxDistance={maxDistance}
+      target={[0, roomConfig.height / 2, 0]}
+      enableDamping={true}
+      dampingFactor={0.05}
+    />
   );
 };
 
@@ -6536,6 +2796,10 @@ const SceneLoader: React.FC = () => (
     <meshStandardMaterial color="#3b82f6" />
   </mesh>
 );
+
+// ═══════════════════════════════════════════════════════════════
+// 🎯 MAIN COMPONENT - Enhanced3DViewer
+// ═══════════════════════════════════════════════════════════════
 
 export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   roomType,
@@ -6548,6 +2812,25 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   const [selectedPreset, setSelectedPreset] = useState<CameraPreset | null>(null);
   const [quality, setQuality] = useState<QualityLevel>('high');
   const [showSettings, setShowSettings] = useState(false);
+  
+  const [showWallSelector, setShowWallSelector] = useState(false);
+  const [isGridMode, setIsGridMode] = useState(false);
+  const [activeWall, setActiveWall] = useState<WallType | null>(null);
+  const [selectedTiles, setSelectedTiles] = useState<number[]>([]);
+  const [customTiles, setCustomTiles] = useState<WallCustomTiles>({
+    back: new Map(),
+    front: new Map(),
+    left: new Map(),
+    right: new Map()
+  });
+  
+  // 🆕 NEW: Replace showQRScanner with showTileUploadOptions
+  const [showTileUploadOptions, setShowTileUploadOptions] = useState(false);
+  
+  const [showRandomPattern, setShowRandomPattern] = useState(false);
+  const [patternOffset, setPatternOffset] = useState(0);
+  const [currentPatternTexture, setCurrentPatternTexture] = useState<THREE.Texture | null>(null);
+  const [isShuffling, setIsShuffling] = useState(false);
 
   const autoQuality = useDeviceQuality();
 
@@ -6567,6 +2850,19 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     wallTile?.size.height || 45
   );
 
+  useEffect(() => {
+    return () => {
+      if (currentPatternTexture) {
+        currentPatternTexture.dispose();
+      }
+      Object.values(customTiles).forEach(wallMap => {
+        wallMap.forEach(texture => {
+          texture.dispose();
+        });
+      });
+    };
+  }, [currentPatternTexture, customTiles]);
+
   const handleReset = useCallback(() => {
     setSelectedPreset(null);
   }, []);
@@ -6584,6 +2880,198 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
       setIsFullscreen(false);
     }
   };
+
+  const handleToggleGridMode = () => {
+    setShowWallSelector(true);
+  };
+
+  const handleSelectWall = (wall: WallType) => {
+    setActiveWall(wall);
+    setIsGridMode(true);
+    setSelectedTiles([]);
+    setShowWallSelector(false);
+  };
+
+  const handleTileClick = (index: number) => {
+    setSelectedTiles(prev => {
+      if (prev.includes(index)) {
+        return prev.filter(i => i !== index);
+      } else {
+        return [...prev, index];
+      }
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTiles([]);
+  };
+
+  // 🆕 MODIFIED: Open tile upload options modal instead of QR scanner
+  const handleOkClick = () => {
+    if (selectedTiles.length > 0) {
+      setShowTileUploadOptions(true);
+    }
+  };
+
+  // 🆕 NEW: Handle tile selection from any of the 3 options
+  const handleTileSelected = (tileData: TileUploadData) => {
+    if (!activeWall) return;
+
+    console.log('🎨 Applying tile to wall:', activeWall, 'Tiles:', selectedTiles.length);
+
+    const loader = new THREE.TextureLoader();
+    loader.load(tileData.imageUrl, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.minFilter = THREE.LinearMipMapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = 16;
+      texture.generateMipmaps = true;
+      texture.premultiplyAlpha = false;
+      texture.needsUpdate = true;
+
+      setCustomTiles(prev => {
+        const newCustomTiles = { ...prev };
+        const wallMap = new Map(prev[activeWall]);
+        
+        selectedTiles.forEach(index => {
+          wallMap.set(index, texture);
+        });
+        
+        newCustomTiles[activeWall] = wallMap;
+        return newCustomTiles;
+      });
+
+      setSelectedTiles([]);
+      setIsGridMode(false);
+      setActiveWall(null);
+      
+      console.log('✅ Tile applied successfully:', tileData.tileName);
+    }, undefined, (error) => {
+      console.error('❌ Failed to load tile texture:', error);
+    });
+  };
+
+  const handleCancelGridMode = () => {
+    setIsGridMode(false);
+    setActiveWall(null);
+    setSelectedTiles([]);
+  };
+
+  const handleRandomPattern = () => {
+    setShowRandomPattern(true);
+  };
+
+  const handleApplyRandomPattern = (result: QRScanResult) => {
+    const loader = new THREE.TextureLoader();
+    loader.load(result.imageUrl, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.minFilter = THREE.LinearMipMapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = 16;
+      texture.generateMipmaps = true;
+      texture.premultiplyAlpha = false;
+      texture.needsUpdate = true;
+
+      setCurrentPatternTexture(texture);
+
+      const roomConfig = ROOM_CONFIGS[roomType];
+      const wallTileSize = { width: 30, height: 45 };
+      const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+
+      const getWallDimensions = (wall: WallType) => {
+        if (wall === 'back' || wall === 'front') {
+          return {
+            cols: Math.ceil(roomConfig.width / tileSizeM.width),
+            rows: Math.ceil(roomConfig.height / tileSizeM.height)
+          };
+        } else {
+          return {
+            cols: Math.ceil(roomConfig.depth / tileSizeM.width),
+            rows: Math.ceil(roomConfig.height / tileSizeM.height)
+          };
+        }
+      };
+
+      setCustomTiles(prev => {
+        const newCustomTiles = { ...prev };
+
+        ['back', 'front', 'left', 'right'].forEach((wallKey) => {
+          const wall = wallKey as WallType;
+          const dims = getWallDimensions(wall);
+          const patternIndices = generateVerticalStripesPattern(dims.cols, dims.rows, patternOffset);
+          
+          const wallMap = new Map<number, THREE.Texture>();
+          patternIndices.forEach(index => {
+            wallMap.set(index, texture);
+          });
+          
+          newCustomTiles[wall] = wallMap;
+        });
+
+        return newCustomTiles;
+      });
+    });
+  };
+
+  const handleShufflePattern = useCallback(() => {
+    if (!currentPatternTexture || isShuffling) return;
+
+    setIsShuffling(true);
+    
+    const timeoutId = setTimeout(() => {
+      const newOffset = Math.floor(Math.random() * 3);
+      setPatternOffset(newOffset);
+
+      const roomConfig = ROOM_CONFIGS[roomType];
+      const wallTileSize = { width: 30, height: 45 };
+      const tileSizeM = { width: wallTileSize.width / 100, height: wallTileSize.height / 100 };
+
+      const getWallDimensions = (wall: WallType) => {
+        if (wall === 'back' || wall === 'front') {
+          return {
+            cols: Math.ceil(roomConfig.width / tileSizeM.width),
+            rows: Math.ceil(roomConfig.height / tileSizeM.height)
+          };
+        } else {
+          return {
+            cols: Math.ceil(roomConfig.depth / tileSizeM.width),
+            rows: Math.ceil(roomConfig.height / tileSizeM.height)
+          };
+        }
+      };
+
+      setCustomTiles(prev => {
+        const newCustomTiles = { ...prev };
+
+        ['back', 'front', 'left', 'right'].forEach((wallKey) => {
+          const wall = wallKey as WallType;
+          const dims = getWallDimensions(wall);
+          const patternIndices = generateVerticalStripesPattern(dims.cols, dims.rows, newOffset);
+          
+          const wallMap = new Map<number, THREE.Texture>();
+          patternIndices.forEach(index => {
+            wallMap.set(index, currentPatternTexture);
+          });
+          
+          newCustomTiles[wall] = wallMap;
+        });
+
+        return newCustomTiles;
+      });
+
+      const endTimeoutId = setTimeout(() => {
+        setIsShuffling(false);
+      }, 500);
+
+      return () => clearTimeout(endTimeoutId);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPatternTexture, isShuffling, roomType]);
 
   const renderScene = () => {
     const showWallTiles = activeSurface === 'wall' || activeSurface === 'both';
@@ -6610,6 +3098,11 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             wallTileSize={wallTile?.size || defaultWallSize}
             showWallTiles={showWallTiles}
             quality={quality}
+            isGridMode={isGridMode}
+            activeWall={activeWall}
+            selectedTiles={selectedTiles}
+            onTileClick={handleTileClick}
+            customTiles={customTiles}
           />
         );
       case 'bathroom':
@@ -6621,6 +3114,11 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             wallTileSize={wallTile?.size || defaultWallSize}
             showWallTiles={showWallTiles}
             quality={quality}
+            isGridMode={isGridMode}
+            activeWall={activeWall}
+            selectedTiles={selectedTiles}
+            onTileClick={handleTileClick}
+            customTiles={customTiles}
           />
         );
     }
@@ -6629,6 +3127,12 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   const presets = CAMERA_PRESETS[roomType] || [];
   const hasFloorTile = !!floorTile?.texture;
   const hasWallTile = !!wallTile?.texture;
+
+  const getTotalCustomTiles = () => {
+    return customTiles.back.size + customTiles.front.size + customTiles.left.size + customTiles.right.size;
+  };
+
+  const hasRandomPattern = currentPatternTexture !== null && getTotalCustomTiles() > 0;
 
   return (
     <div className="relative w-full h-full bg-gradient-to-b from-gray-900 to-black">
@@ -6650,7 +3154,7 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           <color attach="background" args={['#e8f4f8']} />
           <MinimalLighting />
           {renderScene()}
-          <CameraController preset={selectedPreset} onTransitionComplete={handleTransitionComplete} />
+          <CameraController preset={selectedPreset} onTransitionComplete={handleTransitionComplete} roomType={roomType} />
         </Suspense>
       </Canvas>
 
@@ -6671,6 +3175,15 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
         <p className="text-[11px] font-bold capitalize">{activeSurface}</p>
         {hasFloorTile && <p className="text-[9px] opacity-75 mt-0.5 text-green-400">✓ Floor</p>}
         {hasWallTile && <p className="text-[9px] opacity-75 text-blue-400">✓ Wall</p>}
+        {getTotalCustomTiles() > 0 && (
+          <>
+            <p className="text-[9px] opacity-75 text-purple-400 mt-1">Custom Tiles:</p>
+            {customTiles.back.size > 0 && <p className="text-[8px] opacity-75 text-purple-300">• Back: {customTiles.back.size}</p>}
+            {customTiles.front.size > 0 && <p className="text-[8px] opacity-75 text-purple-300">• Front: {customTiles.front.size}</p>}
+            {customTiles.left.size > 0 && <p className="text-[8px] opacity-75 text-purple-300">• Left: {customTiles.left.size}</p>}
+            {customTiles.right.size > 0 && <p className="text-[8px] opacity-75 text-purple-300">• Right: {customTiles.right.size}</p>}
+          </>
+        )}
       </div>
 
       <div className="absolute top-14 right-2 bg-black/80 text-white p-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
@@ -6718,6 +3231,108 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
         </div>
       )}
 
+      {isGridMode && activeWall && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 min-w-[300px] max-w-[90vw] z-40 animate-slideUp">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Grid3x3 className="w-5 h-5 text-blue-600" />
+                Select Tiles
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Editing: {activeWall.charAt(0).toUpperCase() + activeWall.slice(1)} Wall
+              </p>
+            </div>
+            <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-semibold">
+              {selectedTiles.length} selected
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-800">
+                <strong>Tap tiles</strong> on the {activeWall} wall to select them. Selected tiles will be highlighted in green.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleClearSelection}
+                disabled={selectedTiles.length === 0}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={handleOkClick}
+                disabled={selectedTiles.length === 0}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                OK - Upload
+              </button>
+            </div>
+
+            <button
+              onClick={handleCancelGridMode}
+              className="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-2 left-2 flex gap-1.5 flex-wrap max-w-[250px]">
+        <button
+          onClick={handleToggleGridMode}
+          disabled={isGridMode}
+          className={`${
+            isGridMode 
+              ? 'bg-green-600 text-white' 
+              : 'bg-black/80 text-white hover:bg-black/95'
+          } p-1.5 rounded-lg transition-all backdrop-blur-sm shadow-xl border border-white/10 flex items-center gap-1 px-2.5 disabled:opacity-50`}
+          title="Add Highlighter"
+        >
+          <Highlighter className="w-3.5 h-3.5" />
+          <span className="text-[9px] font-semibold hidden sm:inline">
+            Add Highlighter
+          </span>
+        </button>
+
+        {roomType === 'bathroom' && (
+          <button
+            onClick={handleRandomPattern}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-1.5 rounded-lg hover:shadow-lg transition-all backdrop-blur-sm shadow-xl border border-white/10 flex items-center gap-1 px-2.5"
+            title="Random Pattern"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            <span className="text-[9px] font-semibold hidden sm:inline">
+              Random Pattern
+            </span>
+          </button>
+        )}
+
+        {roomType === 'bathroom' && hasRandomPattern && (
+          <button
+            onClick={handleShufflePattern}
+            disabled={isShuffling}
+            className={`${
+              isShuffling 
+                ? 'bg-orange-500' 
+                : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg'
+            } text-white p-1.5 rounded-lg transition-all backdrop-blur-sm shadow-xl border border-white/10 flex items-center gap-1 px-2.5 disabled:opacity-75`}
+            title="Shuffle Pattern"
+          >
+            <Shuffle className={`w-3.5 h-3.5 ${isShuffling ? 'animate-spin' : ''}`} />
+            <span className="text-[9px] font-semibold hidden sm:inline">
+              {isShuffling ? 'Shuffling...' : 'Shuffle Pattern'}
+            </span>
+          </button>
+        )}
+      </div>
+
       <div className="absolute bottom-2 right-2 flex gap-1.5">
         <button
           onClick={() => setShowControls(!showControls)}
@@ -6749,7 +3364,7 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
         </button>
       </div>
 
-      {(!hasFloorTile && !hasWallTile) && (
+      {(!hasFloorTile && !hasWallTile) && !isGridMode && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
           <div className="bg-white rounded-xl p-5 text-center shadow-2xl max-w-[280px] mx-4">
             <Package className="w-10 h-10 mx-auto mb-2.5 text-blue-600" />
@@ -6758,6 +3373,60 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           </div>
         </div>
       )}
+
+      <WallSelectorModal
+        isOpen={showWallSelector}
+        onClose={() => setShowWallSelector(false)}
+        onSelectWall={handleSelectWall}
+        roomType={roomType}
+      />
+
+      {/* 🆕 NEW: Multi-Option Upload Modal */}
+      <TileUploadOptionsModal
+        isOpen={showTileUploadOptions}
+        onClose={() => setShowTileUploadOptions(false)}
+        onTileSelected={handleTileSelected}
+      />
+
+      <RandomPatternModal
+        isOpen={showRandomPattern}
+        onClose={() => setShowRandomPattern(false)}
+        onApplyPattern={handleApplyRandomPattern}
+        roomType={roomType}
+      />
+
+      {isShuffling && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-4 flex items-center gap-3 z-50 animate-slideUp">
+          <Shuffle className="w-6 h-6 text-orange-600 animate-spin" />
+          <div>
+            <p className="font-bold text-gray-800">Shuffling Pattern...</p>
+            <p className="text-xs text-gray-500">Applying new layout</p>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

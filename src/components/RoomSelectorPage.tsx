@@ -169,7 +169,10 @@ export const RoomSelectorPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 sm:gap-2 text-gray-700 hover:text-blue-600 transition-colors touch-manipulation p-2 -ml-2 rounded-lg hover:bg-gray-100"
+            className="flex items-center gap-1.5 sm:gap-2 text-gray-700 h
+            
+            
+            over:text-blue-600 transition-colors touch-manipulation p-2 -ml-2 rounded-lg hover:bg-gray-100"
             aria-label="Go back to tile details"
           >
             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -323,6 +326,8 @@ export const RoomSelectorPage: React.FC = () => {
                   </div>
                 </div>
               </button>
+
+              
             );
           })}
         </div>

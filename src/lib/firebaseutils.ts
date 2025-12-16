@@ -36,7 +36,9 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile, TileSeller } from '../types';
+// Enhanced3DViewer.tsx ke top par add karo:
 
+import { QRScanner } from './QRScanner';  // ✅ Existing component reuse
 
 // ═══════════════════════════════════════════════════════════════
 // ✅ STEP 1: ADD THIS AFTER ALL IMPORTS (Around line 50-60)
@@ -203,7 +205,114 @@ export const validatePassword = (password: string): { isValid: boolean; message:
 // ✅ ADD THIS AFTER LINE ~1850 (After getSellerScanAnalytics function)
 // COPY-PASTE EXACTLY - Don't change anything else in file
 // ═══════════════════════════════════════════════════════════════
+export const getTileByCode = async (tileCode: string) => {
+  try {
+    console.log('🔍 Searching for tile code:', tileCode);
+    
+    // Try multiple field names (flexibility ke liye)
+    const queries = [
+      query(collection(db, 'tiles'), where('tile_code', '==', tileCode)),
+      query(collection(db, 'tiles'), where('tileCode', '==', tileCode)),
+      query(collection(db, 'tiles'), where('code', '==', tileCode)),
+      query(collection(db, 'tiles'), where('sku', '==', tileCode)),
+    ];
 
+    for (const q of queries) {
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        
+        console.log('✅ Tile found:', data);
+        
+        return {
+          success: true,
+          tile: {
+            id: doc.id,
+            name: data.name || data.tileName || 'Unknown Tile',
+            imageUrl: data.imageUrl || data.image_url || data.image || data.url,
+            image_url: data.imageUrl || data.image_url || data.image,
+            size_width: data.size_width || data.width || 30,
+            size_height: data.size_height || data.height || 45,
+            tile_code: tileCode,
+            ...data
+          }
+        };
+      }
+    }
+
+    // Agar exact match nahi mila, partial search try karo
+    console.warn('⚠️ Exact match not found, trying partial search...');
+    
+    const allTilesQuery = query(collection(db, 'tiles'));
+    const allSnapshot = await getDocs(allTilesQuery);
+    
+    const partialMatch = allSnapshot.docs.find(doc => {
+      const data = doc.data();
+      const codes = [
+        data.tile_code,
+        data.tileCode,
+        data.code,
+        data.sku,
+        data.id,
+        doc.id
+      ].filter(Boolean);
+      
+      return codes.some(code => 
+        String(code).toUpperCase().includes(tileCode.toUpperCase())
+      );
+    });
+
+    if (partialMatch) {
+      const data = partialMatch.data();
+      console.log('✅ Partial match found:', data);
+      
+      return {
+        success: true,
+        tile: {
+          id: partialMatch.id,
+          name: data.name || data.tileName || 'Unknown Tile',
+          imageUrl: data.imageUrl || data.image_url || data.image || data.url,
+          image_url: data.imageUrl || data.image_url || data.image,
+          size_width: data.size_width || data.width || 30,
+          size_height: data.size_height || data.height || 45,
+          tile_code: tileCode,
+          ...data
+        }
+      };
+    }
+
+    console.error('❌ No tile found with code:', tileCode);
+    
+    return {
+      success: false,
+      error: `Tile with code "${tileCode}" not found in database`
+    };
+
+  } catch (error) {
+    console.error('❌ Firebase error:', error);
+    return {
+      success: false,
+      error: `Database error: ${""}`
+    };
+  }
+};
+export const getAllTileCodes = async () => {
+  try {
+    const snapshot = await getDocs(collection(db, 'tiles'));
+    const codes = snapshot.docs.map(doc => ({
+      id: doc.id,
+      tile_code: doc.data().tile_code || doc.data().tileCode || doc.data().code,
+      name: doc.data().name
+    }));
+    console.log('📋 All available tile codes:', codes);
+    return codes;
+  } catch (error) {
+    console.error('Error fetching tile codes:', error);
+    return [];
+  }
+};
 /**
  * Get tile by tile code (Manual Entry Support)
  * PRODUCTION v1.0 - Case Insensitive + Worker Security
@@ -212,280 +321,281 @@ export const validatePassword = (password: string): { isValid: boolean; message:
  * @param workerId - Optional worker ID for authorization check
  * @returns Success object with tile data or error message
  */
-export const getTileByCode = async (
-  tileCode: string,
-  workerId?: string
-): Promise<{ success: boolean; tile?: any; error?: string }> => {
+// export const getTileByCode = async (
+
+//   tileCode: string,
+//   workerId?: string
+// ): Promise<{ success: boolean; tile?: any; error?: string }> => {
   
-  try {
-    console.log('🔍 Searching tile by code:', tileCode);
+//   try {
+//     console.log('🔍 Searching tile by code:', tileCode);
 
-    // ═══════════════════════════════════════════════════════════
-    // STEP 1: VALIDATE INPUT
-    // ═══════════════════════════════════════════════════════════
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 1: VALIDATE INPUT
+//     // ═══════════════════════════════════════════════════════════
     
-    if (!tileCode?.trim()) {
-      return { success: false, error: 'Tile code is required' };
-    }
+//     if (!tileCode?.trim()) {
+//       return { success: false, error: 'Tile code is required' };
+//     }
 
-    if (tileCode.trim().length < 3) {
-      return { success: false, error: 'Tile code too short. Enter at least 3 characters.' };
-    }
+//     if (tileCode.trim().length < 3) {
+//       return { success: false, error: 'Tile code too short. Enter at least 3 characters.' };
+//     }
 
-    // Convert to uppercase for case-insensitive search
-    const searchCode = tileCode.trim().toUpperCase();
-    console.log('🔍 Normalized search code:', searchCode);
+//     // Convert to uppercase for case-insensitive search
+//     const searchCode = tileCode.trim().toUpperCase();
+//     console.log('🔍 Normalized search code:', searchCode);
 
-    // ═══════════════════════════════════════════════════════════
-    // STEP 2: QUERY FIRESTORE (Try both field naming conventions)
-    // ═══════════════════════════════════════════════════════════
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 2: QUERY FIRESTORE (Try both field naming conventions)
+//     // ═══════════════════════════════════════════════════════════
     
-    let tiles: any[] = [];
+//     let tiles: any[] = [];
 
-    // Try camelCase field first (tileCode)
-    try {
-      const q1 = query(
-        collection(db, 'tiles'),
-        where('tileCode', '==', searchCode)
-      );
-      const snapshot1 = await getDocs(q1);
-      tiles = snapshot1.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log(`✅ Found ${tiles.length} tiles with tileCode field`);
-    } catch (err: any) {
-      console.warn('⚠️ tileCode query failed:', err.message);
-    }
+//     // Try camelCase field first (tileCode)
+//     try {
+//       const q1 = query(
+//         collection(db, 'tiles'),
+//         where('tileCode', '==', searchCode)
+//       );
+//       const snapshot1 = await getDocs(q1);
+//       tiles = snapshot1.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+//       console.log(`✅ Found ${tiles.length} tiles with tileCode field`);
+//     } catch (err: any) {
+//       console.warn('⚠️ tileCode query failed:', err.message);
+//     }
 
-    // If no results, try snake_case field (tile_code)
-    if (tiles.length === 0) {
-      try {
-        const q2 = query(
-          collection(db, 'tiles'),
-          where('tile_code', '==', searchCode)
-        );
-        const snapshot2 = await getDocs(q2);
-        tiles = snapshot2.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log(`✅ Found ${tiles.length} tiles with tile_code field`);
-      } catch (err: any) {
-        console.warn('⚠️ tile_code query failed:', err.message);
-      }
-    }
+//     // If no results, try snake_case field (tile_code)
+//     if (tiles.length === 0) {
+//       try {
+//         const q2 = query(
+//           collection(db, 'tiles'),
+//           where('tile_code', '==', searchCode)
+//         );
+//         const snapshot2 = await getDocs(q2);
+//         tiles = snapshot2.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+//         console.log(`✅ Found ${tiles.length} tiles with tile_code field`);
+//       } catch (err: any) {
+//         console.warn('⚠️ tile_code query failed:', err.message);
+//       }
+//     }
 
-    // No tiles found with exact code
-    if (tiles.length === 0) {
-      console.log('❌ No tile found with code:', searchCode);
+//     // No tiles found with exact code
+//     if (tiles.length === 0) {
+//       console.log('❌ No tile found with code:', searchCode);
       
-      // Log failed search for analytics
-      try {
-        await addDoc(collection(db, 'analytics'), {
-          action_type: 'manual_search_failed',
-          search_code: searchCode,
-          worker_id: workerId || null,
-          timestamp: new Date().toISOString()
-        });
-      } catch (logErr) {
-        console.warn('⚠️ Could not log failed search');
-      }
+//       // Log failed search for analytics
+//       try {
+//         await addDoc(collection(db, 'analytics'), {
+//           action_type: 'manual_search_failed',
+//           search_code: searchCode,
+//           worker_id: workerId || null,
+//           timestamp: new Date().toISOString()
+//         });
+//       } catch (logErr) {
+//         console.warn('⚠️ Could not log failed search');
+//       }
       
-      return { 
-        success: false, 
-        error: `No tile found with code "${searchCode}".\n\nPlease check:\n• Code spelling\n• Try with/without spaces\n• Ask staff for correct code` 
-      };
-    }
+//       return { 
+//         success: false, 
+//         error: `No tile found with code "${searchCode}".\n\nPlease check:\n• Code spelling\n• Try with/without spaces\n• Ask staff for correct code` 
+//       };
+//     }
 
-    console.log(`✅ Found ${tiles.length} matching tile(s)`);
+//     console.log(`✅ Found ${tiles.length} matching tile(s)`);
 
-    // ═══════════════════════════════════════════════════════════
-    // STEP 3: WORKER AUTHORIZATION CHECK (Security)
-    // ═══════════════════════════════════════════════════════════
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 3: WORKER AUTHORIZATION CHECK (Security)
+//     // ═══════════════════════════════════════════════════════════
     
-    if (workerId) {
-      console.log('🔒 Worker authorization check starting...');
+//     if (workerId) {
+//       console.log('🔒 Worker authorization check starting...');
       
-      // Get worker's seller ID
-      const workerDoc = await getDoc(doc(db, 'users', workerId));
+//       // Get worker's seller ID
+//       const workerDoc = await getDoc(doc(db, 'users', workerId));
       
-      if (!workerDoc.exists()) {
-        console.error('❌ Worker document not found:', workerId);
-        return { success: false, error: 'Worker account not found. Please login again.' };
-      }
+//       if (!workerDoc.exists()) {
+//         console.error('❌ Worker document not found:', workerId);
+//         return { success: false, error: 'Worker account not found. Please login again.' };
+//       }
 
-      const workerData = workerDoc.data();
+//       const workerData = workerDoc.data();
       
-      // Verify worker role
-      if (workerData.role !== 'worker') {
-        console.error('❌ User is not a worker:', workerData.role);
-        return { success: false, error: 'Only workers can use manual search.' };
-      }
+//       // Verify worker role
+//       if (workerData.role !== 'worker') {
+//         console.error('❌ User is not a worker:', workerData.role);
+//         return { success: false, error: 'Only workers can use manual search.' };
+//       }
 
-      // Verify worker is active
-      if (workerData.is_active === false || workerData.account_status === 'deleted') {
-        console.error('❌ Worker account inactive');
-        return { success: false, error: 'Your worker account is inactive. Please contact administrator.' };
-      }
+//       // Verify worker is active
+//       if (workerData.is_active === false || workerData.account_status === 'deleted') {
+//         console.error('❌ Worker account inactive');
+//         return { success: false, error: 'Your worker account is inactive. Please contact administrator.' };
+//       }
 
-      const workerSellerId = workerData.seller_id;
+//       const workerSellerId = workerData.seller_id;
       
-      if (!workerSellerId) {
-        console.error('❌ Worker has no seller assigned');
-        return { success: false, error: 'Worker has no seller assigned. Please contact administrator.' };
-      }
+//       if (!workerSellerId) {
+//         console.error('❌ Worker has no seller assigned');
+//         return { success: false, error: 'Worker has no seller assigned. Please contact administrator.' };
+//       }
 
-      console.log('✅ Worker verified:', workerData.email, '| Seller:', workerSellerId);
+//       console.log('✅ Worker verified:', workerData.email, '| Seller:', workerSellerId);
 
-      // Filter tiles by worker's seller
-      const authorizedTiles = tiles.filter(tile => {
-        const tileSellerId = tile.sellerId || tile.seller_id;
-        return tileSellerId === workerSellerId;
-      });
+//       // Filter tiles by worker's seller
+//       const authorizedTiles = tiles.filter(tile => {
+//         const tileSellerId = tile.sellerId || tile.seller_id;
+//         return tileSellerId === workerSellerId;
+//       });
 
-      console.log(`🔒 Authorization check: ${tiles.length} total, ${authorizedTiles.length} authorized`);
+//       console.log(`🔒 Authorization check: ${tiles.length} total, ${authorizedTiles.length} authorized`);
 
-      if (authorizedTiles.length === 0) {
-        // Get seller names for better error message
-        let workerSellerName = 'your showroom';
-        let tileSellerName = 'another showroom';
+//       if (authorizedTiles.length === 0) {
+//         // Get seller names for better error message
+//         let workerSellerName = 'your showroom';
+//         let tileSellerName = 'another showroom';
 
-        try {
-          const tileSellerId = tiles[0].sellerId || tiles[0].seller_id;
+//         try {
+//           const tileSellerId = tiles[0].sellerId || tiles[0].seller_id;
           
-          const [workerSellerDoc, tileSellerDoc] = await Promise.all([
-            getDoc(doc(db, 'sellers', workerSellerId)),
-            getDoc(doc(db, 'sellers', tileSellerId))
-          ]);
+//           const [workerSellerDoc, tileSellerDoc] = await Promise.all([
+//             getDoc(doc(db, 'sellers', workerSellerId)),
+//             getDoc(doc(db, 'sellers', tileSellerId))
+//           ]);
 
-          if (workerSellerDoc.exists()) {
-            workerSellerName = workerSellerDoc.data().business_name || workerSellerName;
-          }
+//           if (workerSellerDoc.exists()) {
+//             workerSellerName = workerSellerDoc.data().business_name || workerSellerName;
+//           }
 
-          if (tileSellerDoc.exists()) {
-            tileSellerName = tileSellerDoc.data().business_name || tileSellerName;
-          }
-        } catch (nameErr) {
-          console.warn('⚠️ Could not fetch seller names:', nameErr);
-        }
+//           if (tileSellerDoc.exists()) {
+//             tileSellerName = tileSellerDoc.data().business_name || tileSellerName;
+//           }
+//         } catch (nameErr) {
+//           console.warn('⚠️ Could not fetch seller names:', nameErr);
+//         }
 
-        // Log unauthorized attempt
-        try {
-          await addDoc(collection(db, 'securityLogs'), {
-            event: 'unauthorized_manual_search',
-            worker_id: workerId,
-            worker_email: workerData.email,
-            worker_seller_id: workerSellerId,
-            search_code: searchCode,
-            found_tiles: tiles.length,
-            authorized_tiles: 0,
-            attempted_tile_ids: tiles.map(t => t.id),
-            timestamp: new Date().toISOString(),
-            blocked: true
-          });
-        } catch (logErr) {
-          console.warn('⚠️ Could not log security event');
-        }
+//         // Log unauthorized attempt
+//         try {
+//           await addDoc(collection(db, 'securityLogs'), {
+//             event: 'unauthorized_manual_search',
+//             worker_id: workerId,
+//             worker_email: workerData.email,
+//             worker_seller_id: workerSellerId,
+//             search_code: searchCode,
+//             found_tiles: tiles.length,
+//             authorized_tiles: 0,
+//             attempted_tile_ids: tiles.map(t => t.id),
+//             timestamp: new Date().toISOString(),
+//             blocked: true
+//           });
+//         } catch (logErr) {
+//           console.warn('⚠️ Could not log security event');
+//         }
 
-        console.error('🚫 UNAUTHORIZED ACCESS BLOCKED');
+//         console.error('🚫 UNAUTHORIZED ACCESS BLOCKED');
 
-        return {
-          success: false,
-          error: `🚫 UNAUTHORIZED TILE\n\nTile "${searchCode}" belongs to "${tileSellerName}".\n\nYou can only search tiles from "${workerSellerName}".\n\n⚠️ This attempt has been logged.`
-        };
-      }
+//         return {
+//           success: false,
+//           error: `🚫 UNAUTHORIZED TILE\n\nTile "${searchCode}" belongs to "${tileSellerName}".\n\nYou can only search tiles from "${workerSellerName}".\n\n⚠️ This attempt has been logged.`
+//         };
+//       }
 
-      // Use only authorized tiles
-      tiles = authorizedTiles;
-      console.log(`✅ Worker authorized for ${tiles.length} tile(s)`);
-    }
+//       // Use only authorized tiles
+//       tiles = authorizedTiles;
+//       console.log(`✅ Worker authorized for ${tiles.length} tile(s)`);
+//     }
 
-    // ═══════════════════════════════════════════════════════════
-    // STEP 4: HANDLE MULTIPLE MATCHES
-    // ═══════════════════════════════════════════════════════════
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 4: HANDLE MULTIPLE MATCHES
+//     // ═══════════════════════════════════════════════════════════
     
-    let selectedTile = tiles[0];
+//     let selectedTile = tiles[0];
 
-    if (tiles.length > 1) {
-      console.warn(`⚠️ Multiple tiles found with code "${searchCode}":`, tiles.length);
+//     if (tiles.length > 1) {
+//       console.warn(`⚠️ Multiple tiles found with code "${searchCode}":`, tiles.length);
       
-      // Log duplicate code warning
-      try {
-        await addDoc(collection(db, 'adminLogs'), {
-          action: 'duplicate_tile_codes_detected',
-          tile_code: searchCode,
-          count: tiles.length,
-          tile_ids: tiles.map(t => t.id),
-          tile_names: tiles.map(t => t.name || 'Unknown'),
-          timestamp: new Date().toISOString()
-        });
-      } catch (logErr) {
-        console.warn('⚠️ Could not log duplicate warning');
-      }
+//       // Log duplicate code warning
+//       try {
+//         await addDoc(collection(db, 'adminLogs'), {
+//           action: 'duplicate_tile_codes_detected',
+//           tile_code: searchCode,
+//           count: tiles.length,
+//           tile_ids: tiles.map(t => t.id),
+//           tile_names: tiles.map(t => t.name || 'Unknown'),
+//           timestamp: new Date().toISOString()
+//         });
+//       } catch (logErr) {
+//         console.warn('⚠️ Could not log duplicate warning');
+//       }
 
-      // For now, return first match
-      // TODO: Future enhancement - show selection UI
-      console.log('📌 Returning first match:', selectedTile.name);
-    }
+//       // For now, return first match
+//       // TODO: Future enhancement - show selection UI
+//       console.log('📌 Returning first match:', selectedTile.name);
+//     }
 
-    // ═══════════════════════════════════════════════════════════
-    // STEP 5: LOG SUCCESSFUL SEARCH (Analytics)
-    // ═══════════════════════════════════════════════════════════
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 5: LOG SUCCESSFUL SEARCH (Analytics)
+//     // ═══════════════════════════════════════════════════════════
     
-    try {
-      await addDoc(collection(db, 'analytics'), {
-        tile_id: selectedTile.id,
-        action_type: 'manual_search',
-        search_code: searchCode,
-        worker_id: workerId || null,
-        seller_id: selectedTile.sellerId || selectedTile.seller_id,
-        multiple_matches: tiles.length > 1,
-        match_count: tiles.length,
-        timestamp: new Date().toISOString(),
-        device_type: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-        user_agent: navigator.userAgent.substring(0, 200)
-      });
-      console.log('📊 Manual search logged in analytics');
-    } catch (logErr) {
-      console.warn('⚠️ Could not log manual search analytics:', logErr);
-      // Don't fail if logging fails
-    }
+//     try {
+//       await addDoc(collection(db, 'analytics'), {
+//         tile_id: selectedTile.id,
+//         action_type: 'manual_search',
+//         search_code: searchCode,
+//         worker_id: workerId || null,
+//         seller_id: selectedTile.sellerId || selectedTile.seller_id,
+//         multiple_matches: tiles.length > 1,
+//         match_count: tiles.length,
+//         timestamp: new Date().toISOString(),
+//         device_type: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+//         user_agent: navigator.userAgent.substring(0, 200)
+//       });
+//       console.log('📊 Manual search logged in analytics');
+//     } catch (logErr) {
+//       console.warn('⚠️ Could not log manual search analytics:', logErr);
+//       // Don't fail if logging fails
+//     }
 
-    // ═══════════════════════════════════════════════════════════
-    // STEP 6: RETURN SUCCESS
-    // ═══════════════════════════════════════════════════════════
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 6: RETURN SUCCESS
+//     // ═══════════════════════════════════════════════════════════
     
-    console.log('✅ Manual search successful:', {
-      code: searchCode,
-      tileName: selectedTile.name,
-      tileId: selectedTile.id,
-      matches: tiles.length
-    });
+//     console.log('✅ Manual search successful:', {
+//       code: searchCode,
+//       tileName: selectedTile.name,
+//       tileId: selectedTile.id,
+//       matches: tiles.length
+//     });
 
-    return {
-      success: true,
-      tile: selectedTile
-    };
+//     return {
+//       success: true,
+//       tile: selectedTile
+//     };
 
-  } catch (error: any) {
-    console.error('❌ Error in getTileByCode:', error);
+//   } catch (error: any) {
+//     console.error('❌ Error in getTileByCode:', error);
 
-    // Log error for debugging
-    try {
-      await addDoc(collection(db, 'errorLogs'), {
-        function: 'getTileByCode',
-        tile_code: tileCode,
-        worker_id: workerId || null,
-        error_message: error.message,
-        error_code: error.code || 'unknown',
-        error_stack: error.stack?.substring(0, 500) || null,
-        timestamp: new Date().toISOString()
-      });
-    } catch (logErr) {
-      console.warn('⚠️ Could not log error:', logErr);
-    }
+//     // Log error for debugging
+//     try {
+//       await addDoc(collection(db, 'errorLogs'), {
+//         function: 'getTileByCode',
+//         tile_code: tileCode,
+//         worker_id: workerId || null,
+//         error_message: error.message,
+//         error_code: error.code || 'unknown',
+//         error_stack: error.stack?.substring(0, 500) || null,
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (logErr) {
+//       console.warn('⚠️ Could not log error:', logErr);
+//     }
 
-    return {
-      success: false,
-      error: 'Search failed due to technical error. Please try again or use QR scan mode.'
-    };
-  }
-};
+//     return {
+//       success: false,
+//       error: 'Search failed due to technical error. Please try again or use QR scan mode.'
+//     };
+//   }
+// };
 
 // ═══════════════════════════════════════════════════════════════
 // ✅ END OF NEW FUNCTION - Resume original code below

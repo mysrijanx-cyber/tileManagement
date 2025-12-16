@@ -6,6 +6,7 @@ import {
   UserX, Clock,Activity,  Settings, Package,
   QrCode, Image as ImageIcon, Award, TrendingDown, Menu, X
 } from 'lucide-react';
+import { PlansManagement } from './Admin/PlansManagement';
 import { useAppStore } from '../stores/appStore';
 import { 
   getAllAnalytics, 
@@ -157,7 +158,7 @@ export const AdminDashboard: React.FC = () => {
   const { currentUser: _currentUser } = useAppStore();
   
   // ✅ TAB & DATA MANAGEMENT STATES
-  const [activeTab, setActiveTab] = useState<'overview' | 'sellers' | 'analytics' | 'create-seller' | 'email-config' | 'account-access' | 'logs' | 'seller-analytics' | 'pending-requests' | 'rejected-requests' | 'tiles-analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'sellers' | 'analytics' | 'create-seller' |'plans-management' |'email-config' | 'account-access' | 'logs' | 'seller-analytics' | 'pending-requests' | 'rejected-requests' | 'tiles-analytics'>('overview');
   const [sellers, setSellers] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -644,7 +645,6 @@ const fetchTilesData = async (): Promise<TileData[]> => {
     
     if (sellerIds.size > 0) {
       const sellerIdsArray = Array.from(sellerIds);
-      
       for (let i = 0; i < sellerIdsArray.length; i += 10) {
         const batch = sellerIdsArray.slice(i, i + 10);
         const sellersQuery = query(
@@ -1519,7 +1519,8 @@ setErrors({
               
               <div className="space-y-2 sm:space-y-3">
                 {/* Business Name */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex flex-c
+                ol sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg">
                   <span className="text-xs sm:text-sm font-medium text-gray-600 sm:w-32">Business:</span>
                   <span className="text-xs sm:text-sm font-semibold text-gray-800 break-words">{createdSeller.businessName}</span>
                 </div>
@@ -1675,8 +1676,20 @@ setErrors({
                 className="flex-1 px-4 sm:px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
               >
                 Try Again
-              </button>
-              
+ 
+               </button>
+              <button
+  onClick={() => setActiveTab('plans-management')}
+  className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
+    activeTab === 'plans-management' 
+      ? 'bg-purple-600 text-white' 
+      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+  }`}
+>
+  <Package className="w-4 h-4" />
+  <span className="hidden lg:inline">Plans Management</span>
+  <span className="lg:hidden">Plans</span>
+</button>
               <button
                 onClick={() => {
                   setError(null);
@@ -1784,6 +1797,19 @@ setErrors({
         >
           <BarChart3 className="w-4 h-4" />
           <span className="hidden lg:inline">Overview</span>
+
+
+        </button>
+            <button
+          onClick={() => setActiveTab('plans-management')}
+          className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
+            activeTab === 'plans-management' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span className="hidden lg:inline">plans-management</span>
+
+
         </button>
         <button
           onClick={() => setActiveTab('sellers')}
@@ -2078,6 +2104,10 @@ setErrors({
 {/* ═══════════════════════════════════════════════════════════════ */}
 {/* ✅ PENDING REQUESTS TAB - RESPONSIVE */}
 {/* ═══════════════════════════════════════════════════════════════ */}
+
+{activeTab === 'plans-management' && (
+  <PlansManagement />
+)}
 
 {activeTab === 'pending-requests' && (
   <div className="space-y-4">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -9,9 +10,9 @@ import {
   AlertCircle,
   Loader,
   Building,
-  Package,
 } from "lucide-react";
 import { saveCustomerToSession } from '../utils/customerSession';
+
 interface CustomerInquiryFormProps {
   tileId: string;
   tileName: string;
@@ -60,7 +61,6 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
       const width = window.innerWidth;
       setIsMobile(width < 768);
     };
-
     checkDevice();
     window.addEventListener("resize", checkDevice);
     return () => window.removeEventListener("resize", checkDevice);
@@ -81,7 +81,6 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = originalOverflow;
     };
@@ -94,7 +93,6 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
         handleCancel();
       }
     };
-
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [isSubmitting]);
@@ -109,51 +107,59 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
     return cleaned.length === 10;
   };
 
+  // ✅ FIXED - Email & Address completely optional
   const validateField = (field: string, value: string): string | null => {
     switch (field) {
       case "customer_name":
         if (!value.trim()) return "Customer name is required";
-        if (value.trim().length < 2)
-          return "Name must be at least 2 characters";
-        return null;
-
-      case "customer_email":
-        // Email is now optional  ✅ COMMENT ADDED
-        if (value.trim() && !validateEmail(value)) {
-          // ✅ ONLY VALIDATE IF PROVIDED
-          return "Invalid email format";
-        }
+        if (value.trim().length < 2) return "Name must be at least 2 characters";
         return null;
 
       case "customer_phone":
         if (!value.trim()) return "Phone number is required";
-        if (!validatePhone(value))
-          return "Phone number must be exactly 10 digits"; // ✅ EXACTLY 10
+        if (!validatePhone(value)) return "Phone number must be exactly 10 digits";
         return null;
 
+      case "customer_email":
+        // ✅ ONLY validate format IF something is entered
+        if (value.trim() && !validateEmail(value)) {
+          return "Invalid email format";
+        }
+        return null; // ✅ Empty is perfectly valid
+
       case "customer_address":
-        if (!value.trim()) return "Address is required";
-        if (value.trim().length < 10)
+        // ✅ ONLY validate length IF something is entered
+        if (value.trim() && value.trim().length < 10) {
           return "Please enter complete address (min 10 characters)";
-        return null;
+        }
+        return null; // ✅ Empty is perfectly valid
 
       default:
         return null;
     }
   };
 
+  // ✅ FIXED - Only validate REQUIRED fields (name & phone)
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
-    Object.keys(formData).forEach((field) => {
-      const error = validateField(
-        field,
-        formData[field as keyof typeof formData]
-      );
-      if (error) {
-        newErrors[field] = error;
-      }
-    });
+    // ✅ Only check required fields
+    const nameError = validateField("customer_name", formData.customer_name);
+    if (nameError) newErrors.customer_name = nameError;
+
+    const phoneError = validateField("customer_phone", formData.customer_phone);
+    if (phoneError) newErrors.customer_phone = phoneError;
+
+    // ✅ Check optional fields ONLY if they have content
+    if (formData.customer_email.trim()) {
+      const emailError = validateField("customer_email", formData.customer_email);
+      if (emailError) newErrors.customer_email = emailError;
+    }
+
+    if (formData.customer_address.trim()) {
+      const addressError = validateField("customer_address", formData.customer_address);
+      if (addressError) newErrors.customer_address = addressError;
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -162,7 +168,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Real-time validation after field is touched
+    // Real-time validation only if field is touched
     if (touched[field]) {
       const error = validateField(field, value);
       setErrors((prev) => {
@@ -179,13 +185,16 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
 
   const handleBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-
-    const error = validateField(
-      field,
-      formData[field as keyof typeof formData]
-    );
+    const error = validateField(field, formData[field as keyof typeof formData]);
     if (error) {
       setErrors((prev) => ({ ...prev, [field]: error }));
+    } else {
+      // ✅ Clear error if field becomes valid
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -193,16 +202,13 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
     e.preventDefault();
     setSubmitError(null);
 
-    // Mark all fields as touched
+    // ✅ Only mark REQUIRED fields as touched
     setTouched({
       customer_name: true,
-      customer_email: true,
       customer_phone: true,
-      customer_address: true,
     });
 
     if (!validateForm()) {
-      // Scroll to first error
       const firstErrorField = Object.keys(errors)[0];
       const element = document.getElementById(firstErrorField);
       if (element) {
@@ -223,11 +229,10 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
           : "desktop";
 
       const inquiryData = {
-        ...formData,
         customer_name: formData.customer_name.trim(),
-        customer_email: formData.customer_email.trim().toLowerCase(),
         customer_phone: formData.customer_phone.trim(),
-        customer_address: formData.customer_address.trim(),
+        customer_email: formData.customer_email.trim() || null, // ✅ null if empty
+        customer_address: formData.customer_address.trim() || null, // ✅ null if empty
         tile_id: tileId,
         tile_name: tileName,
         tile_code: tileCode || null,
@@ -245,40 +250,33 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
       };
 
       await onSubmit(inquiryData);
-       console.log('💾 Saving customer to session...');
-    
-    const sessionSaved = saveCustomerToSession({
-      name: formData.customer_name.trim(),
-      phone: formData.customer_phone.trim(),
-      address: formData.customer_address.trim(),
-      email: formData.customer_email.trim() || undefined,
-      tileId: tileId,
-      workerId: workerId
-    });
-    
-    if (sessionSaved) {
-      console.log('✅ Customer saved to session - no more forms for this customer!');
-    } else {
-      console.warn('⚠️ Failed to save to session, but inquiry saved to Firebase');
-    }
-    
-    // Haptic feedback on success
-    if (navigator.vibrate) {
-      navigator.vibrate(200);
-    }
-  } catch (error: any) {
-    console.error('❌ Inquiry submission failed:', error);
-    setSubmitError(
-      error.message || "Failed to save customer details. Please try again."
-    );
-    setIsSubmitting(false);
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
+      console.log('💾 Saving customer to session...');
       
-
-     
+      const sessionSaved = saveCustomerToSession({
+        name: formData.customer_name.trim(),
+        phone: formData.customer_phone.trim(),
+        email: formData.customer_email.trim() || undefined,
+        address: formData.customer_address.trim() || undefined,
+        tileId: tileId,
+        workerId: workerId
+      });
+      
+      if (sessionSaved) {
+        console.log('✅ Customer saved to session');
+      }
+      
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
+      }
+    } catch (error: any) {
+      console.error('❌ Submission failed:', error);
+      setSubmitError(
+        error.message || "Failed to save customer details. Please try again."
+      );
+      setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleCancel = () => {
@@ -296,9 +294,14 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
     onCancel();
   };
 
-  const isFormValid = Object.keys(formData).every(
-    (field) => !validateField(field, formData[field as keyof typeof formData])
-  );
+  // ✅ Form is valid if name (2+ chars) and phone (10 digits) are valid
+  const isFormValid = 
+    formData.customer_name.trim().length >= 2 &&
+    validatePhone(formData.customer_phone) &&
+    // ✅ Email must be valid IF entered
+    (!formData.customer_email.trim() || validateEmail(formData.customer_email)) &&
+    // ✅ Address must be 10+ chars IF entered
+    (!formData.customer_address.trim() || formData.customer_address.trim().length >= 10);
 
   return (
     <div
@@ -308,7 +311,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
       }
     >
       <div className="bg-white w-full h-full sm:h-auto sm:rounded-2xl shadow-2xl sm:max-w-2xl sm:max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
-        {/* Header - Fixed */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white flex-shrink-0 safe-top">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -338,16 +341,14 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
           </div>
         </div>
 
-        {/* Content - Scrollable */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           {/* Error Alert */}
           {submitError && (
             <div className="m-4 sm:m-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 animate-shake">
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-red-800 font-medium text-sm">
-                  Submission Failed
-                </p>
+                <p className="text-red-800 font-medium text-sm">Submission Failed</p>
                 <p className="text-red-700 text-xs sm:text-sm break-words mt-1">
                   {submitError}
                 </p>
@@ -398,7 +399,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
             )}
 
             <div className="space-y-4 sm:space-y-5">
-              {/* Customer Name */}
+              {/* ✅ Customer Name - REQUIRED */}
               <div>
                 <label
                   htmlFor="customer_name"
@@ -414,9 +415,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                     id="customer_name"
                     type="text"
                     value={formData.customer_name}
-                    onChange={(e) =>
-                      handleInputChange("customer_name", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("customer_name", e.target.value)}
                     onBlur={() => handleBlur("customer_name")}
                     disabled={isSubmitting}
                     placeholder="Enter full name"
@@ -424,13 +423,8 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                       w-full pl-10 pr-4 py-3 sm:py-3.5 border rounded-lg
                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                       disabled:opacity-50 disabled:cursor-not-allowed
-                      text-sm sm:text-base transition-all
-                      touch-manipulation
-                      ${
-                        errors.customer_name && touched.customer_name
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }
+                      text-sm sm:text-base transition-all touch-manipulation
+                      ${errors.customer_name && touched.customer_name ? "border-red-500" : "border-gray-300"}
                     `}
                     autoComplete="name"
                     inputMode="text"
@@ -444,7 +438,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                 )}
               </div>
 
-              {/* Customer Phone */}
+              {/* ✅ Customer Phone - REQUIRED */}
               <div>
                 <label
                   htmlFor="customer_phone"
@@ -461,29 +455,23 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                     type="tel"
                     value={formData.customer_phone}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, ""); // ✅ Only numbers
+                      const value = e.target.value.replace(/\D/g, "");
                       handleInputChange("customer_phone", value);
                     }}
                     onBlur={() => handleBlur("customer_phone")}
                     disabled={isSubmitting}
                     placeholder="9876543210 (10 digits)"
-                    inputMode="numeric" // ✅ Changed from "tel" to "numeric"
-                    maxLength={10} // ✅ Changed from 15 to 10
+                    inputMode="numeric"
+                    maxLength={10}
                     pattern="[0-9]*"
                     className={`
                       w-full pl-10 pr-4 py-3 sm:py-3.5 border rounded-lg
                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                       disabled:opacity-50 disabled:cursor-not-allowed
-                      text-sm sm:text-base transition-all
-                      touch-manipulation
-                      ${
-                        errors.customer_phone && touched.customer_phone
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }
+                      text-sm sm:text-base transition-all touch-manipulation
+                      ${errors.customer_phone && touched.customer_phone ? "border-red-500" : "border-gray-300"}
                     `}
                     autoComplete="tel"
-       
                   />
                 </div>
                 {errors.customer_phone && touched.customer_phone && (
@@ -497,59 +485,13 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                 </p>
               </div>
 
-              {/* Customer Address */}
-              <div>
-                <label
-                  htmlFor="customer_address"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Complete Address <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                    <MapPin className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <textarea
-                    id="customer_address"
-                    value={formData.customer_address}
-                    onChange={(e) =>
-                      handleInputChange("customer_address", e.target.value)
-                    }
-                    onBlur={() => handleBlur("customer_address")}
-                    disabled={isSubmitting}
-                    placeholder="Enter complete address (street, area, city, state, pincode)"
-                    rows={isMobile ? 3 : 4}
-                    className={`
-                      w-full pl-10 pr-4 py-3 border rounded-lg
-                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      text-sm sm:text-base resize-none transition-all
-                      touch-manipulation
-                      ${
-                        errors.customer_address && touched.customer_address
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }
-                    `}
-                    autoComplete="street-address"
-                  />
-                </div>
-                {errors.customer_address && touched.customer_address && (
-                  <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1 animate-slide-down">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                    {errors.customer_address}
-                  </p>
-                )}
-              </div>
-
-              {/* Customer Email */}
+              {/* ✅ Customer Email - OPTIONAL */}
               <div>
                 <label
                   htmlFor="customer_email"
                   className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
-                  Email Address{" "}
-                  <span className="text-gray-400 text-xs">(Optional)</span>
+                  Email Address <span className="text-gray-400 text-xs font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -559,9 +501,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                     id="customer_email"
                     type="email"
                     value={formData.customer_email}
-                    onChange={(e) =>
-                      handleInputChange("customer_email", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("customer_email", e.target.value)}
                     onBlur={() => handleBlur("customer_email")}
                     disabled={isSubmitting}
                     placeholder="customer@example.com"
@@ -569,13 +509,8 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                       w-full pl-10 pr-4 py-3 sm:py-3.5 border rounded-lg
                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                       disabled:opacity-50 disabled:cursor-not-allowed
-                      text-sm sm:text-base transition-all
-                      touch-manipulation
-                      ${
-                        errors.customer_email && touched.customer_email
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }
+                      text-sm sm:text-base transition-all touch-manipulation
+                      ${errors.customer_email && touched.customer_email ? "border-red-500" : "border-gray-300"}
                     `}
                     autoComplete="email"
                     inputMode="email"
@@ -588,6 +523,44 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                   </p>
                 )}
               </div>
+
+              {/* ✅ Customer Address - OPTIONAL */}
+              <div>
+                <label
+                  htmlFor="customer_address"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  Complete Address <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                    <MapPin className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <textarea
+                    id="customer_address"
+                    value={formData.customer_address}
+                    onChange={(e) => handleInputChange("customer_address", e.target.value)}
+                    onBlur={() => handleBlur("customer_address")}
+                    disabled={isSubmitting}
+                    placeholder="Street, area, city, state, pincode"
+                    rows={isMobile ? 3 : 4}
+                    className={`
+                      w-full pl-10 pr-4 py-3 border rounded-lg
+                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                      text-sm sm:text-base resize-none transition-all touch-manipulation
+                      ${errors.customer_address && touched.customer_address ? "border-red-500" : "border-gray-300"}
+                    `}
+                    autoComplete="street-address"
+                  />
+                </div>
+                {errors.customer_address && touched.customer_address && (
+                  <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1 animate-slide-down">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    {errors.customer_address}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Info Box */}
@@ -596,12 +569,10 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                 <Building className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-blue-900 font-medium text-xs sm:text-sm">
-                    ✅ Customer details will be saved to {sellerBusinessName}'s
-                    dashboard
+                    ✅ Details will be saved to {sellerBusinessName}'s dashboard
                   </p>
                   <p className="text-blue-700 text-xs mt-1">
-                    You can view and manage all customer inquiries after
-                    submission
+                    Only Name & Phone required • Email & Address are optional
                   </p>
                 </div>
               </div>
@@ -609,7 +580,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
           </form>
         </div>
 
-        {/* Footer - Fixed */}
+        {/* Footer */}
         <div className="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-t border-gray-200 safe-bottom">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -618,11 +589,7 @@ export const CustomerInquiryForm: React.FC<CustomerInquiryFormProps> = ({
                 e.preventDefault();
                 const form = document.querySelector("form");
                 if (form) {
-                  const submitEvent = new Event("submit", {
-                    bubbles: true,
-                    cancelable: true,
-                  });
-                  form.dispatchEvent(submitEvent);
+                  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
                 }
               }}
               disabled={isSubmitting || !isFormValid}
