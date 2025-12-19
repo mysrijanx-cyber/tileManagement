@@ -699,13 +699,20 @@ const handleScanSuccess = async (data: any) => {
                 Scan Another
               </button>
               
-              <button
+              {/* <button
                 onClick={() => navigate(`/tile/${scannedTileData.id}`)}
                 className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-green-700 active:bg-green-800 transition-all text-sm sm:text-base touch-manipulation"
               >
                 <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                 View in 3D
-              </button>
+              </button> */} 
+              <button
+  onClick={() => navigate(`/room-select/${scannedTileData.id}`)}
+  className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-green-700 active:bg-green-800 transition-all text-sm sm:text-base touch-manipulation"
+>
+  <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+  View in 3D
+</button>
             </div>
 
             <button
