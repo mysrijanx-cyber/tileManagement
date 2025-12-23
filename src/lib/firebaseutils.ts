@@ -6898,6 +6898,179 @@ export const getSellerStatusHistory = async (sellerId: string): Promise<any[]> =
  * Save customer inquiry from QR scan
  * PRODUCTION v1.0 - Complete with error handling
  */
+// export const saveCustomerInquiry = async (
+//   inquiryData: Partial<CustomerInquiry>
+// ): Promise<{ success: boolean; inquiryId?: string; error?: string }> => {
+  
+//   const startTime = Date.now();
+  
+//   try {
+//     console.log('💾 Saving customer inquiry...');
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 1: VALIDATE REQUIRED FIELDS
+//     // ═══════════════════════════════════════════════════════════
+    
+//     if (!inquiryData.customer_name?.trim()) {
+//       throw new Error('Customer name is required');
+//     }
+
+//     if (!inquiryData.customer_email?.trim()) {
+//       throw new Error('Customer email is required');
+//     }
+
+//     if (!validateEmail(inquiryData.customer_email.trim())) {
+//       throw new Error('Invalid email format');
+//     }
+
+//     if (!inquiryData.customer_phone?.trim()) {
+//       throw new Error('Customer phone is required');
+//     }
+
+//     if (!inquiryData.customer_address?.trim()) {
+//       throw new Error('Customer address is required');
+//     }
+
+//     if (!inquiryData.seller_id) {
+//       throw new Error('Seller ID is required');
+//     }
+
+//     if (!inquiryData.tile_id) {
+//       throw new Error('Tile ID is required');
+//     }
+
+//     if (!inquiryData.scanned_by) {
+//       throw new Error('Worker ID is required');
+//     }
+
+//     console.log('✅ Validation passed');
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 2: PREPARE INQUIRY DOCUMENT
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const inquiry = {
+//       ...inquiryData,
+//       customer_name: inquiryData.customer_name.trim(),
+//       customer_email: inquiryData.customer_email.trim().toLowerCase(),
+//       customer_phone: inquiryData.customer_phone.trim(),
+//       customer_address: inquiryData.customer_address.trim(),
+//       timestamp: new Date().toISOString(),
+//       created_at: new Date().toISOString(),
+//       updated_at: new Date().toISOString(),
+//       status: inquiryData.status || 'new',
+//       source: inquiryData.source || 'qr_scan',
+//       notes: inquiryData.notes || null,
+//       follow_up_date: inquiryData.follow_up_date || null
+//     };
+
+//     console.log('📋 Inquiry prepared:', {
+//       customer: inquiry.customer_name,
+//       tile: inquiry.tile_name,
+//       worker: inquiry.worker_email
+//     });
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 3: SAVE TO FIRESTORE
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const docRef = await addDoc(collection(db, 'customerInquiries'), inquiry);
+    
+//     console.log('✅ Inquiry saved with ID:', docRef.id);
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 4: LOG SELLER ACTIVITY
+//     // ═══════════════════════════════════════════════════════════
+    
+//     try {
+//       await addDoc(collection(db, 'sellerActivity'), {
+//         seller_id: inquiryData.seller_id,
+//         activity_type: 'customer_inquiry_created',
+//         inquiry_id: docRef.id,
+//         customer_name: inquiry.customer_name,
+//         customer_email: inquiry.customer_email,
+//         tile_id: inquiry.tile_id,
+//         tile_name: inquiry.tile_name,
+//         scanned_by: inquiry.scanned_by,
+//         worker_email: inquiry.worker_email,
+//         timestamp: new Date().toISOString(),
+//         device_type: inquiry.device_type || 'unknown'
+//       });
+//       console.log('📊 Activity logged');
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log activity (non-critical):', logError);
+//     }
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 5: LOG WORKER ACTIVITY
+//     // ═══════════════════════════════════════════════════════════
+    
+//     if (inquiryData.scanned_by) {
+//       try {
+//         await addDoc(collection(db, 'workerActivity'), {
+//           worker_id: inquiryData.scanned_by,
+//           seller_id: inquiryData.seller_id,
+//           action: 'CUSTOMER_INQUIRY_CAPTURED',
+//           details: {
+//             inquiry_id: docRef.id,
+//             customer_name: inquiry.customer_name,
+//             tile_name: inquiry.tile_name,
+//             device_type: inquiry.device_type
+//           },
+//           timestamp: new Date().toISOString()
+//         });
+//         console.log('👷 Worker activity logged');
+//       } catch (workerLogError) {
+//         console.warn('⚠️ Could not log worker activity (non-critical):', workerLogError);
+//       }
+//     }
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 6: SUCCESS
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const duration = Date.now() - startTime;
+//     console.log(`🎉 Customer inquiry saved successfully in ${duration}ms`);
+
+//     return {
+//       success: true,
+//       inquiryId: docRef.id
+//     };
+
+//   } catch (error: any) {
+//     console.error('❌ Error saving inquiry:', error);
+
+//     // Log error for debugging
+//     try {
+//       await addDoc(collection(db, 'errorLogs'), {
+//         function: 'saveCustomerInquiry',
+//         error_message: error.message,
+//         error_code: error.code || 'unknown',
+//         inquiry_data: {
+//           customer_name: inquiryData.customer_name,
+//           seller_id: inquiryData.seller_id,
+//           tile_id: inquiryData.tile_id,
+//           worker_id: inquiryData.scanned_by
+//         },
+//         timestamp: new Date().toISOString(),
+//         stack_trace: error.stack?.substring(0, 500) || null
+//       });
+//     } catch (logErr) {
+//       console.warn('⚠️ Could not log error:', logErr);
+//     }
+
+//     return {
+//       success: false,
+//       error: error.message || 'Failed to save customer inquiry'
+//     };
+//   }
+// };
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ FIND THIS FUNCTION IN firebaseUtils.ts AND REPLACE IT
+// Search for: export const saveCustomerInquiry
+// ═══════════════════════════════════════════════════════════════
+
 export const saveCustomerInquiry = async (
   inquiryData: Partial<CustomerInquiry>
 ): Promise<{ success: boolean; inquiryId?: string; error?: string }> => {
@@ -6908,28 +7081,26 @@ export const saveCustomerInquiry = async (
     console.log('💾 Saving customer inquiry...');
 
     // ═══════════════════════════════════════════════════════════
-    // STEP 1: VALIDATE REQUIRED FIELDS
+    // STEP 1: VALIDATE REQUIRED FIELDS ONLY
     // ═══════════════════════════════════════════════════════════
     
     if (!inquiryData.customer_name?.trim()) {
       throw new Error('Customer name is required');
     }
 
-    if (!inquiryData.customer_email?.trim()) {
-      throw new Error('Customer email is required');
-    }
-
-    if (!validateEmail(inquiryData.customer_email.trim())) {
-      throw new Error('Invalid email format');
-    }
-
     if (!inquiryData.customer_phone?.trim()) {
       throw new Error('Customer phone is required');
     }
 
-    if (!inquiryData.customer_address?.trim()) {
-      throw new Error('Customer address is required');
+    // ✅ EMAIL IS OPTIONAL - Only validate if provided
+    if (inquiryData.customer_email?.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(inquiryData.customer_email.trim())) {
+        throw new Error('Invalid email format');
+      }
     }
+
+    // ✅ ADDRESS IS OPTIONAL - No validation needed
 
     if (!inquiryData.seller_id) {
       throw new Error('Seller ID is required');
@@ -6952,9 +7123,15 @@ export const saveCustomerInquiry = async (
     const inquiry = {
       ...inquiryData,
       customer_name: inquiryData.customer_name.trim(),
-      customer_email: inquiryData.customer_email.trim().toLowerCase(),
+      
+      // ✅ OPTIONAL: Set to null if not provided
+      customer_email: inquiryData.customer_email?.trim()?.toLowerCase() || null,
+      
       customer_phone: inquiryData.customer_phone.trim(),
-      customer_address: inquiryData.customer_address.trim(),
+      
+      // ✅ OPTIONAL: Set to null if not provided
+      customer_address: inquiryData.customer_address?.trim() || null,
+      
       timestamp: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -6966,6 +7143,8 @@ export const saveCustomerInquiry = async (
 
     console.log('📋 Inquiry prepared:', {
       customer: inquiry.customer_name,
+      has_email: !!inquiry.customer_email,
+      has_address: !!inquiry.customer_address,
       tile: inquiry.tile_name,
       worker: inquiry.worker_email
     });
