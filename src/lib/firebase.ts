@@ -3,7 +3,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
-
+import { getStorage } from 'firebase/storage'; 
 // Firebase configuration interface
 interface FirebaseConfig {
   apiKey: string;
@@ -28,6 +28,7 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize and export services with proper types
 export const auth: Auth = getAuth(app);
+export const storage = getStorage(app);
 export const db: Firestore = getFirestore(app);
 
 // ✅✅✅ YE NAYA CODE ADD KARO ✅✅✅
