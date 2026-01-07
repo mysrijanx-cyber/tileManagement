@@ -42,6 +42,7 @@ interface PatternConfig {
   coverage: string;
 }
 
+
 const PATTERN_CONFIGS: PatternConfig[] = [
   {
     type: 'vertical',
