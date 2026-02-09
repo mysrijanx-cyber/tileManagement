@@ -1,83 +1,95 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PAYMENT TYPES - PRODUCTION v1.0
+// ✅ PAYMENT TYPES - RAZORPAY PRODUCTION v1.0
 // ═══════════════════════════════════════════════════════════════
 
-export interface PayUConfig {
-  mode: 'test' | 'production';
-  merchant_key: string;
-  merchant_salt: string;
-  base_url: string;
-  success_url: string;
-  failure_url: string;
-  cancel_url: string;
+export interface RazorpayConfig {
+  key_id: string;
+  key_secret: string;
+  environment: 'test' | 'production';
 }
 
-export interface PayUFormData {
+export interface RazorpayOrderData {
+  amount: number; // in paise (₹100 = 10000 paise)
+  currency: string;
+  receipt: string;
+  notes?: Record<string, any>;
+}
+
+export interface RazorpayCheckoutOptions {
   key: string;
-  txnid: string;
-  amount: string;
-  productinfo: string;
-  firstname: string;
-  email: string;
-  phone: string;
-  surl: string;
-  furl: string;
-  hash: string;
-  udf1?: string;
-  udf2?: string;
-  udf3?: string;
-  udf4?: string;
-  udf5?: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  image?: string;
+  order_id: string;
+  handler: (response: RazorpaySuccessResponse) => void;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  notes?: Record<string, any>;
+  theme: {
+    color: string;
+  };
+  modal?: {
+    ondismiss?: () => void;
+  };
 }
 
-export interface PayUResponse {
-  status: string;
-  txnid: string;
-  amount: string;
-  productinfo: string;
-  firstname: string;
-  email: string;
-  phone: string;
-  mihpayid: string;
-  mode: string;
-  bank_ref_num?: string;
-  bankcode?: string;
-  cardnum?: string;
-  hash: string;
-  error?: string;
-  error_Message?: string;
-  udf1?: string;
-  udf2?: string;
-  udf3?: string;
-  udf4?: string;  // ✅ Add this
-  udf5?: string
+export interface RazorpaySuccessResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+export interface RazorpayErrorResponse {
+  error: {
+    code: string;
+    description: string;
+    source: string;
+    step: string;
+    reason: string;
+    metadata: {
+      order_id: string;
+      payment_id: string;
+    };
+  };
 }
 
 export interface Payment {
   id: string;
   
+  // Seller Details
   seller_id: string;
   seller_email: string;
   seller_business: string;
   
+  // Plan Details
   plan_id: string;
   plan_name: string;
-  amount: number;
+  amount: number; // in rupees
   currency: string;
   
-  payu_txn_id: string;
-  payu_order_id: string;
-  payu_payment_id?: string;
-  payu_status: string;
-  payu_mode?: string;
+  // Razorpay Details
+  razorpay_order_id: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
+  razorpay_receipt: string;
   
-  payu_response?: PayUResponse;
-  
+  // Payment Status
   payment_status: 'initiated' | 'processing' | 'completed' | 'failed' | 'cancelled';
   verified: boolean;
   
+  // Razorpay Response
+  razorpay_response?: RazorpaySuccessResponse | RazorpayErrorResponse;
+  
+  // Timestamps
   created_at: string;
   completed_at?: string;
+  
+  // Metadata
   ip_address?: string;
   user_agent?: string;
 }
@@ -118,4 +130,11 @@ export interface CreateSubscriptionData {
   billing_cycle: 'monthly' | 'yearly';
 }
 
-console.log('✅ Payment Types loaded - PRODUCTION v1.0');
+// Razorpay Window Type
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+console.log('✅ Payment Types loaded - RAZORPAY PRODUCTION v1.0');

@@ -1,4 +1,3 @@
-
 import {
   collection,
   doc,
@@ -13,145 +12,99 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import type {
-  PayUConfig,
-  PayUFormData,
-  PayUResponse,
+  RazorpayConfig,
+  RazorpayOrderData,
+  RazorpayCheckoutOptions,
+  RazorpaySuccessResponse,
   Payment,
   CreatePaymentData
 } from '../types/payment.types';
 
 // ═══════════════════════════════════════════════════════════════
-// PAYU CONFIGURATION
+// RAZORPAY CONFIGURATION
 // ═══════════════════════════════════════════════════════════════
 
-export const PAYU_CONFIG: PayUConfig = {
-  mode: import.meta.env.VITE_PAYU_MODE || 'test',
-  merchant_key: import.meta.env.VITE_PAYU_MERCHANT_KEY || 'j9UCue',
-  merchant_salt: import.meta.env.VITE_PAYU_MERCHANT_SALT || 'qSwYptohSBBMH7THpoCPC1f81XLa64kR',
-  base_url: import.meta.env.VITE_PAYU_MODE === 'production' 
-    ? 'https://secure.payu.in/_payment'
-    : 'https://test.payu.in/_payment',
-  success_url: `${window.location.origin}/payment-success`,
-  failure_url: `${window.location.origin}/payment-failure`,
-  cancel_url: `${window.location.origin}/payment-cancelled`
+export const RAZORPAY_CONFIG: RazorpayConfig = {
+  key_id: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_S5T5kBvRLmxwlk',
+  key_secret: import.meta.env.VITE_RAZORPAY_KEY_SECRET || 'kqp6qF91f5WguT53mRYuN0Cd',
+  environment: import.meta.env.VITE_APP_ENV === 'production' ? 'production' : 'test'
 };
 
 // ═══════════════════════════════════════════════════════════════
-// GENERATE UNIQUE TRANSACTION ID
+// LOAD RAZORPAY SCRIPT
 // ═══════════════════════════════════════════════════════════════
 
-export const generateTxnId = (): string => {
+export const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    // Check if already loaded
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    
+    script.onload = () => {
+      console.log('✅ Razorpay script loaded');
+      resolve(true);
+    };
+    
+    script.onerror = () => {
+      console.error('❌ Failed to load Razorpay script');
+      resolve(false);
+    };
+    
+    document.body.appendChild(script);
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════
+// GENERATE UNIQUE RECEIPT ID
+// ═══════════════════════════════════════════════════════════════
+
+export const generateReceiptId = (): string => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 11).toUpperCase();
-  return `TXN_${timestamp}_${random}`;
+  return `RCPT_${timestamp}_${random}`;
 };
 
 // ═══════════════════════════════════════════════════════════════
-// ✅ FIXED: GENERATE PAYU HASH (SIMPLE STRING, NOT JSON)
+// CREATE RAZORPAY ORDER (CLIENT-SIDE)
 // ═══════════════════════════════════════════════════════════════
 
-export const generatePayUHash = async (
-  txnid: string,
-  amount: string,
-  productinfo: string,
-  firstname: string,
-  email: string,
-  udf1: string = '',
-  udf2: string = '',
-  udf3: string = '',
-  udf4: string = '',
-  udf5: string = ''
-): Promise<string> => {
+export const createRazorpayOrder = async (
+  amount: number,
+  receipt: string,
+  notes: Record<string, any> = {}
+): Promise<{ success: boolean; orderId?: string; error?: string }> => {
   try {
-    console.log('🔐 Generating PayU hash...');
+    console.log('📦 Creating Razorpay order...');
     
-    const { merchant_key, merchant_salt } = PAYU_CONFIG;
+    // Convert rupees to paise (Razorpay uses smallest currency unit)
+    const amountInPaise = Math.round(amount * 100);
     
-    if (!merchant_key || !merchant_salt) {
-      throw new Error('PayU merchant credentials not configured');
-    }
+    const orderData: RazorpayOrderData = {
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: receipt,
+      notes: notes
+    };
     
-    // ✅ CRITICAL: Ensure amount has 2 decimal places
-    const formattedAmount = parseFloat(amount).toFixed(2);
+    console.log('📝 Order data:', orderData);
     
-    // ✅ PayU Standard Formula (21 pipes total)
-    // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
-    const hashString = `${merchant_key}|${txnid}|${formattedAmount}|${productinfo}|${firstname}|${email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${merchant_salt}`;
+    // ⚠️ NOTE: In production, this should be done via backend/Cloud Function
+    // For now, we'll create order ID on client side
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     
-    console.log('📝 Hash String:', hashString);
-    console.log('📊 Pipe Count:', (hashString.match(/\|/g) || []).length, '(should be 16)');
+    console.log('✅ Order created:', orderId);
     
-    // Generate SHA-512
-    const encoder = new TextEncoder();
-    const data = encoder.encode(hashString);
-    const hashBuffer = await crypto.subtle.digest('SHA-512', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    console.log('✅ Hash Generated:', hash.substring(0, 40) + '...');
-    console.log('📏 Hash Length:', hash.length, '(should be 128)');
-    
-    // ✅ FIX: Return simple hash string, NOT JSON
-    // PayU accepts simple string hash
-    return hash;
+    return { success: true, orderId };
     
   } catch (error: any) {
-    console.error('❌ Hash generation error:', error);
-    throw new Error(`Hash generation failed: ${error.message}`);
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ FIXED: VERIFY PAYU RESPONSE HASH
-// ═══════════════════════════════════════════════════════════════
-
-export const verifyPayUHash = async (response: PayUResponse): Promise<boolean> => {
-  try {
-    console.log('🔍 Verifying PayU response hash...');
-    
-    const { merchant_key, merchant_salt } = PAYU_CONFIG;
-    
-    // ✅ Ensure amount has 2 decimal places
-    const formattedAmount = parseFloat(response.amount).toFixed(2);
-    
-    // ✅ Reverse hash formula for response verification (16 pipes):
-    // salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-    const hashString = `${merchant_salt}|${response.status}||||||${response.udf5 || ''}|${response.udf4 || ''}|${response.udf3 || ''}|${response.udf2 || ''}|${response.udf1 || ''}|${response.email}|${response.firstname}|${response.productinfo}|${formattedAmount}|${response.txnid}|${merchant_key}`;
-    
-    console.log('📝 Verification Hash String:', hashString);
-    console.log('📊 Pipe Count:', (hashString.match(/\|/g) || []).length);
-    
-    const encoder = new TextEncoder();
-    const data = encoder.encode(hashString);
-    const hashBuffer = await crypto.subtle.digest('SHA-512', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const calculatedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    // ✅ Handle both simple hash and dual hash response
-    let responseHash = response.hash;
-    
-    // If PayU sent dual hash JSON format
-    if (response.hash && response.hash.startsWith('{')) {
-      try {
-        const hashObj = JSON.parse(response.hash);
-        responseHash = hashObj.v1 || hashObj.v2 || response.hash;
-        console.log('📦 Dual hash detected, using v1');
-      } catch (e) {
-        console.log('⚠️ Hash JSON parse failed, using raw hash');
-      }
-    }
-    
-    const isValid = calculatedHash.toLowerCase() === responseHash.toLowerCase();
-    
-    console.log(isValid ? '✅ Hash verified successfully' : '❌ Hash mismatch');
-    console.log('🔢 Calculated:', calculatedHash.substring(0, 30) + '...');
-    console.log('🔢 Received  :', responseHash.substring(0, 30) + '...');
-    
-    return isValid;
-    
-  } catch (error: any) {
-    console.error('❌ Error verifying hash:', error);
-    return false;
+    console.error('❌ Error creating order:', error);
+    return { success: false, error: error.message };
   }
 };
 
@@ -161,7 +114,7 @@ export const verifyPayUHash = async (response: PayUResponse): Promise<boolean> =
 
 export const createPayment = async (
   paymentData: CreatePaymentData
-): Promise<{ success: boolean; paymentId?: string; txnId?: string; error?: string }> => {
+): Promise<{ success: boolean; paymentId?: string; receipt?: string; error?: string }> => {
   try {
     console.log('💳 Creating payment record...');
     
@@ -170,7 +123,7 @@ export const createPayment = async (
       throw new Error('User not authenticated');
     }
     
-    const txnId = generateTxnId();
+    const receipt = generateReceiptId();
     
     const payment: Omit<Payment, 'id'> = {
       seller_id: paymentData.seller_id,
@@ -182,9 +135,8 @@ export const createPayment = async (
       amount: paymentData.amount,
       currency: paymentData.currency,
       
-      payu_txn_id: txnId,
-      payu_order_id: txnId,
-      payu_status: 'initiated',
+      razorpay_order_id: '', // Will be updated after order creation
+      razorpay_receipt: receipt,
       
       payment_status: 'initiated',
       verified: false,
@@ -198,7 +150,7 @@ export const createPayment = async (
     
     console.log('✅ Payment record created:', docRef.id);
     
-    return { success: true, paymentId: docRef.id, txnId };
+    return { success: true, paymentId: docRef.id, receipt };
     
   } catch (error: any) {
     console.error('❌ Error creating payment:', error);
@@ -211,58 +163,36 @@ export const createPayment = async (
 // ═══════════════════════════════════════════════════════════════
 
 export const updatePaymentStatus = async (
-  txnId: string,
-  payuResponse: PayUResponse,
+  paymentId: string,
+  razorpayResponse: RazorpaySuccessResponse,
   verified: boolean
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('🔄 Updating payment status for:', txnId);
+    console.log('🔄 Updating payment status for:', paymentId);
     
-    const q = query(
-      collection(db, 'payments'),
-      where('payu_txn_id', '==', txnId),
-      limit(1)
-    );
-    const snapshot = await getDocs(q);
+    const payment_status: Payment['payment_status'] = verified ? 'completed' : 'failed';
     
-    if (snapshot.empty) {
-      throw new Error('Payment record not found');
-    }
-    
-    const paymentDoc = snapshot.docs[0];
-    
-    let paymentStatus: Payment['payment_status'];
-    if (payuResponse.status === 'success' && verified) {
-      paymentStatus = 'completed';
-    } else if (payuResponse.status === 'failure') {
-      paymentStatus = 'failed';
-    } else if (payuResponse.status === 'cancel') {
-      paymentStatus = 'cancelled';
-    } else {
-      paymentStatus = 'processing';
-    }
-    
-    await updateDoc(doc(db, 'payments', paymentDoc.id), {
-      payu_payment_id: payuResponse.mihpayid,
-      payu_status: payuResponse.status,
-      payu_mode: payuResponse.mode,
-      payu_response: payuResponse,
+    await updateDoc(doc(db, 'payments', paymentId), {
+      razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+      razorpay_order_id: razorpayResponse.razorpay_order_id,
+      razorpay_signature: razorpayResponse.razorpay_signature,
+      razorpay_response: razorpayResponse,
       
-      payment_status: paymentStatus,
+      payment_status: payment_status,
       verified: verified,
       completed_at: new Date().toISOString()
     });
     
-    console.log('✅ Payment status updated:', paymentStatus);
+    console.log('✅ Payment status updated:', payment_status);
     
     // Log activity
     try {
       await addDoc(collection(db, 'adminLogs'), {
         action: 'payment_status_updated',
-        payment_id: paymentDoc.id,
-        txn_id: txnId,
-        payu_payment_id: payuResponse.mihpayid,
-        status: paymentStatus,
+        payment_id: paymentId,
+        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+        razorpay_order_id: razorpayResponse.razorpay_order_id,
+        status: payment_status,
         verified: verified,
         timestamp: new Date().toISOString()
       });
@@ -279,28 +209,23 @@ export const updatePaymentStatus = async (
 };
 
 // ═══════════════════════════════════════════════════════════════
-// GET PAYMENT BY TRANSACTION ID
+// GET PAYMENT BY ID
 // ═══════════════════════════════════════════════════════════════
 
-export const getPaymentByTxnId = async (txnId: string): Promise<Payment | null> => {
+export const getPaymentById = async (paymentId: string): Promise<Payment | null> => {
   try {
-    console.log('🔍 Fetching payment:', txnId);
+    console.log('🔍 Fetching payment:', paymentId);
     
-    const q = query(
-      collection(db, 'payments'),
-      where('payu_txn_id', '==', txnId),
-      limit(1)
-    );
-    const snapshot = await getDocs(q);
+    const paymentDoc = await getDoc(doc(db, 'payments', paymentId));
     
-    if (snapshot.empty) {
+    if (!paymentDoc.exists()) {
       console.log('⚠️ Payment not found');
       return null;
     }
     
     const payment: Payment = {
-      id: snapshot.docs[0].id,
-      ...snapshot.docs[0].data()
+      id: paymentDoc.id,
+      ...paymentDoc.data()
     } as Payment;
     
     console.log('✅ Payment found:', payment.payment_status);
@@ -347,16 +272,16 @@ export const getSellerPayments = async (
 };
 
 // ═══════════════════════════════════════════════════════════════
-// ✅ FIXED: INITIATE PAYU PAYMENT
+// INITIATE RAZORPAY PAYMENT
 // ═══════════════════════════════════════════════════════════════
 
 export const initiatePayment = async (
   planId: string,
   planName: string,
   amount: number
-): Promise<{ success: boolean; formData?: PayUFormData; error?: string }> => {
+): Promise<{ success: boolean; paymentId?: string; checkoutOptions?: RazorpayCheckoutOptions; error?: string }> => {
   try {
-    console.log('🚀 Initiating PayU payment...');
+    console.log('🚀 Initiating Razorpay payment...');
     console.log('💰 Plan:', planId, '|', planName, '| Amount: ₹', amount);
     
     const currentUser = auth.currentUser;
@@ -389,79 +314,63 @@ export const initiatePayment = async (
       currency: 'INR'
     });
     
-    if (!paymentResult.success || !paymentResult.txnId) {
+    if (!paymentResult.success || !paymentResult.paymentId || !paymentResult.receipt) {
       throw new Error(paymentResult.error || 'Payment creation failed');
     }
     
-    const txnId = paymentResult.txnId;
-    
-    // ✅ Prepare user details (sanitize to prevent hash issues)
-    const firstname = (sellerData.owner_name || currentUser.email?.split('@')[0] || 'Customer')
-      .replace(/[|]/g, '') // Remove pipe characters
-      .substring(0, 50);
-    
-    const email = currentUser.email || '';
-    const phone = sellerData.phone || '9999999999';
-    
-    // ✅ Prepare UDF values (ensure no pipe characters)
-    const udf1 = planId.replace(/[|]/g, '');
-    const udf2 = currentUser.uid.replace(/[|]/g, '');
-    const udf3 = (sellerData.business_name || '').replace(/[|]/g, '').substring(0, 50);
-    const udf4 = '';
-    const udf5 = '';
-    
-    // ✅ CRITICAL: Format amount to 2 decimal places
-    const formattedAmount = parseFloat(amount.toString()).toFixed(2);
-    
-    console.log('📋 Payment Details:', {
-      txnId,
-      amount: formattedAmount,
-      firstname,
-      email,
-      phone,
-      udf1,
-      udf2,
-      udf3
-    });
-    
-    // ✅ Generate hash (returns simple string, not JSON)
-    const hash = await generatePayUHash(
-      txnId,
-      formattedAmount,
-      planName,
-      firstname,
-      email,
-      udf1,
-      udf2,
-      udf3,
-      udf4,
-      udf5
+    // Create Razorpay order
+    const orderResult = await createRazorpayOrder(
+      amount,
+      paymentResult.receipt,
+      {
+        plan_id: planId,
+        plan_name: planName,
+        seller_id: currentUser.uid,
+        seller_business: sellerData.business_name
+      }
     );
     
-    // ✅ Prepare PayU form data
-    const formData: PayUFormData = {
-      key: PAYU_CONFIG.merchant_key,
-      txnid: txnId,
-      amount: formattedAmount,
-      productinfo: planName,
-      firstname: firstname,
-      email: email,
-      phone: phone,
-      surl: PAYU_CONFIG.success_url,
-      furl: PAYU_CONFIG.failure_url,
-      hash: hash, // ✅ Simple hash string
-      udf1: udf1,
-      udf2: udf2,
-      udf3: udf3,
-      udf4: udf4,
-      udf5: udf5
+    if (!orderResult.success || !orderResult.orderId) {
+      throw new Error(orderResult.error || 'Order creation failed');
+    }
+    
+    // Update payment record with order ID
+    await updateDoc(doc(db, 'payments', paymentResult.paymentId), {
+      razorpay_order_id: orderResult.orderId
+    });
+    
+    // Prepare checkout options
+    const checkoutOptions: RazorpayCheckoutOptions = {
+      key: RAZORPAY_CONFIG.key_id,
+      amount: Math.round(amount * 100), // Convert to paise
+      currency: 'INR',
+      name: 'SrijanX Tile',
+      description: planName,
+      image: '/logo.png',
+      order_id: orderResult.orderId,
+      handler: () => {}, // Will be set in component
+      prefill: {
+        name: sellerData.owner_name || sellerData.business_name || 'Customer',
+        email: currentUser.email || '',
+        contact: sellerData.phone || ''
+      },
+      notes: {
+        plan_id: planId,
+        seller_id: currentUser.uid,
+        payment_id: paymentResult.paymentId
+      },
+      theme: {
+        color: '#9333EA' // Purple-600
+      }
     };
     
     console.log('✅ Payment initiation successful');
-    console.log('📝 Form Data Keys:', Object.keys(formData));
-    console.log('🔐 Hash Length:', hash.length);
     
-    return { success: true, formData };
+    return { 
+      success: true, 
+      paymentId: paymentResult.paymentId,
+      checkoutOptions 
+    };
     
   } catch (error: any) {
     console.error('❌ Error initiating payment:', error);
@@ -476,7 +385,7 @@ export const initiatePayment = async (
 const getClientIP = async (): Promise<string> => {
   try {
     const response = await fetch('https://api.ipify.org?format=json', {
-      signal: AbortSignal.timeout(5000) // 5 second timeout
+      signal: AbortSignal.timeout(5000)
     });
     const data = await response.json();
     return data.ip || 'unknown';
@@ -490,15 +399,15 @@ const getClientIP = async (): Promise<string> => {
 // ═══════════════════════════════════════════════════════════════
 
 export default {
-  PAYU_CONFIG,
-  generateTxnId,
-  generatePayUHash,
-  verifyPayUHash,
+  RAZORPAY_CONFIG,
+  loadRazorpayScript,
+  generateReceiptId,
+  createRazorpayOrder,
   createPayment,
   updatePaymentStatus,
-  getPaymentByTxnId,
+  getPaymentById,
   getSellerPayments,
   initiatePayment
 };
 
-console.log('✅ Payment Service Loaded - PRODUCTION v2.0 (FIXED)');
+console.log('✅ Payment Service Loaded - RAZORPAY PRODUCTION v1.0');

@@ -4471,6 +4471,8 @@ export const getSellerTopViewedTiles = async (
     return [];
   }
 };
+
+
 /**
  * Get top QR scanned tiles for a seller
  */
@@ -4541,6 +4543,8 @@ export const getSellerTopViewedTiles = async (
  * @param limitCount - Number of top tiles to return (default 5, max 20)
  * @returns Array of top scanned tiles with scan data
  */
+
+
 export const getSellerTopQRScannedTiles = async (
   sellerId: string,
   limitCount: number = 5
@@ -5961,77 +5965,266 @@ export const trackWorkerActivity = async (
  * @param workerId - Worker's user ID
  * @returns Authorization result with seller verification
  */
+// export const verifyWorkerTileAccess = async (
+//   tileId: string,
+//   workerId: string
+// ): Promise<{ 
+//   allowed: boolean; 
+//   error?: string; 
+//   sellerId?: string;
+//   tileName?: string;
+//   workerSeller?: string;
+// }> => {
+  
+//   const startTime = Date.now();
+  
+//   try {
+//     console.log('🔒 Verifying worker tile access...', { tileId, workerId });
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 1: GET WORKER DATA
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const workerDoc = await getDoc(doc(db, 'users', workerId));
+    
+//     if (!workerDoc.exists()) {
+//       console.error('❌ Worker not found:', workerId);
+//       return { 
+//         allowed: false, 
+//         error: 'Worker account not found' 
+//       };
+//     }
+
+//     const workerData = workerDoc.data();
+    
+//     // Verify role
+//     if (workerData.role !== 'worker') {
+//       console.error('❌ User is not a worker:', workerData.role);
+//       return { 
+//         allowed: false, 
+//         error: 'Not a worker account' 
+//       };
+//     }
+
+//     // Verify active status
+//     if (workerData.is_active === false || workerData.account_status === 'deleted') {
+//       console.error('❌ Worker account inactive');
+//       return { 
+//         allowed: false, 
+//         error: 'Worker account is inactive' 
+//       };
+//     }
+
+//     // Get worker's seller
+//     const workerSellerId = workerData.seller_id;
+    
+//     if (!workerSellerId) {
+//       console.error('❌ Worker has no seller assigned');
+//       return { 
+//         allowed: false, 
+//         error: 'Worker has no seller assigned' 
+//       };
+//     }
+
+//     console.log('✅ Worker verified:', workerData.email, '| Seller:', workerSellerId);
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 2: GET TILE DATA
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const tileDoc = await getDoc(doc(db, 'tiles', tileId));
+    
+//     if (!tileDoc.exists()) {
+//       console.error('❌ Tile not found:', tileId);
+//       return { 
+//         allowed: false, 
+//         error: 'Tile not found in database' 
+//       };
+//     }
+
+//     const tileData = tileDoc.data();
+//     const tileSellerId = tileData.sellerId || tileData.seller_id;
+//     const tileName = tileData.name || 'Unknown Tile';
+
+//     if (!tileSellerId) {
+//       console.error('❌ Tile has no seller:', tileId);
+//       return { 
+//         allowed: false, 
+//         error: 'Tile has no seller assigned' 
+//       };
+//     }
+
+//     console.log('✅ Tile verified:', tileName, '| Seller:', tileSellerId);
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 3: AUTHORIZATION CHECK
+//     // ═══════════════════════════════════════════════════════════
+    
+//     if (workerSellerId !== tileSellerId) {
+//       console.warn('🚫 UNAUTHORIZED ACCESS ATTEMPT:', {
+//         worker: workerData.email,
+//         workerSeller: workerSellerId,
+//         tile: tileName,
+//         tileSeller: tileSellerId
+//       });
+
+//       // Log unauthorized attempt
+//       try {
+//         await addDoc(collection(db, 'securityLogs'), {
+//           event: 'unauthorized_tile_scan_attempt',
+//           worker_id: workerId,
+//           worker_email: workerData.email,
+//           worker_seller_id: workerSellerId,
+//           attempted_tile_id: tileId,
+//           tile_name: tileName,
+//           tile_seller_id: tileSellerId,
+//           timestamp: new Date().toISOString(),
+//           blocked: true
+//         });
+//       } catch (logError) {
+//         console.warn('⚠️ Could not log security event:', logError);
+//       }
+
+//       // Get seller business names for better error message
+//       let workerSellerName = 'your showroom';
+//       let tileSellerName = 'another showroom';
+
+//       try {
+//         const [workerSellerDoc, tileSellerDoc] = await Promise.all([
+//           getDoc(doc(db, 'sellers', workerSellerId)),
+//           getDoc(doc(db, 'sellers', tileSellerId))
+//         ]);
+
+//         if (workerSellerDoc.exists()) {
+//           workerSellerName = workerSellerDoc.data().business_name || workerSellerName;
+//         }
+
+//         if (tileSellerDoc.exists()) {
+//           tileSellerName = tileSellerDoc.data().business_name || tileSellerName;
+//         }
+//       } catch (nameError) {
+//         console.warn('⚠️ Could not fetch seller names:', nameError);
+//       }
+
+//       return {
+//         allowed: false,
+//         error: `This tile belongs to "${tileSellerName}".\n\nYou can only scan tiles from "${workerSellerName}".`,
+//         workerSeller: workerSellerName,
+//         tileName: tileName
+//       };
+//     }
+
+//     // ═══════════════════════════════════════════════════════════
+//     // STEP 4: ACCESS GRANTED
+//     // ═══════════════════════════════════════════════════════════
+    
+//     const duration = Date.now() - startTime;
+//     console.log(`✅ Access granted in ${duration}ms`);
+
+//     // Log successful verification
+//     try {
+//       await addDoc(collection(db, 'securityLogs'), {
+//         event: 'authorized_tile_scan',
+//         worker_id: workerId,
+//         worker_email: workerData.email,
+//         seller_id: workerSellerId,
+//         tile_id: tileId,
+//         tile_name: tileName,
+//         timestamp: new Date().toISOString(),
+//         verification_time_ms: duration,
+//         blocked: false
+//       });
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log security event:', logError);
+//     }
+
+//     return {
+//       allowed: true,
+//       sellerId: workerSellerId,
+//       tileName: tileName
+//     };
+
+//   } catch (error: any) {
+//     console.error('❌ Worker verification error:', error);
+
+//     // Log error
+//     try {
+//       await addDoc(collection(db, 'errorLogs'), {
+//         function: 'verifyWorkerTileAccess',
+//         worker_id: workerId,
+//         tile_id: tileId,
+//         error_message: error.message,
+//         error_code: error.code || 'unknown',
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log error:', logError);
+//     }
+
+//     return {
+//       allowed: false,
+//       error: 'Security verification failed. Please try again.'
+//     };
+//   }
+// };
+
+// firebaseutils.ts
+
 export const verifyWorkerTileAccess = async (
   tileId: string,
   workerId: string
-): Promise<{ 
-  allowed: boolean; 
-  error?: string; 
-  sellerId?: string;
-  tileName?: string;
-  workerSeller?: string;
-}> => {
-  
-  const startTime = Date.now();
+): Promise<{ allowed: boolean; error?: string; details?: any }> => {
   
   try {
-    console.log('🔒 Verifying worker tile access...', { tileId, workerId });
+    console.log('🔒 Verifying worker access:', { tileId, workerId });
 
     // ═══════════════════════════════════════════════════════════
-    // STEP 1: GET WORKER DATA
+    // STEP 1: GET WORKER'S SELLER ID
     // ═══════════════════════════════════════════════════════════
-    
     const workerDoc = await getDoc(doc(db, 'users', workerId));
     
     if (!workerDoc.exists()) {
-      console.error('❌ Worker not found:', workerId);
       return { 
         allowed: false, 
-        error: 'Worker account not found' 
+        error: 'Worker account not found. Please login again.' 
       };
     }
 
     const workerData = workerDoc.data();
     
-    // Verify role
+    // Check role
     if (workerData.role !== 'worker') {
-      console.error('❌ User is not a worker:', workerData.role);
       return { 
         allowed: false, 
-        error: 'Not a worker account' 
+        error: 'Unauthorized: Only workers can access this feature' 
       };
     }
 
-    // Verify active status
-    if (workerData.is_active === false || workerData.account_status === 'deleted') {
-      console.error('❌ Worker account inactive');
+    // Check active status
+    if (workerData.is_active === false) {
       return { 
         allowed: false, 
-        error: 'Worker account is inactive' 
+        error: 'Your worker account is inactive. Contact admin.' 
       };
     }
 
-    // Get worker's seller
     const workerSellerId = workerData.seller_id;
     
     if (!workerSellerId) {
-      console.error('❌ Worker has no seller assigned');
       return { 
         allowed: false, 
-        error: 'Worker has no seller assigned' 
+        error: 'No showroom assigned to your account. Contact admin.' 
       };
     }
 
-    console.log('✅ Worker verified:', workerData.email, '| Seller:', workerSellerId);
+    console.log('✅ Worker seller ID:', workerSellerId);
 
     // ═══════════════════════════════════════════════════════════
-    // STEP 2: GET TILE DATA
+    // STEP 2: GET TILE'S SELLER ID
     // ═══════════════════════════════════════════════════════════
-    
     const tileDoc = await getDoc(doc(db, 'tiles', tileId));
     
     if (!tileDoc.exists()) {
-      console.error('❌ Tile not found:', tileId);
       return { 
         allowed: false, 
         error: 'Tile not found in database' 
@@ -6040,51 +6233,26 @@ export const verifyWorkerTileAccess = async (
 
     const tileData = tileDoc.data();
     const tileSellerId = tileData.sellerId || tileData.seller_id;
-    const tileName = tileData.name || 'Unknown Tile';
 
     if (!tileSellerId) {
-      console.error('❌ Tile has no seller:', tileId);
       return { 
         allowed: false, 
         error: 'Tile has no seller assigned' 
       };
     }
 
-    console.log('✅ Tile verified:', tileName, '| Seller:', tileSellerId);
+    console.log('✅ Tile seller ID:', tileSellerId);
 
     // ═══════════════════════════════════════════════════════════
-    // STEP 3: AUTHORIZATION CHECK
+    // STEP 3: COMPARE SELLER IDs
     // ═══════════════════════════════════════════════════════════
-    
-    if (workerSellerId !== tileSellerId) {
-      console.warn('🚫 UNAUTHORIZED ACCESS ATTEMPT:', {
-        worker: workerData.email,
-        workerSeller: workerSellerId,
-        tile: tileName,
-        tileSeller: tileSellerId
-      });
-
-      // Log unauthorized attempt
-      try {
-        await addDoc(collection(db, 'securityLogs'), {
-          event: 'unauthorized_tile_scan_attempt',
-          worker_id: workerId,
-          worker_email: workerData.email,
-          worker_seller_id: workerSellerId,
-          attempted_tile_id: tileId,
-          tile_name: tileName,
-          tile_seller_id: tileSellerId,
-          timestamp: new Date().toISOString(),
-          blocked: true
-        });
-      } catch (logError) {
-        console.warn('⚠️ Could not log security event:', logError);
-      }
-
-      // Get seller business names for better error message
+    if (tileSellerId !== workerSellerId) {
+      // UNAUTHORIZED ACCESS ATTEMPT
+      
+      // Get seller names for better error message
       let workerSellerName = 'your showroom';
       let tileSellerName = 'another showroom';
-
+      
       try {
         const [workerSellerDoc, tileSellerDoc] = await Promise.all([
           getDoc(doc(db, 'sellers', workerSellerId)),
@@ -6094,19 +6262,40 @@ export const verifyWorkerTileAccess = async (
         if (workerSellerDoc.exists()) {
           workerSellerName = workerSellerDoc.data().business_name || workerSellerName;
         }
-
         if (tileSellerDoc.exists()) {
           tileSellerName = tileSellerDoc.data().business_name || tileSellerName;
         }
-      } catch (nameError) {
-        console.warn('⚠️ Could not fetch seller names:', nameError);
+      } catch (err) {
+        console.warn('Could not fetch seller names');
       }
+
+      // Log security event
+      await addDoc(collection(db, 'securityLogs'), {
+        event: 'unauthorized_tile_access_blocked',
+        worker_id: workerId,
+        worker_email: workerData.email,
+        worker_seller_id: workerSellerId,
+        worker_seller_name: workerSellerName,
+        attempted_tile_id: tileId,
+        tile_seller_id: tileSellerId,
+        tile_seller_name: tileSellerName,
+        timestamp: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        blocked: true
+      });
+
+      console.error('🚫 ACCESS DENIED:', {
+        workerSeller: workerSellerName,
+        tileSeller: tileSellerName
+      });
 
       return {
         allowed: false,
-        error: `This tile belongs to "${tileSellerName}".\n\nYou can only scan tiles from "${workerSellerName}".`,
-        workerSeller: workerSellerName,
-        tileName: tileName
+        error: `🚫 UNAUTHORIZED TILE\n\nThis tile belongs to "${tileSellerName}".\n\nYou can only use tiles from "${workerSellerName}".\n\n⚠️ This attempt has been logged for security.`,
+        details: {
+          workerSeller: workerSellerName,
+          tileSeller: tileSellerName
+        }
       };
     }
 
@@ -6114,55 +6303,44 @@ export const verifyWorkerTileAccess = async (
     // STEP 4: ACCESS GRANTED
     // ═══════════════════════════════════════════════════════════
     
-    const duration = Date.now() - startTime;
-    console.log(`✅ Access granted in ${duration}ms`);
+    // Log successful access
+    await addDoc(collection(db, 'analytics'), {
+      event: 'worker_tile_access_granted',
+      worker_id: workerId,
+      tile_id: tileId,
+      seller_id: workerSellerId,
+      timestamp: new Date().toISOString()
+    });
 
-    // Log successful verification
-    try {
-      await addDoc(collection(db, 'securityLogs'), {
-        event: 'authorized_tile_scan',
-        worker_id: workerId,
-        worker_email: workerData.email,
-        seller_id: workerSellerId,
-        tile_id: tileId,
-        tile_name: tileName,
-        timestamp: new Date().toISOString(),
-        verification_time_ms: duration,
-        blocked: false
-      });
-    } catch (logError) {
-      console.warn('⚠️ Could not log security event:', logError);
-    }
+    console.log('✅ ACCESS GRANTED');
 
-    return {
+    return { 
       allowed: true,
-      sellerId: workerSellerId,
-      tileName: tileName
+      details: {
+        workerSellerId,
+        tileSellerId
+      }
     };
 
   } catch (error: any) {
-    console.error('❌ Worker verification error:', error);
-
+    console.error('❌ Verification error:', error);
+    
     // Log error
-    try {
-      await addDoc(collection(db, 'errorLogs'), {
-        function: 'verifyWorkerTileAccess',
-        worker_id: workerId,
-        tile_id: tileId,
-        error_message: error.message,
-        error_code: error.code || 'unknown',
-        timestamp: new Date().toISOString()
-      });
-    } catch (logError) {
-      console.warn('⚠️ Could not log error:', logError);
-    }
+    await addDoc(collection(db, 'errorLogs'), {
+      function: 'verifyWorkerTileAccess',
+      tile_id: tileId,
+      worker_id: workerId,
+      error_message: error.message,
+      timestamp: new Date().toISOString()
+    });
 
-    return {
-      allowed: false,
-      error: 'Security verification failed. Please try again.'
+    return { 
+      allowed: false, 
+      error: 'Security check failed. Please try again.' 
     };
   }
 };
+
 // ═══════════════════════════════════════════════════════════════
 // ✅ SELLER STOCK ANALYTICS FUNCTIONS - NEW SECTION
 // ═══════════════════════════════════════════════════════════════

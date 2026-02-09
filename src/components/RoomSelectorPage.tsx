@@ -1,10 +1,14 @@
-  
-// src/pages/RoomSelectorPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { ArrowLeft, Loader, AlertCircle, CheckCircle, X, Calculator } from 'lucide-react';
 import { getTileById } from '../lib/firebaseutils';
 import { Tile } from '../types';
+import { TileCalculatorModal } from '../components/TileCalculatorModal';
+
+// ═══════════════════════════════════════════════════════════════
+// INTERFACES
+// ═══════════════════════════════════════════════════════════════
 
 interface RoomOption {
   id: string;
@@ -14,7 +18,14 @@ interface RoomOption {
   description: string;
   thumbnail: string;
   surfaceOptions: string[];
+  defaultWidth: number;
+  defaultDepth: number;
+  defaultHeight: number;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS - FIXED DEFAULT ROOM SIZES
+// ═══════════════════════════════════════════════════════════════
 
 const ROOM_OPTIONS: RoomOption[] = [
   {
@@ -24,7 +35,10 @@ const ROOM_OPTIONS: RoomOption[] = [
     icon: '🛋️',
     description: 'See how tiles look in your living space',
     thumbnail: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400',
-    surfaceOptions: ['floor']
+    surfaceOptions: ['floor'],
+    defaultWidth: 15,
+    defaultDepth: 20,
+    defaultHeight: 11
   },
   {
     id: 'kitchen',
@@ -33,7 +47,10 @@ const ROOM_OPTIONS: RoomOption[] = [
     icon: '🍳',
     description: 'Visualize floor and backsplash tiles',
     thumbnail: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=400',
-    surfaceOptions: ['floor', 'wall']
+    surfaceOptions: ['floor', 'wall'],
+    defaultWidth: 10,
+    defaultDepth: 12,
+    defaultHeight: 11
   },
   {
     id: 'bathroom',
@@ -42,24 +59,41 @@ const ROOM_OPTIONS: RoomOption[] = [
     icon: '🛁',
     description: 'Preview floor and wall tile combinations',
     thumbnail: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400',
-    surfaceOptions: ['floor', 'wall']
+    surfaceOptions: ['floor', 'wall'],
+    defaultWidth: 8,
+    defaultDepth: 10,
+    defaultHeight: 11
   }
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
 
 export const RoomSelectorPage: React.FC = () => {
   const { tileId } = useParams<{ tileId: string }>();
   const navigate = useNavigate();
+
+  // ═════════════════════════════════════════════════════════════
+  // STATE
+  // ═════════════════════════════════════════════════════════════
+  
   const [tile, setTile] = useState<Tile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
+
+  // ═════════════════════════════════════════════════════════════
+  // EFFECTS
+  // ═════════════════════════════════════════════════════════════
 
   useEffect(() => {
     loadTileData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tileId]);
 
-  // Auto-clear error messages
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -68,6 +102,10 @@ export const RoomSelectorPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // ═════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═════════════════════════════════════════════════════════════
 
   const loadTileData = async () => {
     if (!tileId) {
@@ -97,14 +135,29 @@ export const RoomSelectorPage: React.FC = () => {
   };
 
   const handleRoomSelect = (roomType: string) => {
+    const roomData = ROOM_OPTIONS.find(r => r.type === roomType);
+    if (!roomData || !tileId) return;
+
+    const dimensionData = {
+      width: roomData.defaultWidth,
+      depth: roomData.defaultDepth,
+      height: roomData.defaultHeight,
+      timestamp: Date.now()
+    };
+
+    localStorage.setItem(`room_dimensions_${roomType}`, JSON.stringify(dimensionData));
+    
     setSelectedRoom(roomType);
     
-    // Haptic feedback
     if (navigator.vibrate) {
-      navigator.vibrate(50);
+      navigator.vibrate([50, 30, 50]);
     }
     
-    // Small delay for visual feedback
+    console.log('✅ Navigating to 3D view with default dimensions:', {
+      room: roomType,
+      dimensions: `${roomData.defaultWidth}' × ${roomData.defaultDepth}' × ${roomData.defaultHeight}'`
+    });
+    
     setTimeout(() => {
       navigate(`/3d-view/${tileId}/${roomType}`);
     }, 150);
@@ -117,16 +170,16 @@ export const RoomSelectorPage: React.FC = () => {
   const filterRoomsByTileCategory = () => {
     if (!tile) return ROOM_OPTIONS;
 
-    // If tile is floor only, show all rooms (but limited surfaces)
-    // If tile is wall only, show kitchen and bathroom
-    // If tile is both, show all rooms with all surfaces
-
     if (tile.category === 'wall') {
       return ROOM_OPTIONS.filter(room => room.type !== 'drawing');
     }
 
     return ROOM_OPTIONS;
   };
+
+  // ═════════════════════════════════════════════════════════════
+  // RENDER LOADING STATE
+  // ═════════════════════════════════════════════════════════════
 
   if (loading) {
     return (
@@ -139,6 +192,10 @@ export const RoomSelectorPage: React.FC = () => {
       </div>
     );
   }
+
+  // ═════════════════════════════════════════════════════════════
+  // RENDER ERROR STATE
+  // ═════════════════════════════════════════════════════════════
 
   if (error && !tile) {
     return (
@@ -162,26 +219,41 @@ export const RoomSelectorPage: React.FC = () => {
 
   const availableRooms = filterRoomsByTileCategory();
 
+  // ═════════════════════════════════════════════════════════════
+  // RENDER MAIN UI
+  // ═════════════════════════════════════════════════════════════
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Header */}
+      {/* HEADER */}
       <header className="bg-white/95 backdrop-blur-sm shadow-sm sticky top-0 z-20 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 sm:gap-2 text-gray-700 h
-            
-            
-            over:text-blue-600 transition-colors touch-manipulation p-2 -ml-2 rounded-lg hover:bg-gray-100"
-            aria-label="Go back to tile details"
-          >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="font-medium text-sm sm:text-base">Back to Tile Details</span>
-          </button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 sm:gap-2 text-gray-700 hover:text-blue-600 transition-colors touch-manipulation p-2 -ml-2 rounded-lg hover:bg-gray-100"
+              aria-label="Go back to tile details"
+            >
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="font-medium text-sm sm:text-base">Back</span>
+            </button>
+
+            {/* ✅ TILE CALCULATOR BUTTON */}
+            {tile && (
+              <button
+                onClick={() => setShowCalculator(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105"
+              >
+                <Calculator className="w-5 h-5" />
+                <span className="hidden sm:inline">Tile Calculator</span>
+                <span className="sm:hidden">Calculator</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Error Message */}
+      {/* ERROR TOAST */}
       {error && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4 animate-slide-down">
           <div className="bg-red-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-2xl flex items-center gap-2 sm:gap-3">
@@ -198,8 +270,9 @@ export const RoomSelectorPage: React.FC = () => {
         </div>
       )}
 
-      {/* Content */}
+      {/* MAIN CONTENT */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12">
+        
         {/* Tile Info Banner */}
         {tile && (
           <section 
@@ -221,11 +294,20 @@ export const RoomSelectorPage: React.FC = () => {
                 {tile.size} • <span className="text-green-600 font-semibold">₹{tile.price}/sq.ft</span>
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm font-medium">
+                <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm font-medium capitalize">
                   {tile.category}
                 </span>
               </div>
             </div>
+            
+            {/* Mobile Calculator Button */}
+            <button
+              onClick={() => setShowCalculator(true)}
+              className="sm:hidden w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              <Calculator className="w-5 h-5" />
+              Open Tile Calculator
+            </button>
           </section>
         )}
 
@@ -235,7 +317,7 @@ export const RoomSelectorPage: React.FC = () => {
             Choose a Room
           </h1>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-            Select where you'd like to see this tile in realistic 3D view
+            Select a room to view this tile in realistic 3D. Use the <strong>Tile Calculator</strong> button above to calculate tiles for any custom room size.
           </p>
         </div>
 
@@ -255,7 +337,6 @@ export const RoomSelectorPage: React.FC = () => {
                 }`}
                 aria-label={`View ${room.name} in 3D`}
               >
-                {/* Room Image */}
                 <div className="relative h-40 sm:h-48 overflow-hidden bg-gray-200">
                   {!hasImageError ? (
                     <img
@@ -272,12 +353,10 @@ export const RoomSelectorPage: React.FC = () => {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                   
-                  {/* Room Icon */}
                   <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-white rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center text-3xl sm:text-4xl shadow-lg transform group-hover:scale-110 transition-transform">
                     {room.icon}
                   </div>
 
-                  {/* Loading indicator when selected */}
                   {isSelected && (
                     <div className="absolute inset-0 bg-blue-600/20 backdrop-blur-sm flex items-center justify-center">
                       <Loader className="w-8 h-8 animate-spin text-white" />
@@ -285,7 +364,6 @@ export const RoomSelectorPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Room Info */}
                 <div className="p-4 sm:p-6">
                   <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                     {room.name}
@@ -294,10 +372,14 @@ export const RoomSelectorPage: React.FC = () => {
                     {room.description}
                   </p>
 
-                  {/* Surface Tags */}
+                  <div className="bg-blue-50 rounded-lg p-2 mb-3">
+                    <p className="text-xs text-blue-700 font-medium">
+                      📏 Default: {room.defaultWidth}' × {room.defaultDepth}' × {room.defaultHeight}'
+                    </p>
+                  </div>
+
                   <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                     {room.surfaceOptions.map((surface) => {
-                      // Check if tile category supports this surface
                       const isSupported = 
                         tile?.category === 'both' ||
                         (tile?.category === surface) ||
@@ -319,15 +401,12 @@ export const RoomSelectorPage: React.FC = () => {
                     })}
                   </div>
 
-                  {/* CTA */}
                   <div className="text-blue-600 font-semibold text-sm sm:text-base flex items-center justify-center gap-2 group-hover:gap-3 sm:group-hover:gap-4 transition-all">
                     <span>View in 3D</span>
                     <span className="text-lg sm:text-xl transform group-hover:translate-x-1 transition-transform">→</span>
                   </div>
                 </div>
               </button>
-
-              
             );
           })}
         </div>
@@ -340,63 +419,100 @@ export const RoomSelectorPage: React.FC = () => {
           <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
             🎨 What You Can Do
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div className="text-center p-4 rounded-lg hover:bg-gray-50 transition-colors">
               <div className="bg-blue-100 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 transform hover:scale-110 transition-transform">
                 <span className="text-2xl sm:text-3xl">🔄</span>
               </div>
               <h4 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">360° Rotation</h4>
               <p className="text-gray-600 text-xs sm:text-sm">
-                View from every angle with smooth rotation
+                View from every angle
               </p>
             </div>
             <div className="text-center p-4 rounded-lg hover:bg-gray-50 transition-colors">
               <div className="bg-purple-100 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 transform hover:scale-110 transition-transform">
-                <span className="text-2xl sm:text-3xl">🎯</span>
+                <span className="text-2xl sm:text-3xl">🧮</span>
               </div>
-              <h4 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Surface Toggle</h4>
+              <h4 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Tile Calculator</h4>
               <p className="text-gray-600 text-xs sm:text-sm">
-                Switch between floor and wall application
+                Calculate for any room size
               </p>
             </div>
-            <div className="text-center p-4 rounded-lg hover:bg-gray-50 transition-colors sm:col-span-2 lg:col-span-1">
+            <div className="text-center p-4 rounded-lg hover:bg-gray-50 transition-colors">
               <div className="bg-green-100 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 transform hover:scale-110 transition-transform">
                 <span className="text-2xl sm:text-3xl">📏</span>
               </div>
-              <h4 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Size Options</h4>
+              <h4 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Custom Dimensions</h4>
               <p className="text-gray-600 text-xs sm:text-sm">
-                Try different tile sizes and see the difference
+                Enter your exact room size
+              </p>
+            </div>
+            <div className="text-center p-4 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="bg-orange-100 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 transform hover:scale-110 transition-transform">
+                <span className="text-2xl sm:text-3xl">🎯</span>
+              </div>
+              <h4 className="font-bold text-gray-900 mb-2 text-sm sm:text-base">Auto Scaling</h4>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                Furniture scales automatically
               </p>
             </div>
           </div>
         </section>
 
-        {/* Additional Info */}
-        <div className="mt-6 sm:mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 border border-blue-200">
+        {/* Pro Tip */}
+        <div className="mt-6 sm:mt-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-green-200">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-lg sm:text-xl">💡</span>
+            <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center">
+              <Calculator className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">Pro Tip</h4>
+              <h4 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">💡 Use the Tile Calculator</h4>
               <p className="text-gray-700 text-xs sm:text-sm">
-                For the best experience, try viewing the 3D visualization in a well-lit environment. 
-                You can rotate, zoom, and pan to see every detail of how the tiles will look in your space.
+                Click the <strong className="text-green-700">Tile Calculator</strong> button above to enter your room's exact dimensions 
+                and get an accurate count of floor and wall tiles needed, with automatic 8% wastage calculation!
               </p>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer Info */}
+      {/* Footer */}
       <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200 py-4 sm:py-6 mt-8">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
           <p className="text-center text-gray-600 text-xs sm:text-sm">
-            Select a room above to start visualizing your tiles in 3D
+            Select a room to visualize in 3D • Use calculator for exact tile count
           </p>
         </div>
       </footer>
+
+      {/* ✅ TILE CALCULATOR MODAL */}
+      {tile && (
+        <TileCalculatorModal
+          isOpen={showCalculator}
+          onClose={() => setShowCalculator(false)}
+          tileName={tile.name}
+          tileSize={tile.size}
+          tileCategory={tile.category}
+        />
+      )}
+
+      {/* CSS ANIMATIONS */}
+      <style>{`
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -20px);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0);
+          }
+        }
+
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
-
