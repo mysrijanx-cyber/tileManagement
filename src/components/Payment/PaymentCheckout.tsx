@@ -1,14 +1,17 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PAYMENT CHECKOUT - RAZORPAY PRODUCTION v1.0
-// Opens Razorpay payment modal
+// ✅ PAYMENT CHECKOUT - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadRazorpayScript, updatePaymentStatus } from '../../lib/paymentService';
+import { loadRazorpayScript, updatePaymentStatus, verifyPayment } from '../../lib/paymentService';
 import { createSubscription } from '../../lib/subscriptionService';
 import { getPlanById } from '../../lib/planService';
-import type { RazorpayCheckoutOptions, RazorpaySuccessResponse, RazorpayErrorResponse } from '../../types/payment.types';
+import type { 
+  RazorpayCheckoutOptions, 
+  RazorpaySuccessResponse, 
+  RazorpayErrorResponse 
+} from '../../types/payment.types';
 
 interface PaymentCheckoutProps {
   checkoutOptions: RazorpayCheckoutOptions;
@@ -35,16 +38,16 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
 
   const initializeRazorpay = async () => {
     try {
-      console.log('🔄 Initializing Razorpay checkout...');
+      console.log('🔄 Initializing Razorpay checkout (TEST MODE)...');
       
-      // Load Razorpay script
       const scriptLoaded = await loadRazorpayScript();
       
       if (!scriptLoaded) {
         throw new Error('Failed to load Razorpay. Please check your internet connection.');
       }
       
-      // Open Razorpay checkout
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       openRazorpayCheckout();
       
     } catch (err: any) {
@@ -63,6 +66,7 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
         ...checkoutOptions,
         handler: handlePaymentSuccess,
         modal: {
+          ...checkoutOptions.modal,
           ondismiss: handlePaymentDismiss
         }
       };
@@ -73,7 +77,7 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
       
       razorpay.open();
       
-      console.log('✅ Razorpay checkout opened');
+      console.log('✅ Razorpay checkout opened (TEST MODE)');
       
     } catch (err: any) {
       console.error('❌ Error opening checkout:', err);
@@ -84,35 +88,35 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
 
   const handlePaymentSuccess = async (response: RazorpaySuccessResponse) => {
     try {
-      console.log('✅ Payment successful:', response);
+      console.log('✅ Payment successful (TEST MODE):', response);
       
-      // Update payment status
-      const updateResult = await updatePaymentStatus(paymentId, response, true);
+      const verifyResult = await verifyPayment(paymentId, response);
       
-      if (!updateResult.success) {
-        throw new Error('Failed to update payment status');
+      if (!verifyResult.success) {
+        throw new Error('Payment verification failed');
       }
       
-      // Get plan details for subscription
       const plan = await getPlanById(planId);
       
       if (!plan) {
-        throw new Error('Plan not found');
+        console.warn('⚠️ Plan not found, but payment successful');
       }
       
-      // Create subscription
-      const subscriptionResult = await createSubscription({
-        seller_id: sellerId,
-        plan_id: planId,
-        payment_id: paymentId,
-        billing_cycle: plan.billing_cycle
-      });
-      
-      if (!subscriptionResult.success) {
-        console.warn('⚠️ Subscription creation failed:', subscriptionResult.error);
+      if (plan) {
+        const subscriptionResult = await createSubscription({
+          seller_id: sellerId,
+          plan_id: planId,
+          payment_id: paymentId,
+          billing_cycle: plan.billing_cycle
+        });
+        
+        if (!subscriptionResult.success) {
+          console.warn('⚠️ Subscription creation failed:', subscriptionResult.error);
+        } else {
+          console.log('✅ Subscription created successfully');
+        }
       }
       
-      // Redirect to success page
       navigate(`/payment-success?payment_id=${paymentId}&razorpay_payment_id=${response.razorpay_payment_id}`);
       
     } catch (err: any) {
@@ -121,16 +125,44 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
     }
   };
 
-  const handlePaymentFailure = (response: RazorpayErrorResponse) => {
+  const handlePaymentFailure = async (response: RazorpayErrorResponse) => {
     console.error('❌ Payment failed:', response);
     
     const errorMsg = response.error?.description || 'Payment failed';
     
+    try {
+      await updatePaymentStatus(
+        paymentId,
+        {
+          razorpay_payment_id: '',
+          razorpay_order_id: '',
+          razorpay_signature: ''
+        },
+        false
+      );
+    } catch (updateError) {
+      console.warn('⚠️ Could not update payment status:', updateError);
+    }
+    
     navigate(`/payment-failure?payment_id=${paymentId}&error=${encodeURIComponent(errorMsg)}`);
   };
 
-  const handlePaymentDismiss = () => {
+  const handlePaymentDismiss = async () => {
     console.log('⚠️ Payment modal dismissed by user');
+    
+    try {
+      await updatePaymentStatus(
+        paymentId,
+        {
+          razorpay_payment_id: '',
+          razorpay_order_id: '',
+          razorpay_signature: ''
+        },
+        false
+      );
+    } catch (updateError) {
+      console.warn('⚠️ Could not update payment status:', updateError);
+    }
     
     navigate(`/payment-failure?payment_id=${paymentId}&error=Payment cancelled by user`);
   };
@@ -157,7 +189,6 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         
-        {/* Header */}
         <div className="text-center mb-6">
           <div className="text-6xl mb-4 animate-bounce">🔒</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -170,7 +201,16 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
           </p>
         </div>
 
-        {/* Loading Animation */}
+        <div className="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-xl p-3">
+          <div className="flex items-center justify-center gap-2 text-yellow-800 font-semibold">
+            <span className="text-xl">⚠️</span>
+            <span className="text-sm">TEST MODE</span>
+          </div>
+          <p className="text-xs text-yellow-700 text-center mt-1">
+            No real money will be charged
+          </p>
+        </div>
+
         {loading && (
           <div className="mb-6">
             <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
@@ -183,7 +223,6 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
           </div>
         )}
 
-        {/* Security Info */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
           <div className="flex items-center justify-center gap-2 text-green-800 font-semibold mb-2">
             <span className="text-2xl">🛡️</span>
@@ -194,7 +233,6 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
           </p>
         </div>
 
-        {/* Payment Details */}
         <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
           <h3 className="font-semibold text-gray-800 mb-3 text-sm">Payment Details:</h3>
           <div className="space-y-2 text-sm">
@@ -208,14 +246,17 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
                 ₹{(checkoutOptions.amount / 100).toLocaleString('en-IN')}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Order ID:</span>
-              <span className="font-mono text-gray-800 text-xs">{checkoutOptions.order_id}</span>
-            </div>
+            {checkoutOptions.notes?.transaction_id && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Transaction ID:</span>
+                <span className="font-mono text-gray-800 text-xs">
+                  {checkoutOptions.notes.transaction_id}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Info Text */}
         <p className="text-xs text-gray-500 text-center">
           If payment window doesn't open, please check if popups are blocked
         </p>
@@ -224,4 +265,4 @@ export const PaymentCheckout: React.FC<PaymentCheckoutProps> = ({
   );
 };
 
-console.log('✅ PaymentCheckout Component loaded - RAZORPAY PRODUCTION v1.0');
+console.log('✅ PaymentCheckout Component loaded - PRODUCTION v2.0');

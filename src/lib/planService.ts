@@ -1,3 +1,6 @@
+// ═══════════════════════════════════════════════════════════════
+// ✅ PLAN SERVICE - PRODUCTION READY v2.1 (FIXED)
+// ═══════════════════════════════════════════════════════════════
 
 import {
   collection,
@@ -9,15 +12,13 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
-  Timestamp,
   writeBatch
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import type { Plan, CreatePlanData, UpdatePlanData, PlanValidationError } from '../types/plan.types';
 
 // ═══════════════════════════════════════════════════════════════
-// 📊 INTERFACES & TYPES
+// INTERFACES
 // ═══════════════════════════════════════════════════════════════
 
 interface ServiceResponse<T = void> {
@@ -33,12 +34,9 @@ interface PlanStats {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🔧 UTILITY FUNCTIONS
+// UTILITY FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Sort plans by display order
- */
 const sortPlansByOrder = (plans: Plan[]): Plan[] => {
   return plans.sort((a, b) => {
     const orderA = a.display_order ?? 999;
@@ -47,9 +45,6 @@ const sortPlansByOrder = (plans: Plan[]): Plan[] => {
   });
 };
 
-/**
- * Check if user is authenticated
- */
 const requireAuth = (): string => {
   const currentUser = auth.currentUser;
   if (!currentUser) {
@@ -58,9 +53,6 @@ const requireAuth = (): string => {
   return currentUser.uid;
 };
 
-/**
- * Log admin action
- */
 const logAdminAction = async (
   action: string,
   details: Record<string, any>
@@ -83,18 +75,13 @@ const logAdminAction = async (
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 📖 READ OPERATIONS
+// READ OPERATIONS
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Get all plans (active and inactive)
- * ✅ NO INDEX REQUIRED
- */
-export const getAllPlans = async (): Promise<Plan[]> => {
+const getAllPlans = async (): Promise<Plan[]> => {
   try {
     console.log('📋 Fetching all plans...');
     
-    // Simple query without complex filters
     const plansRef = collection(db, 'plans');
     const snapshot = await getDocs(plansRef);
     
@@ -108,7 +95,6 @@ export const getAllPlans = async (): Promise<Plan[]> => {
       ...doc.data()
     } as Plan));
     
-    // Client-side sorting
     const sortedPlans = sortPlansByOrder(plans);
     
     console.log(`✅ Fetched ${sortedPlans.length} plans`);
@@ -120,15 +106,10 @@ export const getAllPlans = async (): Promise<Plan[]> => {
   }
 };
 
-/**
- * Get active plans only (for public display)
- * ✅ NO INDEX REQUIRED - Client-side filtering & sorting
- */
-export const getActivePlans = async (): Promise<Plan[]> => {
+const getActivePlans = async (): Promise<Plan[]> => {
   try {
     console.log('📋 Fetching active plans...');
     
-    // Method 1: Try simple query with where clause only
     try {
       const q = query(
         collection(db, 'plans'),
@@ -142,7 +123,6 @@ export const getActivePlans = async (): Promise<Plan[]> => {
         ...doc.data()
       } as Plan));
       
-      // Client-side sorting
       const sortedPlans = sortPlansByOrder(plans);
       
       console.log(`✅ Fetched ${sortedPlans.length} active plans`);
@@ -151,7 +131,6 @@ export const getActivePlans = async (): Promise<Plan[]> => {
     } catch (queryError) {
       console.warn('⚠️ Query failed, using fallback method:', queryError);
       
-      // Method 2: Fallback - fetch all and filter client-side
       const allPlans = await getAllPlans();
       const activePlans = allPlans.filter(plan => plan.is_active === true);
       
@@ -165,10 +144,7 @@ export const getActivePlans = async (): Promise<Plan[]> => {
   }
 };
 
-/**
- * Get plan by ID
- */
-export const getPlanById = async (planId: string): Promise<Plan | null> => {
+const getPlanById = async (planId: string): Promise<Plan | null> => {
   try {
     if (!planId?.trim()) {
       throw new Error('Plan ID is required');
@@ -197,10 +173,7 @@ export const getPlanById = async (planId: string): Promise<Plan | null> => {
   }
 };
 
-/**
- * Get plan statistics
- */
-export const getPlanStats = async (): Promise<PlanStats> => {
+const getPlanStats = async (): Promise<PlanStats> => {
   try {
     const allPlans = await getAllPlans();
     
@@ -220,16 +193,12 @@ export const getPlanStats = async (): Promise<PlanStats> => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// ✏️ VALIDATION
+// VALIDATION
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Validate plan data
- */
-export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): PlanValidationError => {
+const validatePlanData = (planData: CreatePlanData | UpdatePlanData): PlanValidationError => {
   const errors: PlanValidationError = {};
   
-  // Plan name validation
   if ('plan_name' in planData) {
     if (!planData.plan_name?.trim()) {
       errors.plan_name = 'Plan name is required';
@@ -240,7 +209,6 @@ export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): Pla
     }
   }
   
-  // Price validation
   if ('price' in planData) {
     if (planData.price === undefined || planData.price === null) {
       errors.price = 'Price is required';
@@ -253,7 +221,6 @@ export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): Pla
     }
   }
   
-  // Features validation (only for create)
   if ('features' in planData && planData.features) {
     if (!Array.isArray(planData.features)) {
       errors.features = 'Features must be an array';
@@ -269,7 +236,6 @@ export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): Pla
     }
   }
   
-  // Limits validation
   if ('limits' in planData && planData.limits) {
     if (typeof planData.limits !== 'object') {
       errors.limits = 'Limits must be an object';
@@ -283,7 +249,6 @@ export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): Pla
     }
   }
   
-  // Display order validation
   if ('display_order' in planData) {
     if (typeof planData.display_order !== 'number') {
       errors.display_order = 'Display order must be a number';
@@ -292,7 +257,6 @@ export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): Pla
     }
   }
   
-  // Stripe ID validation (if provided)
   if ('stripe_price_id' in planData && planData.stripe_price_id) {
     if (typeof planData.stripe_price_id !== 'string') {
       errors.stripe_price_id = 'Stripe price ID must be a string';
@@ -304,9 +268,6 @@ export const validatePlanData = (planData: CreatePlanData | UpdatePlanData): Pla
   return errors;
 };
 
-/**
- * Check if plan name already exists
- */
 const checkPlanNameExists = async (planName: string, excludePlanId?: string): Promise<boolean> => {
   try {
     const allPlans = await getAllPlans();
@@ -323,20 +284,15 @@ const checkPlanNameExists = async (planName: string, excludePlanId?: string): Pr
 };
 
 // ═══════════════════════════════════════════════════════════════
-// ✍️ WRITE OPERATIONS
+// WRITE OPERATIONS
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Create new plan (Admin only)
- */
-export const createPlan = async (planData: CreatePlanData): Promise<ServiceResponse<string>> => {
+const createPlan = async (planData: CreatePlanData): Promise<ServiceResponse<string>> => {
   try {
     console.log('➕ Creating new plan:', planData.plan_name);
     
-    // Auth check
     const userId = requireAuth();
     
-    // Validate data
     const errors = validatePlanData(planData);
     if (Object.keys(errors).length > 0) {
       const errorMessage = Object.values(errors).join(', ');
@@ -344,14 +300,12 @@ export const createPlan = async (planData: CreatePlanData): Promise<ServiceRespo
       return { success: false, error: errorMessage };
     }
     
-    // Check duplicate name
     const nameExists = await checkPlanNameExists(planData.plan_name);
     if (nameExists) {
       console.error('❌ Plan name already exists');
       return { success: false, error: 'Plan name already exists' };
     }
     
-    // Create plan document
     const newPlan = {
       ...planData,
       created_at: new Date().toISOString(),
@@ -365,7 +319,6 @@ export const createPlan = async (planData: CreatePlanData): Promise<ServiceRespo
     
     console.log('✅ Plan created with ID:', docRef.id);
     
-    // Log admin action
     await logAdminAction('plan_created', {
       plan_id: docRef.id,
       plan_name: planData.plan_name,
@@ -380,31 +333,24 @@ export const createPlan = async (planData: CreatePlanData): Promise<ServiceRespo
   }
 };
 
-/**
- * Update existing plan (Admin only)
- */
-export const updatePlan = async (
+const updatePlan = async (
   planId: string,
   updates: UpdatePlanData
 ): Promise<ServiceResponse> => {
   try {
     console.log('📝 Updating plan:', planId);
     
-    // Validation
     if (!planId?.trim()) {
       return { success: false, error: 'Plan ID is required' };
     }
     
-    // Auth check
     const userId = requireAuth();
     
-    // Check plan exists
     const existingPlan = await getPlanById(planId);
     if (!existingPlan) {
       return { success: false, error: 'Plan not found' };
     }
     
-    // Validate updates
     const errors = validatePlanData(updates);
     if (Object.keys(errors).length > 0) {
       const errorMessage = Object.values(errors).join(', ');
@@ -412,7 +358,6 @@ export const updatePlan = async (
       return { success: false, error: errorMessage };
     }
     
-    // Check duplicate name (if name is being updated)
     if (updates.plan_name && updates.plan_name !== existingPlan.plan_name) {
       const nameExists = await checkPlanNameExists(updates.plan_name, planId);
       if (nameExists) {
@@ -420,19 +365,16 @@ export const updatePlan = async (
       }
     }
     
-    // Prepare update data
     const updateData = {
       ...updates,
       updated_at: new Date().toISOString(),
       updated_by: userId
     };
     
-    // Update plan
     await updateDoc(doc(db, 'plans', planId), updateData);
     
     console.log('✅ Plan updated successfully');
     
-    // Log admin action
     await logAdminAction('plan_updated', {
       plan_id: planId,
       plan_name: existingPlan.plan_name,
@@ -447,29 +389,21 @@ export const updatePlan = async (
   }
 };
 
-/**
- * Delete plan (Admin only)
- * Soft delete if subscriptions exist, hard delete otherwise
- */
-export const deletePlan = async (planId: string): Promise<ServiceResponse> => {
+const deletePlan = async (planId: string): Promise<ServiceResponse> => {
   try {
     console.log('🗑️ Deleting plan:', planId);
     
-    // Validation
     if (!planId?.trim()) {
       return { success: false, error: 'Plan ID is required' };
     }
     
-    // Auth check
     const userId = requireAuth();
     
-    // Check plan exists
     const existingPlan = await getPlanById(planId);
     if (!existingPlan) {
       return { success: false, error: 'Plan not found' };
     }
     
-    // Check for active subscriptions
     let hasActiveSubscriptions = false;
     try {
       const subsQuery = query(
@@ -481,13 +415,12 @@ export const deletePlan = async (planId: string): Promise<ServiceResponse> => {
       hasActiveSubscriptions = !subsSnapshot.empty;
     } catch (error) {
       console.warn('⚠️ Could not check subscriptions, doing soft delete:', error);
-      hasActiveSubscriptions = true; // Safe fallback
+      hasActiveSubscriptions = true;
     }
     
     if (hasActiveSubscriptions) {
       console.log('⚠️ Plan has active subscriptions - soft deleting');
       
-      // Soft delete (mark as inactive)
       await updateDoc(doc(db, 'plans', planId), {
         is_active: false,
         deleted_at: new Date().toISOString(),
@@ -504,7 +437,6 @@ export const deletePlan = async (planId: string): Promise<ServiceResponse> => {
       });
       
     } else {
-      // Hard delete (no subscriptions)
       await deleteDoc(doc(db, 'plans', planId));
       
       console.log('✅ Plan permanently deleted');
@@ -523,31 +455,24 @@ export const deletePlan = async (planId: string): Promise<ServiceResponse> => {
   }
 };
 
-/**
- * Toggle plan active status
- */
-export const togglePlanStatus = async (
+const togglePlanStatus = async (
   planId: string,
   isActive: boolean
 ): Promise<ServiceResponse> => {
   try {
     console.log(`🔄 Toggling plan status to: ${isActive}`);
     
-    // Validation
     if (!planId?.trim()) {
       return { success: false, error: 'Plan ID is required' };
     }
     
-    // Auth check
     const userId = requireAuth();
     
-    // Check plan exists
     const existingPlan = await getPlanById(planId);
     if (!existingPlan) {
       return { success: false, error: 'Plan not found' };
     }
     
-    // Update status
     await updateDoc(doc(db, 'plans', planId), {
       is_active: isActive,
       updated_at: new Date().toISOString(),
@@ -570,21 +495,16 @@ export const togglePlanStatus = async (
   }
 };
 
-/**
- * Reorder plans (bulk update display_order)
- */
-export const reorderPlans = async (planOrders: { id: string; order: number }[]): Promise<ServiceResponse> => {
+const reorderPlans = async (planOrders: { id: string; order: number }[]): Promise<ServiceResponse> => {
   try {
     console.log('🔄 Reordering plans...');
     
-    // Auth check
     const userId = requireAuth();
     
     if (!Array.isArray(planOrders) || planOrders.length === 0) {
       return { success: false, error: 'Invalid plan orders data' };
     }
     
-    // Use batch write for atomic update
     const batch = writeBatch(db);
     
     planOrders.forEach(({ id, order }) => {
@@ -614,36 +534,10 @@ export const reorderPlans = async (planOrders: { id: string; order: number }[]):
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 🔍 HELPER FUNCTIONS
+// HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Get plan by Stripe price ID
- */
-// export const getPlanByStripePriceId = async (stripePriceId: string): Promise<Plan | null> => {
-//   try {
-//     if (!stripePriceId?.trim()) {
-//       throw new Error('Stripe price ID is required');
-//     }
-    
-//     const allPlans = await getAllPlans();
-//     const plan = allPlans.find(p => p.stripe_price_id === stripePriceId);
-    
-//     return plan || null;
-    
-//   } catch (error: any) {
-//     console.error('❌ Error fetching plan by Stripe ID:', error);
-//     return null;
-//   }
-// };
-
-
-
-/**
- * Get plan by Stripe price ID
- * ✅ Works without type modification
- */
-export const getPlanByStripePriceId = async (
+const getPlanByStripePriceId = async (
   stripePriceId: string
 ): Promise<Plan | null> => {
   try {
@@ -653,9 +547,8 @@ export const getPlanByStripePriceId = async (
     
     const allPlans = await getAllPlans();
     
-    // ✅ Safe property access
     const plan = allPlans.find(p => {
-      // @ts-ignore - stripe_price_id exists in Firestore but not in type
+      // @ts-ignore
       return p.stripe_price_id === stripePriceId;
     });
     
@@ -667,10 +560,7 @@ export const getPlanByStripePriceId = async (
   }
 };
 
-/**
- * Check if plan has active subscriptions
- */
-export const planHasActiveSubscriptions = async (planId: string): Promise<boolean> => {
+const planHasActiveSubscriptions = async (planId: string): Promise<boolean> => {
   try {
     const subsQuery = query(
       collection(db, 'subscriptions'),
@@ -686,27 +576,37 @@ export const planHasActiveSubscriptions = async (planId: string): Promise<boolea
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 🎯 EXPORTS
+// ✅ SINGLE EXPORT BLOCK (NO DUPLICATES)
 // ═══════════════════════════════════════════════════════════════
 
-export default {
-  // Read operations
+export {
   getAllPlans,
   getActivePlans,
   getPlanById,
   getPlanStats,
   getPlanByStripePriceId,
-  
-  // Write operations
   createPlan,
   updatePlan,
   deletePlan,
   togglePlanStatus,
   reorderPlans,
-  
-  // Validation & helpers
   validatePlanData,
   planHasActiveSubscriptions
 };
 
-console.log('✅ Plan Service loaded - PRODUCTION v2.0 (No Index Required)');
+export default {
+  getAllPlans,
+  getActivePlans,
+  getPlanById,
+  getPlanStats,
+  getPlanByStripePriceId,
+  createPlan,
+  updatePlan,
+  deletePlan,
+  togglePlanStatus,
+  reorderPlans,
+  validatePlanData,
+  planHasActiveSubscriptions
+};
+
+console.log('✅ Plan Service loaded - PRODUCTION v2.1 (FIXED)');

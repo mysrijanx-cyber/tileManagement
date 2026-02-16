@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PLAN TYPES - PRODUCTION v1.0
+// ✅ PLAN TYPES - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 export interface PlanFeature {
@@ -11,18 +11,17 @@ export interface PlanFeature {
 }
 
 export interface PlanLimits {
-  max_tiles: number;              // -1 for unlimited
+  max_tiles: number;
+  max_collections: number;
   max_qr_codes: number;
   max_workers: number;
-  analytics_retention_days: number;
-  customer_inquiries_limit: number;
+  max_storage_mb: number;
 }
 
 export interface Plan {
   id: string;
   plan_name: string;
   price: number;
-  currency: string;
   billing_cycle: 'monthly' | 'yearly';
   
   features: PlanFeature[];
@@ -30,36 +29,53 @@ export interface Plan {
   
   is_active: boolean;
   is_popular: boolean;
-  display_order: number;
+  display_order?: number;
+  
+  stripe_price_id?: string;
   
   created_at: string;
-  created_by: string;
+  created_by?: string;
   updated_at: string;
   updated_by?: string;
+  
+  deleted_at?: string;
+  deleted_by?: string;
 }
 
 export interface CreatePlanData {
   plan_name: string;
   price: number;
-  currency: string;
   billing_cycle: 'monthly' | 'yearly';
   features: PlanFeature[];
   limits: PlanLimits;
-  is_active: boolean;
-  is_popular: boolean;
-  display_order: number;
+  is_active?: boolean;
+  is_popular?: boolean;
+  display_order?: number;
+  stripe_price_id?: string;
 }
 
-export interface UpdatePlanData extends Partial<CreatePlanData> {
-  updated_by: string;
+export interface UpdatePlanData {
+  plan_name?: string;
+  price?: number;
+  billing_cycle?: 'monthly' | 'yearly';
+  features?: PlanFeature[];
+  limits?: PlanLimits;
+  is_active?: boolean;
+  is_popular?: boolean;
+  display_order?: number;
+  stripe_price_id?: string;
 }
 
 export interface PlanValidationError {
   plan_name?: string;
   price?: string;
+  billing_cycle?: string;
   features?: string;
   limits?: string;
-  [key: string]: string | undefined;
+  display_order?: string;
+  stripe_price_id?: string;
 }
 
-console.log('✅ Plan Types loaded - PRODUCTION v1.0');
+export default {};
+
+console.log('✅ Plan Types loaded - v2.0');

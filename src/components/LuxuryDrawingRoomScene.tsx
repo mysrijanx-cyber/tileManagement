@@ -12,7 +12,7 @@
 //     height: number;
 //   };
 //   furnitureScale?: {
-//     x: number;
+//     x: numbe r;
 //     y: number;
 //     z: number;
 //   };
@@ -630,9 +630,9 @@ interface LuxuryDrawingRoomSceneProps {
 
 // ✅ BIG LUXURY ROOM SIZE
 const DEFAULT_ROOM_DIMENSIONS = {
-  width: 35 * 0.3048,   // 24 feet (BIG)
-  depth: 40 * 0.3048,   // 30 feet (BIG)
-  height: 13 * 0.3048,  // 13 feet (HIGH)
+  width: 85 * 0.3048,   // 24 feet (BIG)
+  depth: 50 * 0.3048,   // 30 feet (BIG)
+  height: 15 * 0.3048,  // 13 feet (HIGH)
 };
 
 // ✅ PREMIUM MATERIALS
@@ -917,10 +917,10 @@ export const LuxuryDrawingRoomScene: React.FC<LuxuryDrawingRoomSceneProps> = ({
             </mesh>
             
             {/* Crystal Bulb */}
-            <mesh position={[0, -0.32, 0]} castShadow>
+            {/* <mesh position={[0, -0.32, 0]} castShadow>
               <sphereGeometry args={[0.085, 24, 24]} />
               <primitive object={Materials.crystalGlass()} attach="material" />
-            </mesh>
+            </mesh> */}
             
             <pointLight position={[0, -0.32, 0]} intensity={1.3} distance={8.5} color="#fff4e6" />
           </group>
@@ -1102,78 +1102,153 @@ export const LuxuryDrawingRoomScene: React.FC<LuxuryDrawingRoomSceneProps> = ({
   };
 
   // ✅ PREMIUM TV WALL PANEL (Enhanced)
-  const PremiumTVPanel = () => (
-    <group position={[0, 0, (-D / 2) + 0.18]}>
-      {/* Background Marble Panel */}
-      <mesh position={[0, 1.9, -0.085]} castShadow>
-        <boxGeometry args={[6.2, 3.5, 0.055]} />
-        <primitive object={Materials.premiumMarbleFloor()} attach="material" />
-      </mesh>
+  // const PremiumTVPanel = () => (
+  //   <group position={[0, 0, (-D / 2) + 0.18]}>
+  //     {/* Background Marble Panel */}
+  //     <mesh position={[0, 1.9, -0.085]} castShadow>
+  //       <boxGeometry args={[6.2, 3.5, 0.055]} />
+  //       <primitive object={Materials.premiumMarbleFloor()} attach="material" />
+  //     </mesh>
       
-      {/* Wooden Frame */}
-      <mesh position={[0, 1.9, -0.055]} castShadow>
-        <boxGeometry args={[5.5, 3.0, 0.035]} />
-        <primitive object={Materials.richWalnut()} attach="material" />
-      </mesh>
+  //     {/* Wooden Frame */}
+  //     <mesh position={[0, 1.9, -0.055]} castShadow>
+  //       <boxGeometry args={[5.5, 3.0, 0.035]} />
+  //       <primitive object={Materials.richWalnut()} attach="material" />
+  //     </mesh>
       
-      {/* TV Screen */}
-      <mesh position={[0, 1.9, 0]} castShadow>
-        <boxGeometry args={[3.5, 2.0, 0.085]} />
-        <primitive object={Materials.matteBlack()} attach="material" />
-      </mesh>
+  //     {/* TV Screen */}
+  //     <mesh position={[0, 1.9, 0]} castShadow>
+  //       <boxGeometry args={[3.5, 2.0, 0.085]} />
+  //       <primitive object={Materials.matteBlack()} attach="material" />
+  //     </mesh>
       
-      {/* TV Display (Screen Glow) */}
-      <mesh position={[0, 1.9, 0.048]}>
-        <planeGeometry args={[3.38, 1.92]} />
-        <meshStandardMaterial 
-          color="#0a0a0a" 
-          emissive="#0f1f2f" 
-          emissiveIntensity={0.22}
-          roughness={0.08}
-        />
-      </mesh>
+  //     {/* TV Display (Screen Glow) */}
+  //     <mesh position={[0, 1.9, 0.048]}>
+  //       <planeGeometry args={[3.38, 1.92]} />
+  //       <meshStandardMaterial 
+  //         color="#0a0a0a" 
+  //         emissive="#0f1f2f" 
+  //         emissiveIntensity={0.22}
+  //         roughness={0.08}
+  //       />
+  //     </mesh>
       
-      {/* Soundbar */}
-      <mesh position={[0, 0.82, 0.32]} castShadow>
-        <boxGeometry args={[1.35, 0.085, 0.13]} />
-        <primitive object={Materials.matteBlack()} attach="material" />
-      </mesh>
+  //     {/* Soundbar */}
+  //     <mesh position={[0, 0.82, 0.32]} castShadow>
+  //       <boxGeometry args={[1.35, 0.085, 0.13]} />
+  //       <primitive object={Materials.matteBlack()} attach="material" />
+  //     </mesh>
       
-      {/* TV Cabinet Base */}
-      <mesh position={[0, 0.38, -0.055]} castShadow>
-        <boxGeometry args={[5.8, 0.72, 0.55]} />
-        <primitive object={Materials.richWalnut()} attach="material" />
-      </mesh>
+  //     {/* TV Cabinet Base */}
+  //     <mesh position={[0, 0.38, -0.055]} castShadow>
+  //       <boxGeometry args={[5.8, 0.72, 0.55]} />
+  //       <primitive object={Materials.richWalnut()} attach="material" />
+  //     </mesh>
       
-      {/* Cabinet Drawers */}
-      {[-2.0, -0.65, 0.65, 2.0].map((x, i) => (
-        <group key={i} position={[x, 0.38, 0.25]}>
-          <mesh castShadow>
-            <boxGeometry args={[1.15, 0.58, 0.032]} />
-            <primitive object={Materials.darkOak()} attach="material" />
-          </mesh>
+  //     {/* Cabinet Drawers */}
+  //     {[-2.0, -0.65, 0.65, 2.0].map((x, i) => (
+  //       <group key={i} position={[x, 0.38, 0.25]}>
+  //         <mesh castShadow>
+  //           <boxGeometry args={[1.15, 0.58, 0.032]} />
+  //           <primitive object={Materials.darkOak()} attach="material" />
+  //         </mesh>
           
-          {/* Gold Handle */}
-          <mesh position={[0, 0, 0.032]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.009, 0.009, 0.42, 16]} />
-            <primitive object={Materials.brushedGold()} attach="material" />
-          </mesh>
-        </group>
-      ))}
+  //         {/* Gold Handle */}
+  //         <mesh position={[0, 0, 0.032]} rotation={[0, 0, Math.PI / 2]}>
+  //           <cylinderGeometry args={[0.009, 0.009, 0.42, 16]} />
+  //           <primitive object={Materials.brushedGold()} attach="material" />
+  //         </mesh>
+  //       </group>
+  //     ))}
       
-      {/* LED Under-lighting */}
-      <mesh position={[0, 0.78, -0.055]}>
-        <boxGeometry args={[5.6, 0.012, 0.45]} />
-        <meshStandardMaterial 
-          color="#ffffff" 
-          emissive="#ffe4b5" 
-          emissiveIntensity={0.58}
-        />
-      </mesh>
+  //     {/* LED Under-lighting */}
+  //     <mesh position={[0, 0.78, -0.055]}>
+  //       <boxGeometry args={[5.6, 0.012, 0.45]} />
+  //       <meshStandardMaterial 
+  //         color="#ffffff" 
+  //         emissive="#ffe4b5" 
+  //         emissiveIntensity={0.58}
+  //       />
+  //     </mesh>
       
-      <pointLight position={[0, 0.82, 0.22]} intensity={1.35} distance={4.5} color="#ffe4b5" />
-    </group>
-  );
+  //     <pointLight position={[0, 0.82, 0.22]} intensity={1.35} distance={4.5} color="#ffe4b5" />
+  //   </group>
+  // ); 
+
+  // ✅ PREMIUM TV WALL PANEL (SMALLER SIZE)
+const PremiumTVPanel = () => (
+  <group position={[0, 0, (-D / 2) + 0.18]}>
+    {/* Background Marble Panel - SMALLER */}
+    <mesh position={[0, 1.6, -0.085]} castShadow>
+      <boxGeometry args={[4.2, 2.6, 0.055]} />
+      <primitive object={Materials.premiumMarbleFloor()} attach="material" />
+    </mesh>
+    
+    {/* Wooden Frame - SMALLER */}
+    <mesh position={[0, 1.6, -0.055]} castShadow>
+      <boxGeometry args={[3.8, 2.2, 0.035]} />
+      <primitive object={Materials.richWalnut()} attach="material" />
+    </mesh>
+    
+    {/* TV Screen - SMALLER (50" instead of 75") */}
+    <mesh position={[0, 1.6, 0]} castShadow>
+      <boxGeometry args={[2.2, 1.3, 0.065]} />
+      <primitive object={Materials.matteBlack()} attach="material" />
+    </mesh>
+    
+    {/* TV Display (Screen Glow) - SMALLER */}
+    <mesh position={[0, 1.6, 0.038]}>
+      <planeGeometry args={[2.12, 1.22]} />
+      <meshStandardMaterial 
+        color="#0a0a0a" 
+        emissive="#0f1f2f" 
+        emissiveIntensity={0.22}
+        roughness={0.08}
+      />
+    </mesh>
+    
+    {/* Soundbar - SMALLER */}
+    <mesh position={[0, 0.68, 0.28]} castShadow>
+      <boxGeometry args={[0.95, 0.065, 0.11]} />
+      <primitive object={Materials.matteBlack()} attach="material" />
+    </mesh>
+    
+    {/* TV Cabinet Base - SMALLER */}
+    <mesh position={[0, 0.32, -0.055]} castShadow>
+      <boxGeometry args={[4.0, 0.58, 0.48]} />
+      <primitive object={Materials.richWalnut()} attach="material" />
+    </mesh>
+    
+    {/* Cabinet Drawers - SMALLER (3 instead of 4) */}
+    {[-1.2, 0, 1.2].map((x, i) => (
+      <group key={i} position={[x, 0.32, 0.22]}>
+        <mesh castShadow>
+          <boxGeometry args={[1.05, 0.48, 0.028]} />
+          <primitive object={Materials.darkOak()} attach="material" />
+        </mesh>
+        
+        {/* Gold Handle - SMALLER */}
+        <mesh position={[0, 0, 0.028]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.007, 0.007, 0.35, 16]} />
+          <primitive object={Materials.brushedGold()} attach="material" />
+        </mesh>
+      </group>
+    ))}
+    
+    {/* LED Under-lighting - SMALLER */}
+    <mesh position={[0, 0.64, -0.055]}>
+      <boxGeometry args={[3.8, 0.01, 0.38]} />
+      <meshStandardMaterial 
+        color="#ffffff" 
+        emissive="#ffe4b5" 
+        emissiveIntensity={0.58}
+      />
+    </mesh>
+    
+    <pointLight position={[0, 0.68, 0.19]} intensity={1.1} distance={3.5} color="#ffe4b5" />
+  </group>
+);
+
 
   // ✅ COMPACT LUXURY SOFA (Smaller Size)
   // const CompactLuxurySofa = () => {

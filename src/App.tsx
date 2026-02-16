@@ -690,7 +690,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, AdminProtectedRoute, SellerProtectedRoute } from './components/ProtectedRoute';
 import { WorkerProtectedRoute } from './components/WorkerProtectedRoute';
-import { PlansModal } from './components/Plans/PlansModal';
+import { PlansModal } from './components/Payment/PlansModal';
 import { PaymentSuccess } from './components/Payment/PaymentSuccess';
 import { PaymentFailure } from './components/Payment/PaymentFailure';
 import { useAuth } from './hooks/useAuth';

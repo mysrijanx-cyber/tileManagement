@@ -1,12 +1,11 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PLANS MODAL COMPONENT - PRODUCTION v1.0
-// Public view all plans (no login required)
+// ✅ PLANS MODAL - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { getActivePlans } from '../../lib/planService';
-import { PlanCard } from './PlanCard';
+import { PlanCard } from '../Plans/PlanCard';
 import type { Plan } from '../../types/plan.types';
 
 interface PlansModalProps {
@@ -64,16 +63,14 @@ export const PlansModal: React.FC<PlansModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       ></div>
 
-      {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden">
-          {/* Header */}
+          
           <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 sm:p-6 z-10">
             <div className="flex items-center justify-between">
               <div>
@@ -93,7 +90,6 @@ export const PlansModal: React.FC<PlansModalProps> = ({
             </div>
           </div>
 
-          {/* Content */}
           <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
             {loading ? (
               <div className="flex items-center justify-center py-12">
@@ -122,7 +118,6 @@ export const PlansModal: React.FC<PlansModalProps> = ({
               </div>
             ) : (
               <>
-                {/* Plans Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                   {plans.map((plan) => (
                     <PlanCard
@@ -136,13 +131,12 @@ export const PlansModal: React.FC<PlansModalProps> = ({
                   ))}
                 </div>
 
-                {/* Info Footer */}
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                     <div>
                       <div className="text-2xl mb-2">🔒</div>
                       <h4 className="font-semibold text-gray-800 text-sm mb-1">Secure Payment</h4>
-                      <p className="text-xs text-gray-600">PayU encrypted checkout</p>
+                      <p className="text-xs text-gray-600">Razorpay encrypted checkout</p>
                     </div>
                     <div>
                       <div className="text-2xl mb-2">📧</div>
@@ -157,7 +151,6 @@ export const PlansModal: React.FC<PlansModalProps> = ({
                   </div>
                 </div>
 
-                {/* Login Prompt */}
                 {!isLoggedIn && (
                   <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
                     <p className="text-yellow-800 font-medium">
@@ -174,4 +167,4 @@ export const PlansModal: React.FC<PlansModalProps> = ({
   );
 };
 
-console.log('✅ PlansModal Component loaded - PRODUCTION v1.0');
+console.log('✅ PlansModal Component loaded - PRODUCTION v2.0');

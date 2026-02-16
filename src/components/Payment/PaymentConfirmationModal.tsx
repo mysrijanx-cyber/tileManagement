@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PAYMENT CONFIRMATION MODAL - PRODUCTION v1.0
-// Shows plan details before payment
+// ✅ PAYMENT CONFIRMATION MODAL - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState } from 'react';
@@ -36,17 +35,14 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
 
   return (
     <div className="fixed inset-0 z-[60] overflow-y-auto">
-      {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-60 transition-opacity"
         onClick={!isProcessing ? onClose : undefined}
       ></div>
 
-      {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
           
-          {/* Header */}
           <div className="sticky top-0 bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 z-10">
             <div className="flex items-center justify-between">
               <div>
@@ -64,10 +60,8 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
             </div>
           </div>
 
-          {/* Content */}
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
             
-            {/* Plan Summary */}
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 mb-6 border-2 border-purple-200">
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -92,7 +86,6 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
                 </div>
               </div>
 
-              {/* Billing Info */}
               <div className="grid grid-cols-2 gap-4 mt-4 p-4 bg-white rounded-lg border border-purple-200">
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-purple-600" />
@@ -115,7 +108,6 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
               </div>
             </div>
 
-            {/* Features Included */}
             <div className="mb-6">
               <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-600" />
@@ -156,7 +148,6 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
               </div>
             </div>
 
-            {/* Plan Limits */}
             {plan.limits && (
               <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <h4 className="font-semibold text-gray-800 mb-3 text-sm">
@@ -185,23 +176,31 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
               </div>
             )}
 
-            {/* Payment Security Info */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
                 <div className="text-2xl">🔒</div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-green-800 mb-1 text-sm">
-                    Secure Payment via PayU
+                    Secure Payment via Razorpay
                   </h4>
                   <p className="text-xs text-green-700">
-                    Your payment is processed through PayU's secure payment gateway. 
+                    Your payment is processed through Razorpay's secure payment gateway. 
                     We don't store any card information.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Terms & Conditions */}
+            <div className="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4">
+              <div className="flex items-center justify-center gap-2 text-yellow-800 font-semibold mb-2">
+                <span className="text-xl">⚠️</span>
+                <span className="text-sm">TEST MODE</span>
+              </div>
+              <p className="text-xs text-yellow-700 text-center">
+                This is a test transaction. No real money will be charged.
+              </p>
+            </div>
+
             <div className="mb-6">
               <label className="flex items-start gap-3 cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <input
@@ -230,7 +229,6 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
               </label>
             </div>
 
-            {/* What Happens Next */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <h4 className="font-semibold text-blue-800 mb-3 text-sm">
                 📝 What happens next?
@@ -238,7 +236,7 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
               <ol className="space-y-2 text-xs text-blue-700">
                 <li className="flex items-start gap-2">
                   <span className="font-bold">1.</span>
-                  <span>You'll be redirected to PayU's secure payment page</span>
+                  <span>You'll be redirected to Razorpay's secure payment page</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold">2.</span>
@@ -257,7 +255,6 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
 
           </div>
 
-          {/* Footer Buttons */}
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
             <div className="flex gap-3">
               <button
@@ -295,4 +292,4 @@ export const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> =
   );
 };
 
-console.log('✅ PaymentConfirmationModal Component loaded - PRODUCTION v1.0');
+console.log('✅ PaymentConfirmationModal Component loaded - PRODUCTION v2.0');

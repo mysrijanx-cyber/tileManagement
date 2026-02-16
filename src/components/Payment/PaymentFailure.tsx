@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PAYMENT FAILURE PAGE - RAZORPAY PRODUCTION v1.0
+// ✅ PAYMENT FAILURE - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState } from 'react';
@@ -37,7 +37,6 @@ export const PaymentFailure: React.FC = () => {
         if (paymentData) {
           setPayment(paymentData);
           
-          // Update payment status to failed if not already
           if (paymentData.payment_status !== 'failed') {
             await updatePaymentStatus(
               paymentId,
@@ -69,7 +68,7 @@ export const PaymentFailure: React.FC = () => {
     const subject = encodeURIComponent('Payment Issue - Help Required');
     const body = encodeURIComponent(
       `Payment ID: ${payment?.id || 'N/A'}\n` +
-      `Order ID: ${payment?.razorpay_order_id || 'N/A'}\n` +
+      `Transaction ID: ${payment?.transaction_id || 'N/A'}\n` +
       `Error: ${errorMessage}\n` +
       `Date: ${new Date().toLocaleString()}\n\n` +
       `Please describe your issue:`
@@ -77,7 +76,6 @@ export const PaymentFailure: React.FC = () => {
     window.location.href = `mailto:support@srijanxtile.com?subject=${subject}&body=${body}`;
   };
 
-  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center p-4">
@@ -94,12 +92,10 @@ export const PaymentFailure: React.FC = () => {
     );
   }
 
-  // Failure State
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
         
-        {/* Failure Header */}
         <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white p-8 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-4">
             <XCircle className="w-12 h-12 text-red-600" />
@@ -110,10 +106,8 @@ export const PaymentFailure: React.FC = () => {
           </p>
         </div>
 
-        {/* Error Details */}
         <div className="p-8">
           
-          {/* Error Message */}
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-red-800 mb-2 flex items-center gap-2">
               <span className="text-xl">⚠️</span>
@@ -129,7 +123,6 @@ export const PaymentFailure: React.FC = () => {
             )}
           </div>
 
-          {/* Transaction Info */}
           {payment && (
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <h3 className="font-semibold text-gray-800 mb-4">
@@ -141,8 +134,8 @@ export const PaymentFailure: React.FC = () => {
                   <span className="font-mono text-gray-800">{payment.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Razorpay Order ID:</span>
-                  <span className="font-mono text-gray-800">{payment.razorpay_order_id}</span>
+                  <span className="text-gray-600">Transaction ID:</span>
+                  <span className="font-mono text-gray-800">{payment.transaction_id || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Attempted Amount:</span>
@@ -164,7 +157,6 @@ export const PaymentFailure: React.FC = () => {
             </div>
           )}
 
-          {/* Common Reasons */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-yellow-800 mb-3">
               💡 Common Reasons for Payment Failure
@@ -197,7 +189,6 @@ export const PaymentFailure: React.FC = () => {
             </ul>
           </div>
 
-          {/* Refund Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-blue-800 mb-3">
               💰 About Refunds
@@ -211,11 +202,10 @@ export const PaymentFailure: React.FC = () => {
               <li>• Amount will be credited to the same payment source</li>
             </ul>
             <p className="text-xs text-blue-600 mt-3">
-              For refund queries, contact Razorpay support with your order ID
+              For refund queries, contact Razorpay support with your transaction ID
             </p>
           </div>
 
-          {/* Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <button
               onClick={handleRetry}
@@ -242,7 +232,6 @@ export const PaymentFailure: React.FC = () => {
             </button>
           </div>
 
-          {/* Support Info */}
           <div className="text-center text-sm text-gray-500 border-t pt-6">
             <p className="mb-2">Need immediate assistance?</p>
             <p>
@@ -265,4 +254,4 @@ export const PaymentFailure: React.FC = () => {
   );
 };
 
-console.log('✅ PaymentFailure Component loaded - RAZORPAY PRODUCTION v1.0');
+console.log('✅ PaymentFailure Component loaded - PRODUCTION v2.0');

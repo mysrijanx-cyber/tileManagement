@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ SUBSCRIPTION SERVICE - PRODUCTION v1.0
+// ✅ SUBSCRIPTION SERVICE - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import {
@@ -17,16 +17,12 @@ import {
 import { db } from './firebase';
 import type { Subscription, CreateSubscriptionData } from '../types/payment.types';
 
-/**
- * Create new subscription
- */
 export const createSubscription = async (
   data: CreateSubscriptionData
 ): Promise<{ success: boolean; subscriptionId?: string; error?: string }> => {
   try {
     console.log('➕ Creating subscription...');
     
-    // Calculate dates
     const startDate = new Date();
     const endDate = new Date();
     
@@ -38,7 +34,6 @@ export const createSubscription = async (
     
     const renewalDate = new Date(endDate);
     
-    // Create subscription
     const subscription: Omit<Subscription, 'id'> = {
       seller_id: data.seller_id,
       plan_id: data.plan_id,
@@ -59,7 +54,6 @@ export const createSubscription = async (
     
     console.log('✅ Subscription created:', docRef.id);
     
-    // Update seller document
     try {
       const sellerQuery = query(
         collection(db, 'sellers'),
@@ -83,7 +77,6 @@ export const createSubscription = async (
       console.warn('⚠️ Could not update seller document:', updateError);
     }
     
-    // Log activity
     try {
       await addDoc(collection(db, 'sellerActivity'), {
         seller_id: data.seller_id,
@@ -106,9 +99,6 @@ export const createSubscription = async (
   }
 };
 
-/**
- * Get seller's current subscription
- */
 export const getSellerSubscription = async (sellerId: string): Promise<Subscription | null> => {
   try {
     console.log('🔍 Fetching subscription for seller:', sellerId);
@@ -142,9 +132,6 @@ export const getSellerSubscription = async (sellerId: string): Promise<Subscript
   }
 };
 
-/**
- * Get subscription history
- */
 export const getSubscriptionHistory = async (
   sellerId: string,
   limitCount: number = 10
@@ -175,9 +162,6 @@ export const getSubscriptionHistory = async (
   }
 };
 
-/**
- * Cancel subscription
- */
 export const cancelSubscription = async (
   subscriptionId: string,
   reason: string
@@ -194,12 +178,10 @@ export const cancelSubscription = async (
     
     console.log('✅ Subscription cancelled');
     
-    // Get subscription data for logging
     const subDoc = await getDoc(doc(db, 'subscriptions', subscriptionId));
     if (subDoc.exists()) {
       const subData = subDoc.data();
       
-      // Update seller document
       try {
         const sellerQuery = query(
           collection(db, 'sellers'),
@@ -218,7 +200,6 @@ export const cancelSubscription = async (
         console.warn('⚠️ Could not update seller:', updateError);
       }
       
-      // Log activity
       try {
         await addDoc(collection(db, 'sellerActivity'), {
           seller_id: subData.seller_id,
@@ -241,9 +222,6 @@ export const cancelSubscription = async (
   }
 };
 
-/**
- * Check if subscription is expired
- */
 export const isSubscriptionExpired = (subscription: Subscription): boolean => {
   if (!subscription.end_date) return true;
   
@@ -253,9 +231,6 @@ export const isSubscriptionExpired = (subscription: Subscription): boolean => {
   return now > endDate;
 };
 
-/**
- * Get days until expiry
- */
 export const getDaysUntilExpiry = (subscription: Subscription): number => {
   if (!subscription.end_date) return 0;
   
@@ -268,4 +243,13 @@ export const getDaysUntilExpiry = (subscription: Subscription): number => {
   return diffDays > 0 ? diffDays : 0;
 };
 
-console.log('✅ Subscription Service loaded - PRODUCTION v1.0');
+export default {
+  createSubscription,
+  getSellerSubscription,
+  getSubscriptionHistory,
+  cancelSubscription,
+  isSubscriptionExpired,
+  getDaysUntilExpiry
+};
+
+console.log('✅ Subscription Service loaded - PRODUCTION v2.0');

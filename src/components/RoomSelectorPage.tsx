@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader, AlertCircle, CheckCircle, X, Calculator } from 'lucide-react';
 import { getTileById } from '../lib/firebaseutils';
 import { Tile } from '../types';
-import { TileCalculatorModal } from '../components/TileCalculatorModal';
+// import { TileCalculatorModal } from '../components/TileCalculatorModal';
 
 // ═══════════════════════════════════════════════════════════════
 // INTERFACES
@@ -36,7 +36,7 @@ const ROOM_OPTIONS: RoomOption[] = [
     description: 'See how tiles look in your living space',
     thumbnail: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400',
     surfaceOptions: ['floor'],
-    defaultWidth: 15,
+    defaultWidth: 20,
     defaultDepth: 20,
     defaultHeight: 11
   },
@@ -48,8 +48,8 @@ const ROOM_OPTIONS: RoomOption[] = [
     description: 'Visualize floor and backsplash tiles',
     thumbnail: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=400',
     surfaceOptions: ['floor', 'wall'],
-    defaultWidth: 10,
-    defaultDepth: 12,
+    defaultWidth: 25,
+    defaultDepth: 25,
     defaultHeight: 11
   },
   {
@@ -60,8 +60,8 @@ const ROOM_OPTIONS: RoomOption[] = [
     description: 'Preview floor and wall tile combinations',
     thumbnail: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400',
     surfaceOptions: ['floor', 'wall'],
-    defaultWidth: 8,
-    defaultDepth: 10,
+    defaultWidth:15,
+    defaultDepth:15,
     defaultHeight: 11
   }
 ];
@@ -134,35 +134,81 @@ export const RoomSelectorPage: React.FC = () => {
     }
   };
 
-  const handleRoomSelect = (roomType: string) => {
-    const roomData = ROOM_OPTIONS.find(r => r.type === roomType);
-    if (!roomData || !tileId) return;
+  // const handleRoomSelect = (roomType: string) => {
+  //   const roomData = ROOM_OPTIONS.find(r => r.type === roomType);
+  //   if (!roomData || !tileId) return;
 
-    const dimensionData = {
-      width: roomData.defaultWidth,
-      depth: roomData.defaultDepth,
-      height: roomData.defaultHeight,
-      timestamp: Date.now()
-    };
+  //   const dimensionData = {
+  //     width: roomData.defaultWidth,
+  //     depth: roomData.defaultDepth,
+  //     height: roomData.defaultHeight,
+  //     timestamp: Date.now()
+  //   };
 
-    localStorage.setItem(`room_dimensions_${roomType}`, JSON.stringify(dimensionData));
+  //   localStorage.setItem(`room_dimensions_${roomType}`, JSON.stringify(dimensionData));
     
-    setSelectedRoom(roomType);
+  //   setSelectedRoom(roomType);
     
-    if (navigator.vibrate) {
-      navigator.vibrate([50, 30, 50]);
-    }
+  //   if (navigator.vibrate) {
+  //     navigator.vibrate([50, 30, 50]);
+  //   }
     
-    console.log('✅ Navigating to 3D view with default dimensions:', {
-      room: roomType,
-      dimensions: `${roomData.defaultWidth}' × ${roomData.defaultDepth}' × ${roomData.defaultHeight}'`
+  //   console.log('✅ Navigating to 3D view with default dimensions:', {
+  //     room: roomType,
+  //     dimensions: `${roomData.defaultWidth}' × ${roomData.defaultDepth}' × ${roomData.defaultHeight}'`
+  //   });
+    
+  //   setTimeout(() => {
+  //     navigate(`/3d-view/${tileId}/${roomType}`);
+  //   }, 150);
+  // }; 
+
+const handleRoomSelect = (roomType: string) => {
+  const roomData = ROOM_OPTIONS.find(r => r.type === roomType);
+  if (!roomData || !tileId) return;
+
+  // ✅ VERSION CONTROL - Change this when you update room sizes
+  const ROOM_CONFIG_VERSION = '2.0'; // Increment this on each update
+  
+  // ✅ AUTO-CLEAR OLD CACHED DIMENSIONS
+  const cachedVersion = localStorage.getItem('room_config_version');
+  if (cachedVersion !== ROOM_CONFIG_VERSION) {
+    // Clear all old room data
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('room_dimensions_') || key.startsWith('room_state_')) {
+        localStorage.removeItem(key);
+      }
     });
-    
-    setTimeout(() => {
-      navigate(`/3d-view/${tileId}/${roomType}`);
-    }, 150);
+    localStorage.setItem('room_config_version', ROOM_CONFIG_VERSION);
+    console.log('🔄 Room configurations updated to version', ROOM_CONFIG_VERSION);
+  }
+
+  const dimensionData = {
+    width: roomData.defaultWidth,
+    depth: roomData.defaultDepth,
+    height: roomData.defaultHeight,
+    timestamp: Date.now(),
+    version: ROOM_CONFIG_VERSION  // ✅ Track version
   };
 
+  localStorage.setItem(`room_dimensions_${roomType}`, JSON.stringify(dimensionData));
+  
+  setSelectedRoom(roomType);
+  
+  if (navigator.vibrate) {
+    navigator.vibrate([50, 30, 50]);
+  }
+  
+  console.log('✅ Navigating to 3D view with dimensions:', {
+    room: roomType,
+    dimensions: `${roomData.defaultWidth}' × ${roomData.defaultDepth}' × ${roomData.defaultHeight}'`,
+    version: ROOM_CONFIG_VERSION
+  });
+  
+  setTimeout(() => {
+    navigate(`/3d-view/${tileId}/${roomType}`);
+  }, 150);
+};
   const handleImageError = (roomId: string) => {
     setImageLoadErrors(prev => new Set(prev).add(roomId));
   };
@@ -486,7 +532,7 @@ export const RoomSelectorPage: React.FC = () => {
       </footer>
 
       {/* ✅ TILE CALCULATOR MODAL */}
-      {tile && (
+      {/* {tile && (
         <TileCalculatorModal
           isOpen={showCalculator}
           onClose={() => setShowCalculator(false)}
@@ -494,7 +540,7 @@ export const RoomSelectorPage: React.FC = () => {
           tileSize={tile.size}
           tileCategory={tile.category}
         />
-      )}
+      )} */}
 
       {/* CSS ANIMATIONS */}
       <style>{`

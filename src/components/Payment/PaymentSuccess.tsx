@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PAYMENT SUCCESS PAGE - RAZORPAY PRODUCTION v1.0
+// ✅ PAYMENT SUCCESS - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState } from 'react';
@@ -41,7 +41,6 @@ export const PaymentSuccess: React.FC = () => {
       
       setPayment(paymentData);
       
-      // Load plan details
       const planData = await getPlanById(paymentData.plan_id);
       setPlan(planData);
       
@@ -70,7 +69,7 @@ PAYMENT DETAILS
 ───────────────────────────────────────
 
 Razorpay Payment ID: ${payment.razorpay_payment_id || 'N/A'}
-Razorpay Order ID: ${payment.razorpay_order_id}
+Transaction ID: ${payment.transaction_id || 'N/A'}
 Receipt Number: ${payment.razorpay_receipt}
 Status: ${payment.payment_status.toUpperCase()}
 
@@ -110,7 +109,6 @@ For support, contact: support@srijanxtile.com
     window.URL.revokeObjectURL(url);
   };
 
-  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -127,7 +125,6 @@ For support, contact: support@srijanxtile.com
     );
   }
 
-  // Error State
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
@@ -148,12 +145,10 @@ For support, contact: support@srijanxtile.com
     );
   }
 
-  // Success State
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
         
-        {/* Success Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-8 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-4 animate-bounce">
             <CheckCircle className="w-12 h-12 text-green-600" />
@@ -164,16 +159,13 @@ For support, contact: support@srijanxtile.com
           </p>
         </div>
 
-        {/* Payment Details */}
         <div className="p-8">
           
-          {/* Success Message */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 mb-6">
             <span className="text-green-600">✓</span>
             <span className="text-sm text-green-800 font-medium">Payment Verified & Subscription Activated</span>
           </div>
 
-          {/* Transaction Info */}
           {payment && (
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -186,8 +178,8 @@ For support, contact: support@srijanxtile.com
                   <span className="font-mono text-gray-800">{payment.razorpay_payment_id || 'Processing...'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Order ID:</span>
-                  <span className="font-mono text-gray-800">{payment.razorpay_order_id}</span>
+                  <span className="text-gray-600">Transaction ID:</span>
+                  <span className="font-mono text-gray-800">{payment.transaction_id || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Receipt Number:</span>
@@ -209,7 +201,6 @@ For support, contact: support@srijanxtile.com
             </div>
           )}
 
-          {/* Plan Info */}
           {plan && (
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 mb-6 border-2 border-purple-200">
               <h3 className="font-semibold text-gray-800 mb-4">
@@ -241,7 +232,6 @@ For support, contact: support@srijanxtile.com
             </div>
           )}
 
-          {/* Next Steps */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-blue-800 mb-3">
               🎉 What's Next?
@@ -266,7 +256,6 @@ For support, contact: support@srijanxtile.com
             </ol>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleDownloadReceipt}
@@ -284,7 +273,6 @@ For support, contact: support@srijanxtile.com
             </button>
           </div>
 
-          {/* Support Info */}
           <div className="mt-6 text-center text-sm text-gray-500">
             <p>Need help? Contact us at{' '}
               <a href="mailto:support@srijanxtile.com" className="text-purple-600 hover:underline">
@@ -299,4 +287,4 @@ For support, contact: support@srijanxtile.com
   );
 };
 
-console.log('✅ PaymentSuccess Component loaded - RAZORPAY PRODUCTION v1.0');
+console.log('✅ PaymentSuccess Component loaded - PRODUCTION v2.0');

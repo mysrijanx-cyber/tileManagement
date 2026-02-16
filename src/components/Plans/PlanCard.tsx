@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// ✅ PLAN CARD COMPONENT - PRODUCTION v1.0
+// ✅ PLAN CARD - PRODUCTION READY v2.0
 // ═══════════════════════════════════════════════════════════════
 
 import React from 'react';
@@ -37,7 +37,6 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           : 'hover:shadow-xl hover:-translate-y-1'
       } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
     >
-      {/* Popular Badge */}
       {plan.is_popular && (
         <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-1 rounded-bl-xl font-bold text-xs sm:text-sm shadow-lg">
           ⭐ POPULAR
@@ -45,12 +44,10 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       )}
 
       <div className="p-6 sm:p-8">
-        {/* Plan Name */}
         <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
           {plan.plan_name}
         </h3>
 
-        {/* Price */}
         <div className="mb-6">
           <div className="flex items-baseline gap-2">
             <span className="text-4xl sm:text-5xl font-extrabold text-purple-600">
@@ -67,7 +64,6 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           )}
         </div>
 
-        {/* Features List */}
         <div className="space-y-3 mb-8">
           {plan.features.map((feature, index) => (
             <div
@@ -125,7 +121,6 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           ))}
         </div>
 
-        {/* Limits Info */}
         {plan.limits && (
           <div className="mb-6 p-3 bg-gray-50 rounded-lg">
             <p className="text-xs font-semibold text-gray-700 mb-2">Plan Limits:</p>
@@ -152,7 +147,6 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           </div>
         )}
 
-        {/* Select Button */}
         {showSelectButton && (
           <button
             onClick={handleSelect}
@@ -185,4 +179,4 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   );
 };
 
-console.log('✅ PlanCard Component loaded - PRODUCTION v1.0');
+console.log('✅ PlanCard Component loaded - PRODUCTION v2.0');
