@@ -239,9 +239,9 @@ const ROOM_CONFIGS = {
     height: 12 * 0.3048    // 9 feet
   },
   bathroom: { 
-    width: 8 * 0.3048,    // 8 feet
-    depth: 10 * 0.3048,   // 10 feet
-    height: 9 * 0.3048    // 9 feet
+    width: 15 * 0.3048,    // 8 feet
+    depth: 15 * 0.3048,   // 10 feet
+    height: 11 * 0.3048    // 9 feet
   }
 } as const;
 
@@ -265,12 +265,29 @@ const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
   ],
 };
 
+// const generateVerticalStripesPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
+//   const selectedIndices: number[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+//       const pattern = (col + randomOffset) % 3;
+//       if (pattern === 0 || pattern === 1) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
 const generateVerticalStripesPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
   const selectedIndices: number[] = [];
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 Y-AXIS INVERSION FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
+      const index = (visualRow * cols) + col + 1;  // 👈 Use visualRow
       const pattern = (col + randomOffset) % 3;
       if (pattern === 0 || pattern === 1) {
         selectedIndices.push(index);
@@ -278,6 +295,7 @@ const generateVerticalStripesPattern = (cols: number, rows: number, randomOffset
     }
   }
   
+  console.log(`✅ Vertical pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
@@ -381,84 +399,185 @@ const verifyTileSeller = (tileData: any, currentUser: any): boolean => {
 
 
 // Horizontal Stripes
+// const generateHorizontalStripesPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
+//   const selectedIndices: number[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+//       const pattern = (row + randomOffset) % 3;
+//       if (pattern === 0 || pattern === 1) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
+
 const generateHorizontalStripesPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
   const selectedIndices: number[] = [];
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
-      const pattern = (row + randomOffset) % 3;
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
+      const pattern = (row + randomOffset) % 3;  // Note: Use original row for pattern logic
       if (pattern === 0 || pattern === 1) {
         selectedIndices.push(index);
       }
     }
   }
   
+  console.log(`✅ Horizontal pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
 // Diagonal Pattern
+// const generateDiagonalPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
+//   const selectedIndices: number[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+//       const diagonal = (row + col + randomOffset) % 4;
+//       if (diagonal === 0 || diagonal === 1) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
+
 const generateDiagonalPattern = (cols: number, rows: number, randomOffset: number = 0): number[] => {
   const selectedIndices: number[] = [];
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
-      const diagonal = (row + col + randomOffset) % 4;
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
+      const diagonal = (row + col + randomOffset) % 4;  // Use original row for logic
       if (diagonal === 0 || diagonal === 1) {
         selectedIndices.push(index);
       }
     }
   }
   
+  console.log(`✅ Diagonal pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
 // Checkerboard Pattern
+// const generateCheckerboardPattern = (cols: number, rows: number, invert: boolean = false): number[] => {
+//   const selectedIndices: number[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+//       const isEven = (row + col) % 2 === 0;
+//       if (invert ? !isEven : isEven) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
 const generateCheckerboardPattern = (cols: number, rows: number, invert: boolean = false): number[] => {
   const selectedIndices: number[] = [];
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
-      const isEven = (row + col) % 2 === 0;
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
+      const isEven = (row + col) % 2 === 0;  // Use original row for logic
       if (invert ? !isEven : isEven) {
         selectedIndices.push(index);
       }
     }
   }
   
+  console.log(`✅ Checkerboard pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
 // Random Scatter Pattern
+// const generateRandomPattern = (cols: number, rows: number, density: number = 0.6, seed: number = 0): number[] => {
+//   const selectedIndices: number[] = [];
+//   const totalTiles = cols * rows;
+  
+//   // Seeded random for reproducibility
+//   let random = seed;
+//   const seededRandom = () => {
+//     random = (random * 9301 + 49297) % 233280;
+//     return random / 233280;
+//   };
+  
+//   for (let i = 1; i <= totalTiles; i++) {
+//     if (seededRandom() < density) {
+//       selectedIndices.push(i);
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
+
 const generateRandomPattern = (cols: number, rows: number, density: number = 0.6, seed: number = 0): number[] => {
   const selectedIndices: number[] = [];
-  const totalTiles = cols * rows;
   
-  // Seeded random for reproducibility
   let random = seed;
   const seededRandom = () => {
     random = (random * 9301 + 49297) % 233280;
     return random / 233280;
   };
   
-  for (let i = 1; i <= totalTiles; i++) {
-    if (seededRandom() < density) {
-      selectedIndices.push(i);
+  for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
+    for (let col = 0; col < cols; col++) {
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
+      if (seededRandom() < density) {
+        selectedIndices.push(index);
+      }
     }
   }
   
+  console.log(`✅ Random pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
-
 // Border Frame Pattern
+// const generateBorderPattern = (cols: number, rows: number, thickness: number = 1): number[] => {
+//   const selectedIndices: number[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+      
+//       const isTopBorder = row < thickness;
+//       const isBottomBorder = row >= rows - thickness;
+//       const isLeftBorder = col < thickness;
+//       const isRightBorder = col >= cols - thickness;
+      
+//       if (isTopBorder || isBottomBorder || isLeftBorder || isRightBorder) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
 const generateBorderPattern = (cols: number, rows: number, thickness: number = 1): number[] => {
   const selectedIndices: number[] = [];
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
       
       const isTopBorder = row < thickness;
       const isBottomBorder = row >= rows - thickness;
@@ -471,16 +590,39 @@ const generateBorderPattern = (cols: number, rows: number, thickness: number = 1
     }
   }
   
+  console.log(`✅ Border pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
 // Corner Focus Pattern
+// const generateCornerPattern = (cols: number, rows: number, size: number = 3): number[] => {
+//   const selectedIndices: number[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+      
+//       const isTopLeft = row < size && col < size;
+//       const isTopRight = row < size && col >= cols - size;
+//       const isBottomLeft = row >= rows - size && col < size;
+//       const isBottomRight = row >= rows - size && col >= cols - size;
+      
+//       if (isTopLeft || isTopRight || isBottomLeft || isBottomRight) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
 const generateCornerPattern = (cols: number, rows: number, size: number = 3): number[] => {
   const selectedIndices: number[] = [];
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
       
       const isTopLeft = row < size && col < size;
       const isTopRight = row < size && col >= cols - size;
@@ -493,18 +635,41 @@ const generateCornerPattern = (cols: number, rows: number, size: number = 3): nu
     }
   }
   
+  console.log(`✅ Corner pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
 // Cross Pattern
+// const generateCrossPattern = (cols: number, rows: number, thickness: number = 2): number[] => {
+//   const selectedIndices: number[] = [];
+//   const centerCol = Math.floor(cols / 2);
+//   const centerRow = Math.floor(rows / 2);
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const index = (row * cols) + col + 1;
+      
+//       const isVerticalLine = Math.abs(col - centerCol) < thickness;
+//       const isHorizontalLine = Math.abs(row - centerRow) < thickness;
+      
+//       if (isVerticalLine || isHorizontalLine) {
+//         selectedIndices.push(index);
+//       }
+//     }
+//   }
+  
+//   return selectedIndices;
+// };
+
 const generateCrossPattern = (cols: number, rows: number, thickness: number = 2): number[] => {
   const selectedIndices: number[] = [];
   const centerCol = Math.floor(cols / 2);
   const centerRow = Math.floor(rows / 2);
   
   for (let row = 0; row < rows; row++) {
+    const visualRow = rows - 1 - row;  // 👈 FIX
     for (let col = 0; col < cols; col++) {
-      const index = (row * cols) + col + 1;
+      const index = (visualRow * cols) + col + 1;  // 👈 FIX
       
       const isVerticalLine = Math.abs(col - centerCol) < thickness;
       const isHorizontalLine = Math.abs(row - centerRow) < thickness;
@@ -515,39 +680,84 @@ const generateCrossPattern = (cols: number, rows: number, thickness: number = 2)
     }
   }
   
+  console.log(`✅ Cross pattern: ${selectedIndices.length} tiles (${cols}×${rows})`);
   return selectedIndices;
 };
 
 
 
 // Universal Pattern Generator
+// const generatePattern = (
+//   patternType: PatternType,
+//   cols: number,
+//   rows: number,
+//   variant: number = 0
+// ): number[] => {
+//   switch (patternType) {
+//     case 'vertical':
+//       return generateVerticalStripesPattern(cols, rows, variant);
+//     case 'horizontal':
+//       return generateHorizontalStripesPattern(cols, rows, variant);
+//     case 'diagonal':
+//       return generateDiagonalPattern(cols, rows, variant);
+//     case 'checkerboard':
+//       return generateCheckerboardPattern(cols, rows, variant % 2 === 1);
+//     case 'random':
+//       return generateRandomPattern(cols, rows, 0.6, variant);
+//     case 'border':
+//       return generateBorderPattern(cols, rows, Math.max(1, variant % 3));
+//     case 'corners':
+//       return generateCornerPattern(cols, rows, Math.max(2, 3 + (variant % 3)));
+//     case 'cross':
+//       return generateCrossPattern(cols, rows, Math.max(1, 2 + (variant % 2)));
+//     default:
+//       return generateVerticalStripesPattern(cols, rows, variant);
+//   }
+// };
+
 const generatePattern = (
   patternType: PatternType,
   cols: number,
   rows: number,
   variant: number = 0
 ): number[] => {
+  console.log(`🎨 Generating ${patternType} pattern:`, { cols, rows, variant });
+  
+  let result: number[];
+  
   switch (patternType) {
     case 'vertical':
-      return generateVerticalStripesPattern(cols, rows, variant);
+      result = generateVerticalStripesPattern(cols, rows, variant);
+      break;
     case 'horizontal':
-      return generateHorizontalStripesPattern(cols, rows, variant);
+      result = generateHorizontalStripesPattern(cols, rows, variant);
+      break;
     case 'diagonal':
-      return generateDiagonalPattern(cols, rows, variant);
+      result = generateDiagonalPattern(cols, rows, variant);
+      break;
     case 'checkerboard':
-      return generateCheckerboardPattern(cols, rows, variant % 2 === 1);
+      result = generateCheckerboardPattern(cols, rows, variant % 2 === 1);
+      break;
     case 'random':
-      return generateRandomPattern(cols, rows, 0.6, variant);
+      result = generateRandomPattern(cols, rows, 0.6, variant);
+      break;
     case 'border':
-      return generateBorderPattern(cols, rows, Math.max(1, variant % 3));
+      result = generateBorderPattern(cols, rows, Math.max(1, variant % 3));
+      break;
     case 'corners':
-      return generateCornerPattern(cols, rows, Math.max(2, 3 + (variant % 3)));
+      result = generateCornerPattern(cols, rows, Math.max(2, 3 + (variant % 3)));
+      break;
     case 'cross':
-      return generateCrossPattern(cols, rows, Math.max(1, 2 + (variant % 2)));
+      result = generateCrossPattern(cols, rows, Math.max(1, 2 + (variant % 2)));
+      break;
     default:
-      return generateVerticalStripesPattern(cols, rows, variant);
+      result = generateVerticalStripesPattern(cols, rows, variant);
   }
+  
+  console.log(`✅ Pattern generated: ${result.length} tiles out of ${cols * rows}`);
+  return result;
 };
+
 
 // ═══════════════════════════════════════════════════════════════
 // CUSTOM HOOKS
@@ -1344,6 +1554,589 @@ const BrightHotelKitchenScene: React.FC<{
 // 🔥 PREMIUM BATHROOM SCENE - PRODUCTION READY WITH SCALING
 // ═══════════════════════════════════════════════════════════════
 
+// const PremiumBathroomScene: React.FC<{ 
+//   floorTexture: THREE.Texture | null;
+//   floorTileSize: { width: number; height: number };
+//   wallTexture: THREE.Texture | null;
+//   wallTileSize: { width: number; height: number };
+//   showWallTiles: boolean;
+//   quality: QualityLevel;
+//   isGridMode: boolean;
+//   activeWall: WallType | null;
+//   selectedTiles: number[];
+//   onTileClick: (index: number) => void;
+//   customTiles: WallCustomTiles;
+//   roomDimensions?: { width: number; depth: number; height: number };
+//   furnitureScale?: { x: number; y: number; z: number };
+// wallTileHeight?: number;
+// highlightTileBorders?: boolean;
+// }> = ({ 
+//   floorTexture, 
+//   floorTileSize, 
+//   wallTexture, 
+//   wallTileSize, 
+//   showWallTiles, 
+//   quality,
+//   isGridMode,
+//   activeWall,
+//   selectedTiles,
+//   onTileClick,
+//   customTiles,
+//   roomDimensions,
+//   furnitureScale = { x: 1, y: 1, z: 1 },
+//   wallTileHeight = 11 ,
+//    highlightTileBorders = false
+// }) => {
+//   const { width: W, depth: D, height: H } = roomDimensions || ROOM_CONFIGS.bathroom;
+//   const { x: scaleX, y: scaleY, z: scaleZ } = furnitureScale;
+// const actualWallHeight = (wallTileHeight / 11) * H;
+
+//   const shouldUseGridWall = (wall: WallType) => {
+//     return (isGridMode && activeWall === wall) || customTiles[wall].size > 0;
+//   };
+
+//   const vanityPosX = -(W/2 - 0.8) * scaleX;
+//   const vanityPosZ = -(D/2 - 0.28) * scaleZ;
+//   const showerPosX = (W/2 - 0.85) * scaleX;
+//   const showerPosZ = -(D/2 - 0.85) * scaleZ;
+//   const toiletPosZ = -(D/2 - 0.35) * scaleZ;
+//   const doorPosX = (W/2 - 1.8) * scaleX;
+//   const doorPosZ = (D/2 - 0.002) * scaleZ;
+//   const plantPosX = -(W/2 - 0.5) * scaleX;
+//   const plantPosZ = (D/2 - 0.5) * scaleZ;
+//   const towelPosX = (W/2 - 1.9) * scaleX;
+//   const towelPosZ = -(D/2 - 0.02) * scaleZ;
+
+//   return (
+//     <group>
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* FLOOR & CEILING - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <TiledFloor 
+//         baseTexture={floorTexture} 
+//         tileSize={floorTileSize} 
+//         roomWidth={W} 
+//         roomDepth={D} 
+//         position={[0, 0, 0]} 
+//         quality={quality} 
+//          highlightBorders={highlightTileBorders} 
+//       />
+//       <Ceiling width={W} depth={D} height={H} />
+
+//       {['back', 'front', 'left', 'right'].map((wallKey) => {
+//   const wall = wallKey as WallType;
+//   const wallWidth = wall === 'left' || wall === 'right' ? D : W;
+  
+//   // ✅ CRITICAL: Use actualWallHeight for position
+//   const wallPos = 
+//     wall === 'back' ? [0, actualWallHeight/2, -D/2] :
+//     wall === 'front' ? [0, actualWallHeight/2, D/2] :
+//     wall === 'left' ? [-W/2, actualWallHeight/2, 0] :
+//     [W/2, actualWallHeight/2, 0];
+    
+//   const wallRot =
+//     wall === 'front' ? [0, Math.PI, 0] :
+//     wall === 'left' ? [0, Math.PI/2, 0] :
+//     wall === 'right' ? [0, -Math.PI/2, 0] :
+//     [0, 0, 0];
+
+//   return showWallTiles && shouldUseGridWall(wall) ? (
+//     <GridWall
+//       key={wall}
+//       baseTexture={wallTexture}
+//       tileSize={wallTileSize}
+//       width={wallWidth}
+//       height={actualWallHeight}  // ✅ Not H
+//       position={wallPos as [number, number, number]}
+//       rotation={wallRot as [number, number, number]}
+//       isGridMode={isGridMode && activeWall === wall}
+//       selectedTiles={activeWall === wall ? selectedTiles : []}
+//       onTileClick={onTileClick}
+//       customTilesMap={customTiles[wall]}
+//     />
+//   ) : showWallTiles ? (
+//     <TiledWall
+//       key={wall}
+//       baseTexture={wallTexture}
+//       tileSize={wallTileSize}
+//       width={wallWidth}
+//       height={actualWallHeight}  // ✅ Not H
+//       position={wallPos as [number, number, number]}
+//       rotation={wallRot as [number, number, number]}
+//       quality={quality}
+//       highlightBorders={highlightTileBorders}
+//     />
+//   ) : (
+//     <mesh key={wall} position={wallPos as [number, number, number]} rotation={wallRot as [number, number, number]}>
+//       <planeGeometry args={[wallWidth, H]} />  {/* ✅ This is OK - plain walls can use full height */}
+//       <meshStandardMaterial 
+//         color={
+//           wall === 'front' ? '#ffffff' : 
+//           wall === 'left' ? '#fef9f3' : 
+//           wall === 'right' ? '#faf5ed' : 
+//           '#f5f5f5'
+//         } 
+//         roughness={0.85} 
+//       />
+//     </mesh>
+//   );
+// })}
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* VANITY + WASH BASIN - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[vanityPosX, 0, vanityPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+//         <mesh position={[0, 0.45, 0]} castShadow>
+//           <boxGeometry args={[1.3, 0.9, 0.55]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.1} />
+//         </mesh>
+//         <mesh position={[0, 0.92, 0]} castShadow>
+//           <boxGeometry args={[1.35, 0.05, 0.6]} />
+//           <meshStandardMaterial color="#f5f5f0" roughness={0.15} metalness={0.45} />
+//         </mesh>
+//         {[-0.32, 0.32].map((x, i) => (
+//           <React.Fragment key={i}>
+//             <mesh position={[x, 0.45, 0.285]} castShadow>
+//               <boxGeometry args={[0.6, 0.85, 0.02]} />
+//               <meshStandardMaterial color="#fafafa" roughness={0.3} metalness={0.05} />
+//             </mesh>
+//             <mesh position={[x + 0.18, 0.45, 0.305]}>
+//               <boxGeometry args={[0.15, 0.02, 0.02]} />
+//               <meshStandardMaterial color="#c0c0c0" roughness={0.1} metalness={0.9} />
+//             </mesh>
+//           </React.Fragment>
+//         ))}
+//         <group position={[0, 0.88, 0]}>
+//           <mesh castShadow>
+//             <cylinderGeometry args={[0.23, 0.19, 0.16, 32]} />
+//             <meshStandardMaterial color="#ffffff" roughness={0.08} metalness={0.2} />
+//           </mesh>
+//           <mesh position={[0, -0.01, 0]}>
+//             <cylinderGeometry args={[0.19, 0.15, 0.14, 32]} />
+//             <meshStandardMaterial color="#f8f8f8" roughness={0.1} metalness={0.15} />
+//           </mesh>
+//           <mesh position={[0, -0.07, 0]}>
+//             <cylinderGeometry args={[0.025, 0.025, 0.01, 24]} />
+//             <meshStandardMaterial color="#888888" roughness={0.3} metalness={0.7} />
+//           </mesh>
+//         </group>
+//         <group position={[0, 0.95, -0.22]}>
+//           <mesh>
+//             <cylinderGeometry args={[0.03, 0.035, 0.02, 24]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.05} metalness={0.98} />
+//           </mesh>
+//           <mesh position={[0, 0.18, 0]}>
+//             <cylinderGeometry args={[0.015, 0.015, 0.36, 16]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.05} metalness={0.98} />
+//           </mesh>
+//           <mesh position={[0, 0.35, 0.09]} rotation={[Math.PI / 2.8, 0, 0]}>
+//             <cylinderGeometry args={[0.013, 0.013, 0.18, 16]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.05} metalness={0.98} />
+//           </mesh>
+//           <mesh position={[0, 0.42, 0.18]}>
+//             <cylinderGeometry args={[0.018, 0.015, 0.03, 20]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.05} metalness={0.98} />
+//           </mesh>
+//           {[-0.1, 0.1].map((x, i) => (
+//             <group key={i} position={[x, 0.38, -0.02]}>
+//               <mesh>
+//                 <cylinderGeometry args={[0.022, 0.022, 0.018, 20]} />
+//                 <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.95} />
+//               </mesh>
+//               <mesh position={[0, 0.015, 0]} rotation={[0, 0, Math.PI / 4]}>
+//                 <boxGeometry args={[0.045, 0.008, 0.008]} />
+//                 <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.95} />
+//               </mesh>
+//             </group>
+//           ))}
+//         </group>
+//         <mesh position={[0.48, 0.97, 0.18]} castShadow>
+//           <cylinderGeometry args={[0.032, 0.038, 0.14, 20]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.1} transparent opacity={0.92} />
+//         </mesh>
+//         <mesh position={[0.48, 1.04, 0.18]}>
+//           <cylinderGeometry args={[0.015, 0.02, 0.04, 16]} />
+//           <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.85} />
+//         </mesh>
+//         <mesh position={[-0.42, 0.94, 0.12]} castShadow>
+//           <boxGeometry args={[0.22, 0.015, 0.16]} />
+//           <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
+//         </mesh>
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* LED MIRROR - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[vanityPosX, 1.65 * scaleY, -(D/2 - 0.07)]} scale={[scaleX, scaleY, 1]}>
+//         <mesh castShadow>
+//           <boxGeometry args={[1.25, 0.95, 0.03]} />
+//           <meshStandardMaterial color="#c8c8c8" roughness={0.18} metalness={0.92} />
+//         </mesh>
+//         <mesh position={[0, 0, 0.018]}>
+//           <boxGeometry args={[1.19, 0.89, 0.008]} />
+//           <meshStandardMaterial color="#e8f4f8" roughness={0.02} metalness={0.98} envMapIntensity={2.0} />
+//         </mesh>
+//         {[[0, 0.49, 1.21, 0.04], [0, -0.49, 1.21, 0.04], [-0.61, 0, 0.03, 0.89], [0.61, 0, 0.03, 0.89]].map((params, i) => (
+//           <mesh key={i} position={[params[0], params[1], 0.025]}>
+//             <boxGeometry args={i < 2 ? [params[2], params[3], 0.02] : [params[2], params[3], 0.02]} />
+//             <meshStandardMaterial color="#ffffff" emissive="#fffef8" emissiveIntensity={i < 2 ? (i === 0 ? 1.2 : 0.9) : 0.7} />
+//           </mesh>
+//         ))}
+//         <rectAreaLight position={[0, 0.49, 0.05]} width={1.21} height={0.04} intensity={3.5} color="#fffef8" />
+//         <rectAreaLight position={[0, -0.49, 0.05]} width={1.21} height={0.04} intensity={2.5} color="#fffef8" />
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* SHOWER ENCLOSURE - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[showerPosX, 0, showerPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+//         <mesh position={[0, 0.04, 0]} castShadow>
+//           <boxGeometry args={[1.0, 0.08, 1.0]} />
+//           <meshStandardMaterial color="#fafafa" roughness={0.2} metalness={0.15} />
+//         </mesh>
+//         <mesh position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+//           <torusGeometry args={[0.49, 0.015, 12, 32]} />
+//           <meshStandardMaterial color="#e8e8e8" roughness={0.25} metalness={0.2} />
+//         </mesh>
+//         <mesh position={[0, 0.085, 0]}>
+//           <cylinderGeometry args={[0.045, 0.045, 0.01, 32]} />
+//           <meshStandardMaterial color="#888888" roughness={0.25} metalness={0.75} />
+//         </mesh>
+//         {[[0, 1.25, -0.5, 1.0, 2.5, 0.012], [-0.5, 1.25, 0, 1.0, 2.5, 0.012], [0.5, 1.25, 0, 1.0, 2.5, 0.012]].map((params, i) => (
+//           <mesh key={i} position={[params[0], params[1], params[2]]} rotation={i === 0 ? [0, 0, 0] : [0, Math.PI / 2, 0]} castShadow>
+//             <boxGeometry args={[params[3], params[4], params[5]]} />
+//             <meshStandardMaterial color="#ffffff" transparent opacity={0.32} roughness={0.05} metalness={0.08} />
+//           </mesh>
+//         ))}
+//         {[[0, 2.5, -0.5, 1.0, 0.025, 0.025], [-0.5, 2.5, 0, 0.025, 0.025, 1.0], [0.5, 2.5, 0, 0.025, 0.025, 1.0], [-0.5, 1.25, -0.5, 0.025, 2.5, 0.025], [0.5, 1.25, -0.5, 0.025, 2.5, 0.025]].map((params, i) => (
+//           <mesh key={i} position={[params[0], params[1], params[2]]}>
+//             <boxGeometry args={[params[3], params[4], params[5]]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.05} metalness={0.95} />
+//           </mesh>
+//         ))}
+//         <group position={[0, 2.15, -0.35]}>
+//           <mesh>
+//             <boxGeometry args={[0.06, 0.06, 0.1]} />
+//             <meshStandardMaterial color="#e0e0e0" roughness={0.05} metalness={0.95} />
+//           </mesh>
+//           <mesh position={[0, 0, 0.18]} rotation={[0, Math.PI / 2, 0]}>
+//             <cylinderGeometry args={[0.018, 0.018, 0.35, 16]} />
+//             <meshStandardMaterial color="#e0e0e0" roughness={0.05} metalness={0.95} />
+//           </mesh>
+//           <mesh position={[0, -0.06, 0.35]} rotation={[Math.PI / 7, 0, 0]}>
+//             <cylinderGeometry args={[0.12, 0.12, 0.035, 40]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
+//           </mesh>
+//           <mesh position={[0, -0.065, 0.35]} rotation={[Math.PI / 7, 0, 0]}>
+//             <cylinderGeometry args={[0.11, 0.11, 0.01, 40]} />
+//             <meshStandardMaterial color="#a0a0a0" roughness={0.35} metalness={0.65} />
+//           </mesh>
+//         </group>
+//         <group position={[-0.42, 1.15, -0.45]}>
+//           <mesh>
+//             <boxGeometry args={[0.15, 0.35, 0.03]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.9} />
+//           </mesh>
+//           <mesh position={[0, 0.08, 0.025]}>
+//             <cylinderGeometry args={[0.055, 0.055, 0.04, 28]} />
+//             <meshStandardMaterial color="#e0e0e0" roughness={0.05} metalness={0.95} />
+//           </mesh>
+//           <mesh position={[0, -0.08, 0.025]}>
+//             <cylinderGeometry args={[0.042, 0.042, 0.035, 24]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.92} />
+//           </mesh>
+//         </group>
+//         <group position={[-0.42, 1.55, -0.45]}>
+//           <mesh>
+//             <torusGeometry args={[0.032, 0.012, 14, 28, Math.PI]} />
+//             <meshStandardMaterial color="#e0e0e0" roughness={0.05} metalness={0.95} />
+//           </mesh>
+//           <mesh position={[0, -0.1, 0.025]} rotation={[Math.PI / 5, 0, 0]}>
+//             <capsuleGeometry args={[0.022, 0.14, 14, 24]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.08} metalness={0.92} />
+//           </mesh>
+//           <mesh position={[0, -0.18, 0.02]} rotation={[Math.PI / 5, 0, 0]}>
+//             <sphereGeometry args={[0.025, 16, 16]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.1} metalness={0.9} />
+//           </mesh>
+//         </group>
+//         <group position={[0.35, 1.0, -0.35]}>
+//           <mesh>
+//             <boxGeometry args={[0.2, 0.025, 0.2]} />
+//             <meshStandardMaterial color="#e0e0e0" roughness={0.25} metalness={0.7} />
+//           </mesh>
+//           <mesh position={[0.05, 0.06, 0.05]} castShadow>
+//             <cylinderGeometry args={[0.025, 0.025, 0.1, 16]} />
+//             <meshStandardMaterial color="#87ceeb" roughness={0.4} metalness={0.1} transparent opacity={0.85} />
+//           </mesh>
+//         </group>
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* TOILET - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[0, 0, toiletPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+//         <mesh position={[0, 0.25, 0]} castShadow>
+//           <capsuleGeometry args={[0.22, 0.3, 18, 28]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.12} />
+//         </mesh>
+//         <mesh position={[0, 0.42, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
+//           <torusGeometry args={[0.2, 0.03, 18, 36]} />
+//           <meshStandardMaterial color="#f5f5f5" roughness={0.22} metalness={0.06} />
+//         </mesh>
+//         <mesh position={[0, 0.44, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
+//           <circleGeometry args={[0.22, 36]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.1} />
+//         </mesh>
+//         <mesh position={[0, 0.65, -0.19]} castShadow>
+//           <boxGeometry args={[0.36, 0.52, 0.17]} />
+//           <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.12} />
+//         </mesh>
+//         <group position={[0, 0.92, -0.12]}>
+//           {[-0.04, 0.04].map((x, i) => (
+//             <mesh key={i} position={[x, 0, 0]}>
+//               <cylinderGeometry args={[0.027, 0.027, 0.02, 24]} />
+//               <meshStandardMaterial color="#e0e0e0" roughness={0.12} metalness={0.88} />
+//             </mesh>
+//           ))}
+//         </group>
+//         <group position={[0.38, 0.55, 0]}>
+//           <mesh position={[0, 0, -0.05]}>
+//             <cylinderGeometry args={[0.018, 0.018, 0.08, 16]} />
+//             <meshStandardMaterial color="#c0c0c0" roughness={0.1} metalness={0.9} />
+//           </mesh>
+//           <mesh rotation={[0, 0, Math.PI / 2]}>
+//             <cylinderGeometry args={[0.015, 0.015, 0.16, 16]} />
+//             <meshStandardMaterial color="#c0c0c0" roughness={0.1} metalness={0.9} />
+//           </mesh>
+//           <mesh position={[0, 0.09, 0]} rotation={[0, 0, Math.PI / 2]}>
+//             <cylinderGeometry args={[0.055, 0.055, 0.1, 28]} />
+//             <meshStandardMaterial color="#ffffff" roughness={0.65} metalness={0} />
+//           </mesh>
+//         </group>
+//         <group position={[-0.45, 0, 0.12]}>
+//           <mesh position={[0, 0.05, 0]} castShadow>
+//             <cylinderGeometry args={[0.075, 0.085, 0.1, 24]} />
+//             <meshStandardMaterial color="#e8e8e8" roughness={0.35} metalness={0.25} />
+//           </mesh>
+//           <mesh position={[0, 0.22, 0]} castShadow>
+//             <cylinderGeometry args={[0.058, 0.065, 0.35, 24]} />
+//             <meshStandardMaterial color="#ffffff" roughness={0.4} metalness={0.15} transparent opacity={0.88} />
+//           </mesh>
+//           <mesh position={[0, 0.45, 0]}>
+//             <cylinderGeometry args={[0.012, 0.012, 0.15, 12]} />
+//             <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.6} />
+//           </mesh>
+//         </group>
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* TOWEL RACK - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[towelPosX, 1.35 * scaleY, towelPosZ]} scale={[scaleX, scaleY, 1]}>
+//         {[0, -0.18].map((y, i) => (
+//           <mesh key={i} position={[0, y, 0]} rotation={[0, 0, Math.PI / 2]}>
+//             <cylinderGeometry args={[0.018, 0.018, 0.85, 18]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.05} metalness={0.95} />
+//           </mesh>
+//         ))}
+//         {[-0.42, 0.42].map((x, i) => (
+//           <mesh key={i} position={[x, -0.09, -0.025]}>
+//             <cylinderGeometry args={[0.028, 0.028, 0.05, 20]} />
+//             <meshStandardMaterial color="#c0c0c0" roughness={0.1} metalness={0.9} />
+//           </mesh>
+//         ))}
+//         <mesh position={[0, -0.09, 0.018]} castShadow>
+//           <boxGeometry args={[0.75, 0.4, 0.018]} />
+//           <meshStandardMaterial color="#87ceeb" roughness={0.85} metalness={0} />
+//         </mesh>
+//         <mesh position={[0.22, 0.05, 0.018]} castShadow>
+//           <boxGeometry args={[0.32, 0.24, 0.015]} />
+//           <meshStandardMaterial color="#b0c4de" roughness={0.82} metalness={0} />
+//         </mesh>
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* EXHAUST FAN - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[0, (H - 0.02) * scaleY, 0]} scale={[scaleX, scaleY, scaleZ]}>
+//         <mesh castShadow>
+//           <cylinderGeometry args={[0.19, 0.19, 0.05, 36]} />
+//           <meshStandardMaterial color="#f0f0f0" roughness={0.4} metalness={0.1} />
+//         </mesh>
+//         <mesh position={[0, -0.028, 0]}>
+//           <cylinderGeometry args={[0.16, 0.16, 0.012, 6]} />
+//           <meshStandardMaterial color="#c0c0c0" roughness={0.35} metalness={0.5} />
+//         </mesh>
+//         <mesh position={[0, -0.035, 0]}>
+//           <cylinderGeometry args={[0.038, 0.038, 0.008, 24]} />
+//           <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.6} />
+//         </mesh>
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* ENTRANCE DOOR - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[doorPosX, 0, doorPosZ]} scale={[scaleX, scaleY, 1]}>
+//         <mesh position={[0, 1.05, 0]} castShadow>
+//           <boxGeometry args={[1.02, 2.15, 0.08]} />
+//           <meshStandardMaterial color="#8b7355" roughness={0.65} metalness={0.05} />
+//         </mesh>
+//         <mesh position={[0, 1.05, -0.025]} castShadow>
+//           <boxGeometry args={[0.95, 2.05, 0.045]} />
+//           <meshStandardMaterial color="#fafafa" roughness={0.45} metalness={0.08} />
+//         </mesh>
+//         {[0.65, 0.15, -0.35, -0.85].map((y, i) => (
+//           <mesh key={i} position={[0, y, -0.05]} castShadow>
+//             <boxGeometry args={[0.75, 0.38, 0.015]} />
+//             <meshStandardMaterial color="#f5f5f5" roughness={0.55} metalness={0.05} />
+//           </mesh>
+//         ))}
+//         <group position={[-0.35, 1.05, -0.06]}>
+//           <mesh>
+//             <cylinderGeometry args={[0.025, 0.025, 0.05, 20]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.95} />
+//           </mesh>
+//           <mesh position={[0, 0, -0.08]} rotation={[0, 0, -Math.PI / 6]}>
+//             <boxGeometry args={[0.12, 0.022, 0.022]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.95} />
+//           </mesh>
+//         </group>
+//         <mesh position={[-0.35, 1.05, -0.058]}>
+//           <cylinderGeometry args={[0.012, 0.012, 0.025, 16]} />
+//           <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.85} />
+//         </mesh>
+//         <mesh position={[0, 1.75, -0.048]} castShadow>
+//           <boxGeometry args={[0.75, 0.45, 0.012]} />
+//           <meshStandardMaterial color="#ffffff" transparent opacity={0.35} roughness={0.15} metalness={0.05} />
+//         </mesh>
+//         <lineSegments position={[0, 1.75, -0.048]}>
+//           <edgesGeometry args={[new THREE.BoxGeometry(0.75, 0.45, 0.012)]} />
+//           <lineBasicMaterial color="#8b7355" linewidth={2} />
+//         </lineSegments>
+//         {[1.85, 1.05, 0.25].map((y, i) => (
+//           <group key={i} position={[0.47, y, -0.04]}>
+//             <mesh>
+//               <boxGeometry args={[0.015, 0.08, 0.025]} />
+//               <meshStandardMaterial color="#8b7355" roughness={0.45} metalness={0.25} />
+//             </mesh>
+//             <mesh position={[0.008, 0, 0]}>
+//               <cylinderGeometry args={[0.008, 0.008, 0.08, 12]} />
+//               <meshStandardMaterial color="#8b7355" roughness={0.45} metalness={0.25} />
+//             </mesh>
+//           </group>
+//         ))}
+//         <mesh position={[0, 0.015, 0]} castShadow>
+//           <boxGeometry args={[1.02, 0.03, 0.1]} />
+//           <meshStandardMaterial color="#8b7355" roughness={0.65} metalness={0.05} />
+//         </mesh>
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* DECORATIVE PLANT - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <group position={[plantPosX, 0, plantPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+//         <mesh position={[0, 0.2, 0]} castShadow>
+//           <cylinderGeometry args={[0.15, 0.12, 0.4, 24]} />
+//           <meshStandardMaterial color="#f5f5f0" roughness={0.35} metalness={0.08} />
+//         </mesh>
+//         <mesh position={[0, 0.41, 0]}>
+//           <torusGeometry args={[0.15, 0.015, 16, 32]} />
+//           <meshStandardMaterial color="#e8e8e8" roughness={0.4} metalness={0.1} />
+//         </mesh>
+//         <mesh position={[0, 0.38, 0]}>
+//           <cylinderGeometry args={[0.14, 0.14, 0.04, 24]} />
+//           <meshStandardMaterial color="#4a3c2a" roughness={0.95} metalness={0} />
+//         </mesh>
+//         <mesh position={[0, 0.65, 0]}>
+//           <cylinderGeometry args={[0.015, 0.018, 0.5, 12]} />
+//           <meshStandardMaterial color="#2d5016" roughness={0.85} metalness={0} />
+//         </mesh>
+//         {[
+//           { pos: [-0.12, 0.55, 0.08], rot: [0.3, -0.5, -0.4], scale: 0.85 },
+//           { pos: [0.1, 0.52, -0.1], rot: [-0.2, 0.6, 0.3], scale: 0.8 },
+//           { pos: [0.08, 0.58, 0.12], rot: [0.4, 0.3, 0.5], scale: 0.75 },
+//           { pos: [-0.15, 0.7, -0.05], rot: [-0.3, -0.7, -0.5], scale: 0.95 },
+//           { pos: [0.12, 0.68, 0.1], rot: [0.25, 0.8, 0.4], scale: 0.9 },
+//           { pos: [-0.08, 0.75, 0.15], rot: [0.5, -0.4, 0.6], scale: 0.85 },
+//           { pos: [0.1, 0.88, -0.08], rot: [-0.4, 0.5, 0.3], scale: 1.0 },
+//           { pos: [-0.12, 0.92, 0.1], rot: [0.3, -0.6, -0.5], scale: 0.95 },
+//           { pos: [0.05, 0.95, 0.12], rot: [0.2, 0.4, 0.4], scale: 0.9 }
+//         ].map((leaf, i) => (
+//           <mesh key={i} position={[leaf.pos[0], leaf.pos[1], leaf.pos[2]]} rotation={[leaf.rot[0], leaf.rot[1], leaf.rot[2]]} castShadow>
+//             <boxGeometry args={[0.18 * leaf.scale, 0.25 * leaf.scale, 0.002]} />
+//             <meshStandardMaterial color={i < 3 ? "#3d6b2e" : i < 6 ? "#4a7c3a" : "#5a8f45"} roughness={0.65} metalness={0} side={THREE.DoubleSide} />
+//           </mesh>
+//         ))}
+//         {[
+//           { pos: [0.08, 0.62, -0.15], rot: [0.5, 0.8, 0.3], scale: 0.4 },
+//           { pos: [-0.1, 0.82, -0.12], rot: [-0.4, -0.6, -0.4], scale: 0.45 },
+//           { pos: [0.12, 1.0, 0.05], rot: [0.3, 0.7, 0.5], scale: 0.5 }
+//         ].map((leaf, i) => (
+//           <mesh key={`accent-${i}`} position={[leaf.pos[0], leaf.pos[1], leaf.pos[2]]} rotation={[leaf.rot[0], leaf.rot[1], leaf.rot[2]]} castShadow>
+//             <boxGeometry args={[0.12 * leaf.scale, 0.16 * leaf.scale, 0.002]} />
+//             <meshStandardMaterial color="#6aa84f" roughness={0.6} metalness={0} side={THREE.DoubleSide} />
+//           </mesh>
+//         ))}
+//         {[
+//           { pos: [-0.08, 0.4, 0.05], size: 0.018 },
+//           { pos: [0.06, 0.4, -0.07], size: 0.015 },
+//           { pos: [0.1, 0.4, 0.08], size: 0.02 },
+//           { pos: [-0.05, 0.4, -0.09], size: 0.012 }
+//         ].map((pebble, i) => (
+//           <mesh key={`pebble-${i}`} position={[pebble.pos[0], pebble.pos[1], pebble.pos[2]]}>
+//             <sphereGeometry args={[pebble.size, 8, 8]} />
+//             <meshStandardMaterial color="#d0d0d0" roughness={0.75} metalness={0.05} />
+//           </mesh>
+//         ))}
+//       </group>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* BATH MATS - SCALED */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <mesh position={[showerPosX, 0.008, -(D/2 - 2.05) * scaleZ]} rotation={[-Math.PI / 2, 0, 0]} castShadow scale={[scaleX, scaleZ, 1]}>
+//         <planeGeometry args={[0.6, 0.42]} />
+//         <meshStandardMaterial color="#b0c4de" roughness={0.92} metalness={0} />
+//       </mesh>
+
+//       <mesh position={[vanityPosX, 0.008, -(D/2 - 1.45) * scaleZ]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} castShadow scale={[scaleX, scaleZ, 1]}>
+//         <planeGeometry args={[0.5, 0.35]} />
+//         <meshStandardMaterial color="#b0c4de" roughness={0.92} metalness={0} />
+//       </mesh>
+
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+//       {/* PROFESSIONAL LIGHTING - SCALED POSITIONS */}
+//       {/* ═══════════════════════════════════════════════════════════════ */}
+      
+//       <pointLight position={[0, (H - 0.15) * scaleY, 0]} intensity={2.8} color="#fff8e1" distance={7.5} decay={2} castShadow />
+//       <pointLight position={[vanityPosX, (H - 0.3) * scaleY, -(D/2 - 1.7) * scaleZ]} intensity={2.4} color="#fffef8" distance={4} decay={2} />
+//       <pointLight position={[vanityPosX, 1.65 * scaleY, -(D/2 - 1.3) * scaleZ]} intensity={1.6} color="#ffffff" distance={2.5} decay={2} />
+//       <pointLight position={[showerPosX, (H - 0.2) * scaleY, showerPosZ]} intensity={1.9} color="#ffffff" distance={3.5} decay={2} />
+//       <pointLight position={[0, (H - 0.4) * scaleY, (D/2 - 2.35) * scaleZ]} intensity={1.4} color="#fff8e1" distance={3} decay={2} />
+//       <pointLight position={[(W/2 - 0.3) * scaleX, (H - 0.5) * scaleY, -(D/2 - 2.1) * scaleZ]} intensity={0.95} color="#ffffff" distance={4.5} decay={2} />
+//       <pointLight position={[-(W/2 - 0.3) * scaleX, (H - 0.5) * scaleY, -(D/2 - 2.1) * scaleZ]} intensity={0.95} color="#ffffff" distance={4.5} decay={2} />
+//       <pointLight position={[0, (H - 0.6) * scaleY, (D/2 - 1.0) * scaleZ]} intensity={1.05} color="#fff8e1" distance={4} decay={2} />
+//       <pointLight position={[doorPosX, 1.8 * scaleY, (D/2 - 0.9) * scaleZ]} intensity={1.2} color="#fffef8" distance={2.5} decay={2} />
+//       <pointLight position={[plantPosX, 1.2 * scaleY, (D/2 - 0.7) * scaleZ]} intensity={0.8} color="#f0ffe0" distance={1.8} decay={2} />
+//     </group>
+//   );
+// };
+
+
+// ═══════════════════════════════════════════════════════════════
+// 🎯 BATHROOM SCENE - FIXED FURNITURE POSITIONING
+// ═══════════════════════════════════════════════════════════════
+
 const PremiumBathroomScene: React.FC<{ 
   floorTexture: THREE.Texture | null;
   floorTileSize: { width: number; height: number };
@@ -1358,8 +2151,8 @@ const PremiumBathroomScene: React.FC<{
   customTiles: WallCustomTiles;
   roomDimensions?: { width: number; depth: number; height: number };
   furnitureScale?: { x: number; y: number; z: number };
-wallTileHeight?: number;
-highlightTileBorders?: boolean;
+  wallTileHeight?: number;
+  highlightTileBorders?: boolean;
 }> = ({ 
   floorTexture, 
   floorTileSize, 
@@ -1374,33 +2167,57 @@ highlightTileBorders?: boolean;
   customTiles,
   roomDimensions,
   furnitureScale = { x: 1, y: 1, z: 1 },
-  wallTileHeight = 11 ,
-   highlightTileBorders = false
+  wallTileHeight = 11,
+  highlightTileBorders = false
 }) => {
+  
+  // ✅ FIX 1: Define REFERENCE room (what furniture was designed for)
+  const REFERENCE_ROOM = {
+    width: 15 * 0.3048,   // 15 feet = 4.572m
+    depth: 15 * 0.3048,   // 15 feet = 4.572m
+    height: 11 * 0.3048   // 11 feet = 3.3528m
+  };
+
+  // ✅ FIX 2: Use actual room dimensions (custom or default)
   const { width: W, depth: D, height: H } = roomDimensions || ROOM_CONFIGS.bathroom;
   const { x: scaleX, y: scaleY, z: scaleZ } = furnitureScale;
-const actualWallHeight = (wallTileHeight / 11) * H;
+  const actualWallHeight = (wallTileHeight / 11) * H;
+
+  // ✅ FIX 3: Calculate ABSOLUTE positions (not scaled by furnitureScale)
+  // These are designed for 15×15 room, will work for ANY room size
+  
+  // Vanity: Left wall, near back
+  const vanityPosX = -W/2 + 0.8;      // 0.8m from left wall
+  const vanityPosZ = -D/2 + 0.28;     // 0.28m from back wall
+  
+  // Shower: Right wall, back corner
+  const showerPosX = W/2 - 0.85;      // 0.85m from right wall
+  const showerPosZ = -D/2 + 0.85;     // 0.85m from back wall
+  
+  // Toilet: Center-right, near back
+  const toiletPosX = 0;                // Centered
+  const toiletPosZ = -D/2 + 0.35;     // 0.35m from back wall
+  
+  // Door: Right side, front wall
+  const doorPosX = W/2 - 1.8;         // 1.8m from right edge
+  const doorPosZ = D/2 - 0.002;       // At front wall
+  
+  // Plant: Left corner, front
+  const plantPosX = -W/2 + 0.5;       // 0.5m from left wall
+  const plantPosZ = D/2 - 0.5;        // 0.5m from front wall
+  
+  // Towel rack: Right wall, near back
+  const towelPosX = W/2 - 1.9;        // 1.9m from right edge
+  const towelPosZ = -D/2 + 0.02;      // Near back wall
 
   const shouldUseGridWall = (wall: WallType) => {
     return (isGridMode && activeWall === wall) || customTiles[wall].size > 0;
   };
 
-  const vanityPosX = -(W/2 - 0.8) * scaleX;
-  const vanityPosZ = -(D/2 - 0.28) * scaleZ;
-  const showerPosX = (W/2 - 0.85) * scaleX;
-  const showerPosZ = -(D/2 - 0.85) * scaleZ;
-  const toiletPosZ = -(D/2 - 0.35) * scaleZ;
-  const doorPosX = (W/2 - 1.8) * scaleX;
-  const doorPosZ = (D/2 - 0.002) * scaleZ;
-  const plantPosX = -(W/2 - 0.5) * scaleX;
-  const plantPosZ = (D/2 - 0.5) * scaleZ;
-  const towelPosX = (W/2 - 1.9) * scaleX;
-  const towelPosZ = -(D/2 - 0.02) * scaleZ;
-
   return (
     <group>
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* FLOOR & CEILING - SCALED */}
+      {/* FLOOR & CEILING */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
       <TiledFloor 
@@ -1410,82 +2227,90 @@ const actualWallHeight = (wallTileHeight / 11) * H;
         roomDepth={D} 
         position={[0, 0, 0]} 
         quality={quality} 
-         highlightBorders={highlightTileBorders} 
+        highlightBorders={highlightTileBorders} 
       />
       <Ceiling width={W} depth={D} height={H} />
 
-      {['back', 'front', 'left', 'right'].map((wallKey) => {
-  const wall = wallKey as WallType;
-  const wallWidth = wall === 'left' || wall === 'right' ? D : W;
-  
-  // ✅ CRITICAL: Use actualWallHeight for position
-  const wallPos = 
-    wall === 'back' ? [0, actualWallHeight/2, -D/2] :
-    wall === 'front' ? [0, actualWallHeight/2, D/2] :
-    wall === 'left' ? [-W/2, actualWallHeight/2, 0] :
-    [W/2, actualWallHeight/2, 0];
-    
-  const wallRot =
-    wall === 'front' ? [0, Math.PI, 0] :
-    wall === 'left' ? [0, Math.PI/2, 0] :
-    wall === 'right' ? [0, -Math.PI/2, 0] :
-    [0, 0, 0];
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* WALLS */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
 
-  return showWallTiles && shouldUseGridWall(wall) ? (
-    <GridWall
-      key={wall}
-      baseTexture={wallTexture}
-      tileSize={wallTileSize}
-      width={wallWidth}
-      height={actualWallHeight}  // ✅ Not H
-      position={wallPos as [number, number, number]}
-      rotation={wallRot as [number, number, number]}
-      isGridMode={isGridMode && activeWall === wall}
-      selectedTiles={activeWall === wall ? selectedTiles : []}
-      onTileClick={onTileClick}
-      customTilesMap={customTiles[wall]}
-    />
-  ) : showWallTiles ? (
-    <TiledWall
-      key={wall}
-      baseTexture={wallTexture}
-      tileSize={wallTileSize}
-      width={wallWidth}
-      height={actualWallHeight}  // ✅ Not H
-      position={wallPos as [number, number, number]}
-      rotation={wallRot as [number, number, number]}
-      quality={quality}
-      highlightBorders={highlightTileBorders}
-    />
-  ) : (
-    <mesh key={wall} position={wallPos as [number, number, number]} rotation={wallRot as [number, number, number]}>
-      <planeGeometry args={[wallWidth, H]} />  {/* ✅ This is OK - plain walls can use full height */}
-      <meshStandardMaterial 
-        color={
-          wall === 'front' ? '#ffffff' : 
-          wall === 'left' ? '#fef9f3' : 
-          wall === 'right' ? '#faf5ed' : 
-          '#f5f5f5'
-        } 
-        roughness={0.85} 
-      />
-    </mesh>
-  );
-})}
+      {['back', 'front', 'left', 'right'].map((wallKey) => {
+        const wall = wallKey as WallType;
+        const wallWidth = wall === 'left' || wall === 'right' ? D : W;
+        
+        const wallPos = 
+          wall === 'back' ? [0, actualWallHeight/2, -D/2] :
+          wall === 'front' ? [0, actualWallHeight/2, D/2] :
+          wall === 'left' ? [-W/2, actualWallHeight/2, 0] :
+          [W/2, actualWallHeight/2, 0];
+          
+        const wallRot =
+          wall === 'front' ? [0, Math.PI, 0] :
+          wall === 'left' ? [0, Math.PI/2, 0] :
+          wall === 'right' ? [0, -Math.PI/2, 0] :
+          [0, 0, 0];
+
+        return showWallTiles && shouldUseGridWall(wall) ? (
+          <GridWall
+            key={wall}
+            baseTexture={wallTexture}
+            tileSize={wallTileSize}
+            width={wallWidth}
+            height={actualWallHeight}
+            position={wallPos as [number, number, number]}
+            rotation={wallRot as [number, number, number]}
+            isGridMode={isGridMode && activeWall === wall}
+            selectedTiles={activeWall === wall ? selectedTiles : []}
+            onTileClick={onTileClick}
+            customTilesMap={customTiles[wall]}
+          />
+        ) : showWallTiles ? (
+          <TiledWall
+            key={wall}
+            baseTexture={wallTexture}
+            tileSize={wallTileSize}
+            width={wallWidth}
+            height={actualWallHeight}
+            position={wallPos as [number, number, number]}
+            rotation={wallRot as [number, number, number]}
+            quality={quality}
+            highlightBorders={highlightTileBorders}
+          />
+        ) : (
+          <mesh key={wall} position={wallPos as [number, number, number]} rotation={wallRot as [number, number, number]}>
+            <planeGeometry args={[wallWidth, H]} />
+            <meshStandardMaterial 
+              color={
+                wall === 'front' ? '#ffffff' : 
+                wall === 'left' ? '#fef9f3' : 
+                wall === 'right' ? '#faf5ed' : 
+                '#f5f5f5'
+              } 
+              roughness={0.85} 
+            />
+          </mesh>
+        );
+      })}
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* VANITY + WASH BASIN - SCALED */}
+      {/* 🔧 FIXED: VANITY + WASH BASIN - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[vanityPosX, 0, vanityPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+      <group position={[vanityPosX, 0, vanityPosZ]}>
+        {/* Vanity Cabinet Base */}
         <mesh position={[0, 0.45, 0]} castShadow>
           <boxGeometry args={[1.3, 0.9, 0.55]} />
           <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.1} />
         </mesh>
+        
+        {/* Vanity Countertop */}
         <mesh position={[0, 0.92, 0]} castShadow>
           <boxGeometry args={[1.35, 0.05, 0.6]} />
           <meshStandardMaterial color="#f5f5f0" roughness={0.15} metalness={0.45} />
         </mesh>
+        
+        {/* Cabinet Doors */}
         {[-0.32, 0.32].map((x, i) => (
           <React.Fragment key={i}>
             <mesh position={[x, 0.45, 0.285]} castShadow>
@@ -1498,6 +2323,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             </mesh>
           </React.Fragment>
         ))}
+        
+        {/* Wash Basin */}
         <group position={[0, 0.88, 0]}>
           <mesh castShadow>
             <cylinderGeometry args={[0.23, 0.19, 0.16, 32]} />
@@ -1512,6 +2339,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#888888" roughness={0.3} metalness={0.7} />
           </mesh>
         </group>
+        
+        {/* Faucet */}
         <group position={[0, 0.95, -0.22]}>
           <mesh>
             <cylinderGeometry args={[0.03, 0.035, 0.02, 24]} />
@@ -1529,6 +2358,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <cylinderGeometry args={[0.018, 0.015, 0.03, 20]} />
             <meshStandardMaterial color="#e8e8e8" roughness={0.05} metalness={0.98} />
           </mesh>
+          
+          {/* Faucet Handles */}
           {[-0.1, 0.1].map((x, i) => (
             <group key={i} position={[x, 0.38, -0.02]}>
               <mesh>
@@ -1542,6 +2373,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             </group>
           ))}
         </group>
+        
+        {/* Soap Dispenser */}
         <mesh position={[0.48, 0.97, 0.18]} castShadow>
           <cylinderGeometry args={[0.032, 0.038, 0.14, 20]} />
           <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.1} transparent opacity={0.92} />
@@ -1550,6 +2383,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
           <cylinderGeometry args={[0.015, 0.02, 0.04, 16]} />
           <meshStandardMaterial color="#c0c0c0" roughness={0.15} metalness={0.85} />
         </mesh>
+        
+        {/* Small Tray */}
         <mesh position={[-0.42, 0.94, 0.12]} castShadow>
           <boxGeometry args={[0.22, 0.015, 0.16]} />
           <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
@@ -1557,37 +2392,51 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* LED MIRROR - SCALED */}
+      {/* 🔧 FIXED: LED MIRROR - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[vanityPosX, 1.65 * scaleY, -(D/2 - 0.07)]} scale={[scaleX, scaleY, 1]}>
+      <group position={[vanityPosX, 1.65, -D/2 + 0.07]}>
+        {/* Mirror Frame */}
         <mesh castShadow>
           <boxGeometry args={[1.25, 0.95, 0.03]} />
           <meshStandardMaterial color="#c8c8c8" roughness={0.18} metalness={0.92} />
         </mesh>
+        
+        {/* Mirror Glass */}
         <mesh position={[0, 0, 0.018]}>
           <boxGeometry args={[1.19, 0.89, 0.008]} />
           <meshStandardMaterial color="#e8f4f8" roughness={0.02} metalness={0.98} envMapIntensity={2.0} />
         </mesh>
+        
+        {/* LED Strips */}
         {[[0, 0.49, 1.21, 0.04], [0, -0.49, 1.21, 0.04], [-0.61, 0, 0.03, 0.89], [0.61, 0, 0.03, 0.89]].map((params, i) => (
           <mesh key={i} position={[params[0], params[1], 0.025]}>
             <boxGeometry args={i < 2 ? [params[2], params[3], 0.02] : [params[2], params[3], 0.02]} />
-            <meshStandardMaterial color="#ffffff" emissive="#fffef8" emissiveIntensity={i < 2 ? (i === 0 ? 1.2 : 0.9) : 0.7} />
+            <meshStandardMaterial 
+              color="#ffffff" 
+              emissive="#fffef8" 
+              emissiveIntensity={i < 2 ? (i === 0 ? 1.2 : 0.9) : 0.7} 
+            />
           </mesh>
         ))}
+        
+        {/* LED Lighting */}
         <rectAreaLight position={[0, 0.49, 0.05]} width={1.21} height={0.04} intensity={3.5} color="#fffef8" />
         <rectAreaLight position={[0, -0.49, 0.05]} width={1.21} height={0.04} intensity={2.5} color="#fffef8" />
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* SHOWER ENCLOSURE - SCALED */}
+      {/* 🔧 FIXED: SHOWER ENCLOSURE - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[showerPosX, 0, showerPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+      <group position={[showerPosX, 0, showerPosZ]}>
+        {/* Shower Base */}
         <mesh position={[0, 0.04, 0]} castShadow>
           <boxGeometry args={[1.0, 0.08, 1.0]} />
           <meshStandardMaterial color="#fafafa" roughness={0.2} metalness={0.15} />
         </mesh>
+        
+        {/* Drain Ring */}
         <mesh position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.49, 0.015, 12, 32]} />
           <meshStandardMaterial color="#e8e8e8" roughness={0.25} metalness={0.2} />
@@ -1596,18 +2445,24 @@ const actualWallHeight = (wallTileHeight / 11) * H;
           <cylinderGeometry args={[0.045, 0.045, 0.01, 32]} />
           <meshStandardMaterial color="#888888" roughness={0.25} metalness={0.75} />
         </mesh>
+        
+        {/* Glass Walls */}
         {[[0, 1.25, -0.5, 1.0, 2.5, 0.012], [-0.5, 1.25, 0, 1.0, 2.5, 0.012], [0.5, 1.25, 0, 1.0, 2.5, 0.012]].map((params, i) => (
           <mesh key={i} position={[params[0], params[1], params[2]]} rotation={i === 0 ? [0, 0, 0] : [0, Math.PI / 2, 0]} castShadow>
             <boxGeometry args={[params[3], params[4], params[5]]} />
             <meshStandardMaterial color="#ffffff" transparent opacity={0.32} roughness={0.05} metalness={0.08} />
           </mesh>
         ))}
+        
+        {/* Metal Frame */}
         {[[0, 2.5, -0.5, 1.0, 0.025, 0.025], [-0.5, 2.5, 0, 0.025, 0.025, 1.0], [0.5, 2.5, 0, 0.025, 0.025, 1.0], [-0.5, 1.25, -0.5, 0.025, 2.5, 0.025], [0.5, 1.25, -0.5, 0.025, 2.5, 0.025]].map((params, i) => (
           <mesh key={i} position={[params[0], params[1], params[2]]}>
             <boxGeometry args={[params[3], params[4], params[5]]} />
             <meshStandardMaterial color="#d0d0d0" roughness={0.05} metalness={0.95} />
           </mesh>
         ))}
+        
+        {/* Shower Head */}
         <group position={[0, 2.15, -0.35]}>
           <mesh>
             <boxGeometry args={[0.06, 0.06, 0.1]} />
@@ -1626,6 +2481,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#a0a0a0" roughness={0.35} metalness={0.65} />
           </mesh>
         </group>
+        
+        {/* Temperature Control Panel */}
         <group position={[-0.42, 1.15, -0.45]}>
           <mesh>
             <boxGeometry args={[0.15, 0.35, 0.03]} />
@@ -1640,6 +2497,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.92} />
           </mesh>
         </group>
+        
+        {/* Hand Shower */}
         <group position={[-0.42, 1.55, -0.45]}>
           <mesh>
             <torusGeometry args={[0.032, 0.012, 14, 28, Math.PI]} />
@@ -1654,6 +2513,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#d0d0d0" roughness={0.1} metalness={0.9} />
           </mesh>
         </group>
+        
+        {/* Shampoo Shelf */}
         <group position={[0.35, 1.0, -0.35]}>
           <mesh>
             <boxGeometry args={[0.2, 0.025, 0.2]} />
@@ -1667,26 +2528,35 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* TOILET - SCALED */}
+      {/* 🔧 FIXED: TOILET - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[0, 0, toiletPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+      <group position={[toiletPosX, 0, toiletPosZ]}>
+        {/* Toilet Bowl Base */}
         <mesh position={[0, 0.25, 0]} castShadow>
           <capsuleGeometry args={[0.22, 0.3, 18, 28]} />
           <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.12} />
         </mesh>
+        
+        {/* Toilet Seat Ring */}
         <mesh position={[0, 0.42, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
           <torusGeometry args={[0.2, 0.03, 18, 36]} />
           <meshStandardMaterial color="#f5f5f5" roughness={0.22} metalness={0.06} />
         </mesh>
+        
+        {/* Toilet Seat Cover */}
         <mesh position={[0, 0.44, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
           <circleGeometry args={[0.22, 36]} />
           <meshStandardMaterial color="#ffffff" roughness={0.18} metalness={0.1} />
         </mesh>
+        
+        {/* Toilet Tank */}
         <mesh position={[0, 0.65, -0.19]} castShadow>
           <boxGeometry args={[0.36, 0.52, 0.17]} />
           <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.12} />
         </mesh>
+        
+        {/* Flush Buttons */}
         <group position={[0, 0.92, -0.12]}>
           {[-0.04, 0.04].map((x, i) => (
             <mesh key={i} position={[x, 0, 0]}>
@@ -1695,6 +2565,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             </mesh>
           ))}
         </group>
+        
+        {/* Toilet Paper Holder */}
         <group position={[0.38, 0.55, 0]}>
           <mesh position={[0, 0, -0.05]}>
             <cylinderGeometry args={[0.018, 0.018, 0.08, 16]} />
@@ -1709,6 +2581,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#ffffff" roughness={0.65} metalness={0} />
           </mesh>
         </group>
+        
+        {/* Toilet Brush Holder */}
         <group position={[-0.45, 0, 0.12]}>
           <mesh position={[0, 0.05, 0]} castShadow>
             <cylinderGeometry args={[0.075, 0.085, 0.1, 24]} />
@@ -1726,26 +2600,33 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* TOWEL RACK - SCALED */}
+      {/* 🔧 FIXED: TOWEL RACK - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[towelPosX, 1.35 * scaleY, towelPosZ]} scale={[scaleX, scaleY, 1]}>
+      <group position={[towelPosX, 1.35, towelPosZ]}>
+        {/* Towel Bars */}
         {[0, -0.18].map((y, i) => (
           <mesh key={i} position={[0, y, 0]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.018, 0.018, 0.85, 18]} />
             <meshStandardMaterial color="#d0d0d0" roughness={0.05} metalness={0.95} />
           </mesh>
         ))}
+        
+        {/* Wall Mounts */}
         {[-0.42, 0.42].map((x, i) => (
           <mesh key={i} position={[x, -0.09, -0.025]}>
             <cylinderGeometry args={[0.028, 0.028, 0.05, 20]} />
             <meshStandardMaterial color="#c0c0c0" roughness={0.1} metalness={0.9} />
           </mesh>
         ))}
+        
+        {/* Large Towel */}
         <mesh position={[0, -0.09, 0.018]} castShadow>
           <boxGeometry args={[0.75, 0.4, 0.018]} />
           <meshStandardMaterial color="#87ceeb" roughness={0.85} metalness={0} />
         </mesh>
+        
+        {/* Small Hand Towel */}
         <mesh position={[0.22, 0.05, 0.018]} castShadow>
           <boxGeometry args={[0.32, 0.24, 0.015]} />
           <meshStandardMaterial color="#b0c4de" roughness={0.82} metalness={0} />
@@ -1753,10 +2634,10 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* EXHAUST FAN - SCALED */}
+      {/* 🔧 FIXED: EXHAUST FAN - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[0, (H - 0.02) * scaleY, 0]} scale={[scaleX, scaleY, scaleZ]}>
+      <group position={[0, H - 0.02, 0]}>
         <mesh castShadow>
           <cylinderGeometry args={[0.19, 0.19, 0.05, 36]} />
           <meshStandardMaterial color="#f0f0f0" roughness={0.4} metalness={0.1} />
@@ -1772,24 +2653,31 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* ENTRANCE DOOR - SCALED */}
+      {/* 🔧 FIXED: ENTRANCE DOOR - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[doorPosX, 0, doorPosZ]} scale={[scaleX, scaleY, 1]}>
+      <group position={[doorPosX, 0, doorPosZ]}>
+        {/* Door Frame */}
         <mesh position={[0, 1.05, 0]} castShadow>
           <boxGeometry args={[1.02, 2.15, 0.08]} />
           <meshStandardMaterial color="#8b7355" roughness={0.65} metalness={0.05} />
         </mesh>
+        
+        {/* Door Panel */}
         <mesh position={[0, 1.05, -0.025]} castShadow>
           <boxGeometry args={[0.95, 2.05, 0.045]} />
           <meshStandardMaterial color="#fafafa" roughness={0.45} metalness={0.08} />
         </mesh>
+        
+        {/* Door Panels (Decorative) */}
         {[0.65, 0.15, -0.35, -0.85].map((y, i) => (
           <mesh key={i} position={[0, y, -0.05]} castShadow>
             <boxGeometry args={[0.75, 0.38, 0.015]} />
             <meshStandardMaterial color="#f5f5f5" roughness={0.55} metalness={0.05} />
           </mesh>
         ))}
+        
+        {/* Door Handle */}
         <group position={[-0.35, 1.05, -0.06]}>
           <mesh>
             <cylinderGeometry args={[0.025, 0.025, 0.05, 20]} />
@@ -1800,18 +2688,26 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#d0d0d0" roughness={0.08} metalness={0.95} />
           </mesh>
         </group>
+        
+        {/* Keyhole */}
         <mesh position={[-0.35, 1.05, -0.058]}>
           <cylinderGeometry args={[0.012, 0.012, 0.025, 16]} />
           <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.85} />
         </mesh>
+        
+        {/* Door Window */}
         <mesh position={[0, 1.75, -0.048]} castShadow>
           <boxGeometry args={[0.75, 0.45, 0.012]} />
           <meshStandardMaterial color="#ffffff" transparent opacity={0.35} roughness={0.15} metalness={0.05} />
         </mesh>
+        
+        {/* Window Frame */}
         <lineSegments position={[0, 1.75, -0.048]}>
           <edgesGeometry args={[new THREE.BoxGeometry(0.75, 0.45, 0.012)]} />
           <lineBasicMaterial color="#8b7355" linewidth={2} />
         </lineSegments>
+        
+        {/* Hinges */}
         {[1.85, 1.05, 0.25].map((y, i) => (
           <group key={i} position={[0.47, y, -0.04]}>
             <mesh>
@@ -1824,6 +2720,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             </mesh>
           </group>
         ))}
+        
+        {/* Door Threshold */}
         <mesh position={[0, 0.015, 0]} castShadow>
           <boxGeometry args={[1.02, 0.03, 0.1]} />
           <meshStandardMaterial color="#8b7355" roughness={0.65} metalness={0.05} />
@@ -1831,26 +2729,35 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* DECORATIVE PLANT - SCALED */}
+      {/* 🔧 FIXED: DECORATIVE PLANT - NO FURNITURE SCALE */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <group position={[plantPosX, 0, plantPosZ]} scale={[scaleX, scaleY, scaleZ]}>
+      <group position={[plantPosX, 0, plantPosZ]}>
+        {/* Pot */}
         <mesh position={[0, 0.2, 0]} castShadow>
           <cylinderGeometry args={[0.15, 0.12, 0.4, 24]} />
           <meshStandardMaterial color="#f5f5f0" roughness={0.35} metalness={0.08} />
         </mesh>
+        
+        {/* Pot Rim */}
         <mesh position={[0, 0.41, 0]}>
           <torusGeometry args={[0.15, 0.015, 16, 32]} />
           <meshStandardMaterial color="#e8e8e8" roughness={0.4} metalness={0.1} />
         </mesh>
+        
+        {/* Soil */}
         <mesh position={[0, 0.38, 0]}>
           <cylinderGeometry args={[0.14, 0.14, 0.04, 24]} />
           <meshStandardMaterial color="#4a3c2a" roughness={0.95} metalness={0} />
         </mesh>
+        
+        {/* Stem */}
         <mesh position={[0, 0.65, 0]}>
           <cylinderGeometry args={[0.015, 0.018, 0.5, 12]} />
           <meshStandardMaterial color="#2d5016" roughness={0.85} metalness={0} />
         </mesh>
+        
+        {/* Leaves (Multiple layers for fullness) */}
         {[
           { pos: [-0.12, 0.55, 0.08], rot: [0.3, -0.5, -0.4], scale: 0.85 },
           { pos: [0.1, 0.52, -0.1], rot: [-0.2, 0.6, 0.3], scale: 0.8 },
@@ -1864,9 +2771,16 @@ const actualWallHeight = (wallTileHeight / 11) * H;
         ].map((leaf, i) => (
           <mesh key={i} position={[leaf.pos[0], leaf.pos[1], leaf.pos[2]]} rotation={[leaf.rot[0], leaf.rot[1], leaf.rot[2]]} castShadow>
             <boxGeometry args={[0.18 * leaf.scale, 0.25 * leaf.scale, 0.002]} />
-            <meshStandardMaterial color={i < 3 ? "#3d6b2e" : i < 6 ? "#4a7c3a" : "#5a8f45"} roughness={0.65} metalness={0} side={THREE.DoubleSide} />
+            <meshStandardMaterial 
+              color={i < 3 ? "#3d6b2e" : i < 6 ? "#4a7c3a" : "#5a8f45"} 
+              roughness={0.65} 
+              metalness={0} 
+              side={THREE.DoubleSide} 
+            />
           </mesh>
         ))}
+        
+        {/* Accent Leaves */}
         {[
           { pos: [0.08, 0.62, -0.15], rot: [0.5, 0.8, 0.3], scale: 0.4 },
           { pos: [-0.1, 0.82, -0.12], rot: [-0.4, -0.6, -0.4], scale: 0.45 },
@@ -1877,6 +2791,8 @@ const actualWallHeight = (wallTileHeight / 11) * H;
             <meshStandardMaterial color="#6aa84f" roughness={0.6} metalness={0} side={THREE.DoubleSide} />
           </mesh>
         ))}
+        
+        {/* Decorative Pebbles */}
         {[
           { pos: [-0.08, 0.4, 0.05], size: 0.018 },
           { pos: [0.06, 0.4, -0.07], size: 0.015 },
@@ -1891,33 +2807,50 @@ const actualWallHeight = (wallTileHeight / 11) * H;
       </group>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* BATH MATS - SCALED */}
+      {/* 🔧 FIXED: BATH MATS - ABSOLUTE POSITIONING */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <mesh position={[showerPosX, 0.008, -(D/2 - 2.05) * scaleZ]} rotation={[-Math.PI / 2, 0, 0]} castShadow scale={[scaleX, scaleZ, 1]}>
+      {/* Mat near shower */}
+      <mesh position={[showerPosX, 0.008, -D/2 + 2.05]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
         <planeGeometry args={[0.6, 0.42]} />
         <meshStandardMaterial color="#b0c4de" roughness={0.92} metalness={0} />
       </mesh>
 
-      <mesh position={[vanityPosX, 0.008, -(D/2 - 1.45) * scaleZ]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} castShadow scale={[scaleX, scaleZ, 1]}>
+      {/* Mat near vanity */}
+      <mesh position={[vanityPosX, 0.008, -D/2 + 1.45]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} castShadow>
         <planeGeometry args={[0.5, 0.35]} />
         <meshStandardMaterial color="#b0c4de" roughness={0.92} metalness={0} />
       </mesh>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* PROFESSIONAL LIGHTING - SCALED POSITIONS */}
+      {/* 🔧 FIXED: PROFESSIONAL LIGHTING - ABSOLUTE POSITIONING */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       
-      <pointLight position={[0, (H - 0.15) * scaleY, 0]} intensity={2.8} color="#fff8e1" distance={7.5} decay={2} castShadow />
-      <pointLight position={[vanityPosX, (H - 0.3) * scaleY, -(D/2 - 1.7) * scaleZ]} intensity={2.4} color="#fffef8" distance={4} decay={2} />
-      <pointLight position={[vanityPosX, 1.65 * scaleY, -(D/2 - 1.3) * scaleZ]} intensity={1.6} color="#ffffff" distance={2.5} decay={2} />
-      <pointLight position={[showerPosX, (H - 0.2) * scaleY, showerPosZ]} intensity={1.9} color="#ffffff" distance={3.5} decay={2} />
-      <pointLight position={[0, (H - 0.4) * scaleY, (D/2 - 2.35) * scaleZ]} intensity={1.4} color="#fff8e1" distance={3} decay={2} />
-      <pointLight position={[(W/2 - 0.3) * scaleX, (H - 0.5) * scaleY, -(D/2 - 2.1) * scaleZ]} intensity={0.95} color="#ffffff" distance={4.5} decay={2} />
-      <pointLight position={[-(W/2 - 0.3) * scaleX, (H - 0.5) * scaleY, -(D/2 - 2.1) * scaleZ]} intensity={0.95} color="#ffffff" distance={4.5} decay={2} />
-      <pointLight position={[0, (H - 0.6) * scaleY, (D/2 - 1.0) * scaleZ]} intensity={1.05} color="#fff8e1" distance={4} decay={2} />
-      <pointLight position={[doorPosX, 1.8 * scaleY, (D/2 - 0.9) * scaleZ]} intensity={1.2} color="#fffef8" distance={2.5} decay={2} />
-      <pointLight position={[plantPosX, 1.2 * scaleY, (D/2 - 0.7) * scaleZ]} intensity={0.8} color="#f0ffe0" distance={1.8} decay={2} />
+      {/* Ceiling Center */}
+      <pointLight position={[0, H - 0.15, 0]} intensity={2.8} color="#fff8e1" distance={7.5} decay={2} castShadow />
+      
+      {/* Vanity Area */}
+      <pointLight position={[vanityPosX, H - 0.3, -D/2 + 1.7]} intensity={2.4} color="#fffef8" distance={4} decay={2} />
+      <pointLight position={[vanityPosX, 1.65, -D/2 + 1.3]} intensity={1.6} color="#ffffff" distance={2.5} decay={2} />
+      
+      {/* Shower Area */}
+      <pointLight position={[showerPosX, H - 0.2, showerPosZ]} intensity={1.9} color="#ffffff" distance={3.5} decay={2} />
+      
+      {/* Room Center */}
+      <pointLight position={[0, H - 0.4, D/2 - 2.35]} intensity={1.4} color="#fff8e1" distance={3} decay={2} />
+      
+      {/* Side Walls */}
+      <pointLight position={[W/2 - 0.3, H - 0.5, -D/2 + 2.1]} intensity={0.95} color="#ffffff" distance={4.5} decay={2} />
+      <pointLight position={[-W/2 + 0.3, H - 0.5, -D/2 + 2.1]} intensity={0.95} color="#ffffff" distance={4.5} decay={2} />
+      
+      {/* Front Area */}
+      <pointLight position={[0, H - 0.6, D/2 - 1.0]} intensity={1.05} color="#fff8e1" distance={4} decay={2} />
+      
+      {/* Door Area */}
+      <pointLight position={[doorPosX, 1.8, D/2 - 0.9]} intensity={1.2} color="#fffef8" distance={2.5} decay={2} />
+      
+      {/* Plant Accent Light */}
+      <pointLight position={[plantPosX, 1.2, plantPosZ]} intensity={0.8} color="#f0ffe0" distance={1.8} decay={2} />
     </group>
   );
 };
@@ -4742,35 +5675,28 @@ const renderScene = () => {
         </div>
       )}
 {customDimensions && (
-  <div className="absolute top-28 right-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-    <p className="text-[9px] font-medium mb-0.5">Custom Size:</p>
-    <p className="text-[11px] font-bold">
-      {customDimensions.width}' × {customDimensions.depth}' × {customDimensions.height}'
-    </p>
-    <p className="text-[8px] opacity-75 mt-0.5">
-      {(customDimensions.width * customDimensions.depth).toFixed(1)} sq ft
-    </p>
-  </div>
+<></>
 )}
       {/* TOP RIGHT - APPLIED TILES INFO */}
-      <div className="absolute top-2 right-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-        <p className="text-[9px] font-medium mb-0.5">Applied:</p>
+      <div className="">
+        {/* <p className="text-[9px] font-medium mb-0.5">Applied:</p>
         <p className="text-[11px] font-bold capitalize">{activeSurface}</p>
-        
+         */}
         {(hasFloorTile || hasCustomFloor) && (
-          <p className="text-[9px] opacity-75 mt-0.5 text-green-400 flex items-center gap-1">
-            ✓ Floor
-            {hasCustomFloor && (
-              <span className="text-[7px] bg-green-500/20 px-1 py-0.5 rounded font-semibold">
-                Custom
-              </span>
-            )}
-          </p>
+          // <p className="text-[9px] opacity-75 mt-0.5 text-green-400 flex items-center gap-1">
+          //   ✓ Floor
+          //   {hasCustomFloor && (
+          //     <span className="text-[7px] bg-green-500/20 px-1 py-0.5 rounded font-semibold">
+          //       Custom
+          //     </span>
+          //   )}
+          // </p>
+          <></>
         )}
         
-        {hasWallTile && (
+        {/* {hasWallTile && (
           <p className="text-[9px] opacity-75 text-blue-400">✓ Wall</p>
-        )}
+        )} */}
         
         {totalCustomTiles > 0 && (
           <>
@@ -4811,33 +5737,7 @@ const renderScene = () => {
       </div>
 
       {/* SETTINGS PANEL */}
-      {showSettings && (
-        <div className="absolute bottom-12 right-2 bg-black/90 text-white p-2.5 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 min-w-[140px]">
-          <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-            <Settings className="w-2.5 h-2.5" />
-            Settings
-          </p>
-          <div className="space-y-1.5">
-            <div>
-              <p className="text-[9px] mb-1 opacity-75">Quality</p>
-              <div className="flex flex-col gap-0.5">
-                {(['ultra', 'high', 'medium', 'low'] as QualityLevel[]).map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => setQuality(q)}
-                    className={`px-1.5 py-0.5 rounded text-[9px] capitalize transition-all ${
-                      quality === q ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+     
       {/* 🆕 MODIFIED: SIDE INFO PANEL (Small, Non-Blocking) */}
       {isGridMode && activeWall && (
         <div className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-3 max-w-[200px] z-30 border-2 border-blue-400">
@@ -5111,24 +6011,24 @@ const renderScene = () => {
   </button>
 
   {/* 9️⃣ Settings Button */}
-  <button
+  {/* <button
     onClick={() => setShowSettings(!showSettings)}
     className="bg-black/80 text-white p-2 sm:p-2.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10 hover:scale-110 active:scale-95"
     title="Settings"
     aria-label="Toggle settings"
   >
     <Settings className="w-4 h-4" />
-  </button>
+  </button> */}
 
   {/* 🔟 Reset Button */}
-  <button
+  {/* <button
     onClick={handleReset}
     className="bg-black/80 text-white p-2 sm:p-2.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10 hover:scale-110 active:scale-95"
     title="Reset"
     aria-label="Reset"
   >
     <RotateCcw className="w-4 h-4" />
-  </button>
+  </button> */}
 
   {/* 1️⃣1️⃣ Fullscreen Button */}
   <button
