@@ -1256,6 +1256,112 @@ const MinimalLighting: React.FC = () => {
   );
 };
 
+// const TiledFloor: React.FC<{
+//   baseTexture: THREE.Texture | null;
+//   tileSize: { width: number; height: number };
+//   roomWidth: number;
+//   roomDepth: number;
+//   position: [number, number, number];
+//   quality: QualityLevel;
+//    highlightBorders?: boolean;
+// }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position, highlightBorders = false }) => {
+  
+//   const material = useMemo(() => {
+//     if (!baseTexture) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: '#e8e8e8',
+//         side: THREE.DoubleSide
+//       });
+//     }
+
+//     const clonedTexture = baseTexture.clone();
+//     clonedTexture.needsUpdate = true;
+//     clonedTexture.colorSpace = THREE.SRGBColorSpace;
+//     clonedTexture.wrapS = THREE.RepeatWrapping;
+//     clonedTexture.wrapT = THREE.RepeatWrapping;
+//     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
+//     clonedTexture.magFilter = THREE.LinearFilter;
+//     clonedTexture.anisotropy = 16;
+    
+//     const tileSizeM = {
+//       width: tileSize.width / 100,
+//       height: tileSize.height / 100
+//     };
+    
+//     const repeatX = roomWidth / tileSizeM.width;
+//     const repeatY = roomDepth / tileSizeM.height;
+    
+//     clonedTexture.repeat.set(repeatX, repeatY);
+
+//     const mat = new THREE.MeshBasicMaterial({ 
+//       map: clonedTexture,
+//       side: THREE.DoubleSide,
+//       toneMapped: false
+//     });
+//     (mat as any)._customTexture = clonedTexture;
+//     return mat;
+//   }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
+
+//   useEffect(() => {
+//     return () => {
+//       if ((material as any)._customTexture) {
+//         (material as any)._customTexture.dispose();
+//       }
+//       material.dispose();
+//     };
+//   }, [material]);
+
+  
+
+//   const gridLines = useMemo(() => {
+//     if (!highlightBorders) return null;
+    
+//     const tileSizeM = {
+//       width: tileSize.width / 100,
+//       height: tileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(roomWidth / tileSizeM.width);
+//     const rows = Math.ceil(roomDepth / tileSizeM.height);
+    
+//     const points: THREE.Vector3[] = [];
+    
+//     // Vertical lines
+//     for (let i = 0; i <= cols; i++) {
+//       const x = -roomWidth/2 + i * tileSizeM.width;
+//       points.push(new THREE.Vector3(x, -roomDepth/2, 0.001));
+//       points.push(new THREE.Vector3(x, roomDepth/2, 0.001));
+//     }
+    
+//     // Horizontal lines
+//     for (let i = 0; i <= rows; i++) {
+//       const y = -roomDepth/2 + i * tileSizeM.height;
+//       points.push(new THREE.Vector3(-roomWidth/2, y, 0.001));
+//       points.push(new THREE.Vector3(roomWidth/2, y, 0.001));
+//     }
+    
+//     const geometry = new THREE.BufferGeometry().setFromPoints(points);
+//     return geometry;
+//   }, [highlightBorders, roomWidth, roomDepth, tileSize]);
+
+//   return (
+//   <group>
+
+//     <mesh rotation={[-Math.PI / 2, 0, 0]} position={position}>
+//       <planeGeometry args={[roomWidth, roomDepth]} />
+//       <primitive object={material} attach="material" />
+//     </mesh>
+//     {highlightBorders && gridLines && (
+//         <lineSegments rotation={[-Math.PI / 2, 0, 0]} position={position}>
+//           <primitive object={gridLines} attach="geometry" />
+//           <lineBasicMaterial color="#000000" linewidth={2} opacity={0.8} transparent />
+//         </lineSegments>
+//       )}
+//     </group>
+//   );
+// };
+
+// ✅ FIXED CODE - INDIVIDUAL TILE MESHES (CORRECT VISUAL SIZE)
 const TiledFloor: React.FC<{
   baseTexture: THREE.Texture | null;
   tileSize: { width: number; height: number };
@@ -1263,10 +1369,66 @@ const TiledFloor: React.FC<{
   roomDepth: number;
   position: [number, number, number];
   quality: QualityLevel;
-   highlightBorders?: boolean;
+  highlightBorders?: boolean;
 }> = ({ baseTexture, tileSize, roomWidth, roomDepth, position, highlightBorders = false }) => {
   
-  const material = useMemo(() => {
+  // ✅ FIX: Convert tile size to meters once
+  const tileSizeM = useMemo(() => ({
+    width: tileSize.width / 100,   // cm to meters
+    height: tileSize.height / 100
+  }), [tileSize.width, tileSize.height]);
+
+  // ✅ FIX: Calculate grid dimensions
+  const gridDimensions = useMemo(() => {
+    const cols = Math.ceil(roomWidth / tileSizeM.width);
+    const rows = Math.ceil(roomDepth / tileSizeM.height);
+    
+    console.log('🟫 Floor grid:', { 
+      cols, 
+      rows, 
+      total: cols * rows,
+      tileSize: `${tileSize.width}×${tileSize.height}cm`,
+      tileSizeM: `${tileSizeM.width.toFixed(3)}×${tileSizeM.height.toFixed(3)}m`
+    });
+    
+    return { cols, rows };
+  }, [roomWidth, roomDepth, tileSizeM.width, tileSizeM.height, tileSize.width, tileSize.height]);
+
+  // ✅ FIX: Generate individual tile data
+  const tilesData = useMemo(() => {
+    const tiles: Array<{
+      index: number;
+      row: number;
+      col: number;
+      position: [number, number, number];
+    }> = [];
+
+    const { cols, rows } = gridDimensions;
+    let index = 1;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // ✅ Calculate exact position for this tile
+        const x = -roomWidth/2 + (col + 0.5) * tileSizeM.width;
+        const z = -roomDepth/2 + (row + 0.5) * tileSizeM.height;
+        
+        tiles.push({
+          index,
+          row,
+          col,
+          position: [x, z, 0]  // z instead of y for floor (rotated 90°)
+        });
+        
+        index++;
+      }
+    }
+
+    console.log(`✅ Floor tiles generated: ${tiles.length} tiles (${cols}×${rows})`);
+    return tiles;
+  }, [gridDimensions, roomWidth, roomDepth, tileSizeM.width, tileSizeM.height]);
+
+  // ✅ FIX: Create material for each tile (proper texture without stretching)
+  const tileMaterial = useMemo(() => {
     if (!baseTexture) {
       return new THREE.MeshBasicMaterial({ 
         color: '#e8e8e8',
@@ -1274,6 +1436,7 @@ const TiledFloor: React.FC<{
       });
     }
 
+    // ✅ Clone texture for floor tiles
     const clonedTexture = baseTexture.clone();
     clonedTexture.needsUpdate = true;
     clonedTexture.colorSpace = THREE.SRGBColorSpace;
@@ -1283,45 +1446,34 @@ const TiledFloor: React.FC<{
     clonedTexture.magFilter = THREE.LinearFilter;
     clonedTexture.anisotropy = 16;
     
-    const tileSizeM = {
-      width: tileSize.width / 100,
-      height: tileSize.height / 100
-    };
-    
-    const repeatX = roomWidth / tileSizeM.width;
-    const repeatY = roomDepth / tileSizeM.height;
-    
-    clonedTexture.repeat.set(repeatX, repeatY);
+    // ✅ CRITICAL: Repeat set to 1 (each tile shows FULL texture once)
+    clonedTexture.repeat.set(1, 1);
 
     const mat = new THREE.MeshBasicMaterial({ 
       map: clonedTexture,
       side: THREE.DoubleSide,
       toneMapped: false
     });
+    
     (mat as any)._customTexture = clonedTexture;
     return mat;
-  }, [baseTexture, tileSize.width, tileSize.height, roomWidth, roomDepth]);
+  }, [baseTexture]);
 
+  // ✅ Cleanup
   useEffect(() => {
     return () => {
-      if ((material as any)._customTexture) {
-        (material as any)._customTexture.dispose();
+      if ((tileMaterial as any)._customTexture) {
+        (tileMaterial as any)._customTexture.dispose();
       }
-      material.dispose();
+      tileMaterial.dispose();
     };
-  }, [material]);
+  }, [tileMaterial]);
 
+  // ✅ Grid lines (same as before, works correctly)
   const gridLines = useMemo(() => {
     if (!highlightBorders) return null;
     
-    const tileSizeM = {
-      width: tileSize.width / 100,
-      height: tileSize.height / 100
-    };
-    
-    const cols = Math.ceil(roomWidth / tileSizeM.width);
-    const rows = Math.ceil(roomDepth / tileSizeM.height);
-    
+    const { cols, rows } = gridDimensions;
     const points: THREE.Vector3[] = [];
     
     // Vertical lines
@@ -1333,24 +1485,29 @@ const TiledFloor: React.FC<{
     
     // Horizontal lines
     for (let i = 0; i <= rows; i++) {
-      const y = -roomDepth/2 + i * tileSizeM.height;
-      points.push(new THREE.Vector3(-roomWidth/2, y, 0.001));
-      points.push(new THREE.Vector3(roomWidth/2, y, 0.001));
+      const z = -roomDepth/2 + i * tileSizeM.height;
+      points.push(new THREE.Vector3(-roomWidth/2, z, 0.001));
+      points.push(new THREE.Vector3(roomWidth/2, z, 0.001));
     }
     
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     return geometry;
-  }, [highlightBorders, roomWidth, roomDepth, tileSize]);
+  }, [highlightBorders, gridDimensions, roomWidth, roomDepth, tileSizeM.width, tileSizeM.height]);
 
   return (
-  <group>
-
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={position}>
-      <planeGeometry args={[roomWidth, roomDepth]} />
-      <primitive object={material} attach="material" />
-    </mesh>
-    {highlightBorders && gridLines && (
-        <lineSegments rotation={[-Math.PI / 2, 0, 0]} position={position}>
+    <group rotation={[-Math.PI / 2, 0, 0]} position={position}>
+      {/* ✅ FIX: Render individual tile meshes */}
+      {tilesData.map((tile) => (
+        <mesh key={tile.index} position={tile.position}>
+          {/* ✅ CRITICAL: Each tile has its OWN geometry with CORRECT size */}
+          <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+          <primitive object={tileMaterial} attach="material" />
+        </mesh>
+      ))}
+      
+      {/* ✅ Grid lines (same as before) */}
+      {highlightBorders && gridLines && (
+        <lineSegments position={[0, 0, 0.001]}>
           <primitive object={gridLines} attach="geometry" />
           <lineBasicMaterial color="#000000" linewidth={2} opacity={0.8} transparent />
         </lineSegments>
