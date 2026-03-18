@@ -78,7 +78,22 @@ interface SceneProps {
    wallTileHeight?: number;
 }
 
-// ✅ NEW: Proper interface for currentUser
+// ✅ NEW: Proper interface for currentUser 
+
+// ✅ NEW: Floor tile data structure (same as wall tiles)
+interface FloorTileData {
+  index: number;
+  row: number;
+  col: number;
+  position: [number, number, number];
+  texture: string | null;
+  isCustom: boolean;
+}
+
+interface CustomFloorTileData {
+  texture: THREE.Texture;
+  size: { width: number; height: number };
+}
 interface CurrentUserData {
   uid?: string;           // From Firebase Auth
   user_id?: string;       // From Firestore/AppStore
@@ -295,10 +310,7 @@ const CAMERA_PRESETS: Record<string, CameraPreset[]> = {
     { name: 'Full Kitchen', position: [6, 3, 0], target: [0, 1.5, 0], fov: 55 },
   ],
   bathroom: [
-    { name: 'Full View', position: [2.5, 2, 2.5], target: [0, 1.2, 0], fov: 55 },
-    { name: 'Vanity Area', position: [0, 1.5, 2], target: [0, 1.5, -1.5], fov: 50 },
-    { name: 'Shower Zone', position: [1.5, 1.4, 0], target: [-1.2, 1.2, -1], fov: 45 },
-    { name: 'Toilet Area', position: [1.8, 1.2, 0.8], target: [0.9, 0.5, 1.2], fov: 48 },
+   
   ],
 };
 
@@ -9315,24 +9327,7 @@ const renderScene = () => {
         )}
       </div>
 
-      {/* CAMERA PRESETS */}
-      <div className="absolute top-14 right-2 bg-black/80 text-white p-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">
-        <p className="text-[9px] font-semibold mb-1.5 flex items-center gap-1">
-          <Camera className="w-2.5 h-2.5" />
-          Camera
-        </p>
-        <div className="flex flex-col gap-1">
-          {presets.map((preset, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedPreset(preset)}
-              className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[9px] transition-all"
-            >
-              {preset.name}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* SETTINGS PANEL */}
      
@@ -9374,6 +9369,105 @@ const renderScene = () => {
           </button>
         </div>
       )}
+
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* 🔥 FIXED: GRID MODE CONTROL PANEL - OK & CANCEL BUTTONS */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+
+{isGridMode && activeWall && (
+  <>
+    {/* Side Info Panel (Keep existing) */}
+    <div className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-3 max-w-[200px] z-30 border-2 border-blue-400">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Grid3x3 className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-gray-800 truncate">
+            {activeWall.charAt(0).toUpperCase() + activeWall.slice(1)} Wall
+          </p>
+          <p className="text-[10px] text-gray-600">Grid Mode Active</p>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 rounded-lg p-2 mb-2">
+        <p className="text-xs text-blue-800 text-center">
+          <strong className="text-2xl font-bold">{selectedTiles.length}</strong>
+          <br />
+          <span className="text-[10px]">tiles selected</span>
+        </p>
+      </div>
+
+      <div className="space-y-1.5 text-[10px] text-gray-600">
+        <p>• Tap tiles to select</p>
+        <p>• Green = selected</p>
+        <p>• Use buttons below</p>
+      </div>
+
+      <button
+        onClick={handleClearSelection}
+        disabled={selectedTiles.length === 0}
+        className="w-full mt-2 px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-[10px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Clear All
+      </button>
+    </div>
+
+    {/* ✅ FIX: BOTTOM CONTROL BAR - OK & CANCEL BUTTONS */}
+    <div className="absolute bottom-2 left-2 right-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-3 z-40 border-2 border-blue-500 max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <p className="text-xs font-bold text-gray-800">
+            {selectedTiles.length} tile{selectedTiles.length !== 1 ? 's' : ''} selected
+          </p>
+        </div>
+        <button
+          onClick={handleClearSelection}
+          disabled={selectedTiles.length === 0}
+          className="text-xs text-red-600 hover:text-red-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Clear
+        </button>
+      </div>
+
+      {selectedTiles.length === 0 && (
+        <p className="text-[10px] text-gray-500 mb-2 text-center">
+          👆 Tap tiles on the wall to select them
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          onClick={handleCancelGridMode}
+          className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all border border-gray-300 active:scale-95"
+        >
+          Cancel
+        </button>
+        
+        <button
+          onClick={handleOkClick}
+          disabled={selectedTiles.length === 0}
+          className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-purple-600 active:scale-95 flex items-center justify-center gap-2"
+        >
+          <Check className="w-4 h-4" />
+          OK ({selectedTiles.length})
+        </button>
+      </div>
+
+      {selectedTiles.length > 0 && (
+        <div className="mt-2 bg-blue-50 rounded-lg p-2 border border-blue-200">
+          <p className="text-[9px] text-blue-700 flex items-start gap-1">
+            <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+            <span>
+              Click <strong>OK</strong> to upload tile texture for selected positions
+            </span>
+          </p>
+        </div>
+      )}
+    </div>
+  </>
+)} 
 
 {/* ═══════════════════════════════════════════════════════════════ */}
 {/* ✅ CLEAN 3D VIEWER - ALL BUTTONS MOVED TO PARENT SIDEBAR */}
