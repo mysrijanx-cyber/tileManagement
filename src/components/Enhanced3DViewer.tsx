@@ -654,7 +654,7 @@ const generateDiagonalPattern = (cols: number, rows: number, variant: number = 0
   return selectedIndices;
 };
 
-// Checkerboard Pattern
+
 // const generateCheckerboardPattern = (cols: number, rows: number, invert: boolean = false): number[] => {
 //   const selectedIndices: number[] = [];
   
@@ -706,7 +706,7 @@ const generateCheckerboardPattern = (cols: number, rows: number, invert: boolean
 };
 
 
-// Random Scatter Pattern
+
 // const generateRandomPattern = (cols: number, rows: number, density: number = 0.6, seed: number = 0): number[] => {
 //   const selectedIndices: number[] = [];
 //   const totalTiles = cols * rows;
@@ -796,7 +796,7 @@ const generateRandomPattern = (cols: number, rows: number, density: number = 0.6
   return selectedIndices;
 };
 
-// Border Frame Pattern
+
 // const generateBorderPattern = (cols: number, rows: number, thickness: number = 1): number[] => {
 //   const selectedIndices: number[] = [];
   
@@ -863,7 +863,7 @@ const generateBorderPattern = (cols: number, rows: number, thickness: number = 1
 };
 
 
-// Corner Focus Pattern
+
 // const generateCornerPattern = (cols: number, rows: number, size: number = 3): number[] => {
 //   const selectedIndices: number[] = [];
   
@@ -964,7 +964,7 @@ const generateCornerPattern = (cols: number, rows: number, variant: number = 0):
 };
 
 
-// Cross Pattern
+
 // const generateCrossPattern = (cols: number, rows: number, thickness: number = 2): number[] => {
 //   const selectedIndices: number[] = [];
 //   const centerCol = Math.floor(cols / 2);
