@@ -8615,12 +8615,7 @@ export const Room3DViewPage: React.FC = () => {
           <div className="bg-purple-600/20 border-t border-purple-500/30 px-3 py-1.5">
             <div className="max-w-7xl mx-auto flex items-center gap-2">
               <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-              <p className="text-purple-200 text-xs">
-                🧱 Wall tiles: <strong>Full coverage (11 feet)</strong>
-                {wallTile.size && (
-                  <span className="ml-2">| 📏 Size: <strong>{wallTile.size.width}×{wallTile.size.height}cm</strong></span>
-                )}
-              </p>
+             
             </div>
           </div>
         )}
