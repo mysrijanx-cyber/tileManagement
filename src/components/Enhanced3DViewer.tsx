@@ -3329,13 +3329,13 @@ const BrightHotelKitchenScene: React.FC<{
           </mesh>
         ))}
 
-        {/* Upper Cabinet Handles */}
+        {/* Upper Cabinet Handles
         {[-2.2, -1.5, -0.8, -0.1, 0.6, 1.3, 2.0].map((x, i) => (
           <mesh key={`handle-upper-${i}`} position={[x, 2.1, -0.05]} castShadow>
             <boxGeometry args={[0.15, 0.025, 0.025]} />
             <meshStandardMaterial color="#e8e8e8" roughness={0.12} metalness={0.92} />
           </mesh>
-        ))}
+        ))} */}
 
         {/* Under Cabinet Lighting */}
         <rectAreaLight position={[0, 1.6, -0.38]} width={5.0} height={0.05} intensity={3.5} color="#fffef8" />
@@ -9038,24 +9038,14 @@ const renderScene = () => {
 
       {/* TOP LEFT - ROOM INFO */}
       {showControls && (
-        <div className="absolute top-2 left-2 bg-black/80 text-white px-2.5 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10 max-w-[180px]">
-          <p className="font-semibold mb-0.5 flex items-center gap-1.5 text-[11px]">
-            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-            {roomType.charAt(0).toUpperCase() + roomType.slice(1)} Room
-          </p>
-          <p className="text-[9px] opacity-75">
-            Quality: <span className="text-blue-400 font-medium capitalize">{quality}</span>
-          </p>
+        <div>
+          
+       
           {(floorTile || hasCustomFloor) && (
-            <p className="text-[9px] opacity-75 mt-0.5">
-              Floor: {customFloorSize.width}×{customFloorSize.height} cm
-              {hasCustomFloor && <span className="text-green-400 ml-1">★</span>}
-            </p>
+            <></>
           )}
           {wallTile && (
-            <p className="text-[9px] opacity-75">
-              Wall: {wallTile.size.width}×{wallTile.size.height} cm
-            </p>
+           <></>
           )}
         </div>
       )}
