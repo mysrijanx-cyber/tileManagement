@@ -1,3 +1,4 @@
+
 // import React, { useState, useEffect } from "react";
 // import {
 //   Plus,
@@ -5,7 +6,6 @@
 //   Trash2,
 //   Upload,
 //   Save,
-//   BarChart3,
 //   Store,
 //   Package,
 //   FileSpreadsheet,
@@ -14,7 +14,7 @@
 //   Loader,
 //   Search,
 //   Filter,
-//     Users,
+//   Users,
 //   RefreshCw,
 //   ChevronUp,
 //   ChevronDown,
@@ -25,6 +25,8 @@
 //   User,
 //   Menu,
 //   X,
+//   ChevronLeft,
+//   ChevronRight,
 // } from "lucide-react";
 // import { Tile } from "../types";
 // import { useAppStore } from "../stores/appStore";
@@ -53,30 +55,18 @@
 // export const SellerDashboard: React.FC = () => {
 //   const { currentUser, isAuthenticated } = useAppStore();
 //   const [isAddingTile, setIsAddingTile] = useState(false);
-//   // const [activeTab, setActiveTab] = useState<
-//   //   | "tiles"
-//   //   | "bulk"
-//   //   | "excel"
-//   //   | "analytics"
-//   //   | "qrcodes"
-//   //   | "profile"
-//   //   | "worker"
-//   //   | "scan"
-//   //   | "stock-analytics"
-//   // >("tiles"); 
-
-// const [activeTab, setActiveTab] = useState<
-//   | "tiles"
-//   | "bulk"
-//   | "excel"
-//   | "analytics"
-//   | "qrcodes"
-//   | "profile"
-//   | "worker"
-//   | "scan"
-//   | "stock-analytics"
-//   | "customer-inquiries"  // ← ADD THIS
-// >("tiles");
+//   const [activeTab, setActiveTab] = useState<
+//     | "tiles"
+//     | "bulk"
+//     | "excel"
+//     | "analytics"
+//     | "qrcodes"
+//     | "profile"
+//     | "worker"
+//     | "scan"
+//     | "stock-analytics"
+//     | "customer-inquiries"
+//   >("tiles");
 
 //   const [editingTile, setEditingTile] = useState<Tile | null>(null);
 //   const [sellerProfile, setSellerProfile] = useState<any>(null);
@@ -92,6 +82,11 @@
 //   const [stockFilter, setStockFilter] = useState<string>("all");
 //   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 //   const [expandedTileId, setExpandedTileId] = useState<string | null>(null);
+
+//   // ✅ PAGINATION STATE
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [itemsPerPage] = useState(10); // Fixed at 10 items per page
+
 //   const [newTile, setNewTile] = useState<Partial<Tile>>({
 //     name: "",
 //     category: "both",
@@ -102,6 +97,8 @@
 //     imageUrl: "",
 //     textureUrl: "",
 //     tileCode: "",
+//     tileSurface: "",
+//     tileMaterial: "",
 //   });
 
 //   useEffect(() => {
@@ -118,8 +115,10 @@
 //     }
 //   }, [currentUser, isAuthenticated]);
 
+//   // ✅ RESET TO PAGE 1 WHEN FILTERS CHANGE
 //   useEffect(() => {
 //     filterTiles();
+//     setCurrentPage(1);
 //   }, [tiles, searchTerm, categoryFilter, stockFilter]);
 
 //   useEffect(() => {
@@ -131,32 +130,7 @@
 //       return () => clearTimeout(timer);
 //     }
 //   }, [error, success]);
-//   // const loadData = async () => {
-//   //   try {
-//   //     setLoading(true);
-//   //     setError(null);
 
-//   //     console.log('🔄 Loading seller data for:', currentUser?.email);
-
-//   //     const [profile, sellerTiles] = await Promise.all([
-//   //       getSellerProfile(currentUser?.user_id || ''),
-//   //       getSellerTiles(currentUser?.user_id || '')
-//   //     ]);
-
-//   //     setSellerProfile(profile);
-//   //     setTiles(sellerTiles || []);
-
-//   //     console.log('✅ Seller data loaded:', {
-//   //       profile: profile?.business_name || 'No profile',
-//   //       tilesCount: sellerTiles?.length || 0
-//   //     });
-//   //   } catch (error: any) {
-//   //     console.error('❌ Error loading seller data:', error);
-//   //     setError('Failed to load dashboard data. Please refresh the page.');
-//   //   } finally {
-//   //     setLoading(false);
-//   //   }
-//   // };
 //   const loadData = async () => {
 //     try {
 //       setLoading(true);
@@ -171,7 +145,6 @@
 
 //       setSellerProfile(profile);
 
-//       // ✅ FIX: Extra deduplication layer in component
 //       if (sellerTiles && sellerTiles.length > 0) {
 //         const uniqueTilesMap = new Map();
 //         sellerTiles.forEach((tile) => {
@@ -209,7 +182,9 @@
 //         (tile) =>
 //           tile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 //           tile.tileCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//           tile.size.toLowerCase().includes(searchTerm.toLowerCase())
+//           tile.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//           tile.tileSurface?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//           tile.tileMaterial?.toLowerCase().includes(searchTerm.toLowerCase())
 //       );
 //     }
 
@@ -224,6 +199,62 @@
 //     }
 
 //     setFilteredTiles(filtered);
+//   };
+
+//   // ✅ PAGINATION CALCULATIONS
+//   const totalPages = Math.ceil(filteredTiles.length / itemsPerPage);
+//   const indexOfLastItem = currentPage * itemsPerPage;
+//   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+//   const currentTiles = filteredTiles.slice(indexOfFirstItem, indexOfLastItem);
+
+//   // ✅ PAGINATION HANDLERS
+//   const goToPage = (pageNumber: number) => {
+//     setCurrentPage(pageNumber);
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
+//   };
+
+//   const goToNextPage = () => {
+//     if (currentPage < totalPages) {
+//       setCurrentPage(currentPage + 1);
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     }
+//   };
+
+//   const goToPreviousPage = () => {
+//     if (currentPage > 1) {
+//       setCurrentPage(currentPage - 1);
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     }
+//   };
+
+//   // ✅ GENERATE PAGE NUMBERS FOR PAGINATION
+//   const getPageNumbers = () => {
+//     const pages = [];
+//     const maxPagesToShow = 5;
+
+//     if (totalPages <= maxPagesToShow) {
+//       for (let i = 1; i <= totalPages; i++) {
+//         pages.push(i);
+//       }
+//     } else {
+//       if (currentPage <= 3) {
+//         for (let i = 1; i <= 4; i++) pages.push(i);
+//         pages.push('...');
+//         pages.push(totalPages);
+//       } else if (currentPage >= totalPages - 2) {
+//         pages.push(1);
+//         pages.push('...');
+//         for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+//       } else {
+//         pages.push(1);
+//         pages.push('...');
+//         for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+//         pages.push('...');
+//         pages.push(totalPages);
+//       }
+//     }
+
+//     return pages;
 //   };
 
 //   const generateTileCode = (): string => {
@@ -278,17 +309,7 @@
 //     }
 //   };
 
-//   // const validateTileForm = (): string | null => {
-//   //   if (!newTile.name?.trim()) return 'Tile name is required';
-//   //   if (!newTile.size?.trim()) return 'Tile size is required';
-//   //   if (!newTile.price || newTile.price <= 0) return 'Valid price is required';
-//   //   if (newTile.stock === undefined || newTile.stock < 0) return 'Valid stock quantity is required';
-//   //   if (!newTile.imageUrl?.trim()) return 'Image is required';
-//   //   return null;
-//   // };
-
 //   const validateTileForm = (): string | null => {
-//     // ✅ Detailed validation with field identification
 //     if (!newTile.name?.trim()) {
 //       return "❌ Tile Name is required. Please enter a tile name.";
 //     }
@@ -309,7 +330,6 @@
 //       return "❌ Tile Image is required. Please upload an image before saving.";
 //     }
 
-//     // ✅ All validations passed
 //     return null;
 //   };
 
@@ -321,10 +341,7 @@
 //       if (validationError) {
 //         setError(validationError);
 //         window.scrollTo({ top: 0, behavior: "smooth" });
-
-//         // ✅ FIX 3: Auto-clear after 8 seconds (longer than current 5s)
 //         setTimeout(() => {
-//           // Don't clear if there's a new error
 //           setError((prev) => (prev === validationError ? null : prev));
 //         }, 8000);
 //         return;
@@ -364,12 +381,9 @@
 //       let qrCodeGenerated = false;
 //       try {
 //         const qrCodeDataUrl = await generateTileQRCode(savedTile);
-
 //         console.log("✅ QR code generated successfully");
 //         console.log("🔄 Step 4/4: Updating tile with QR code...");
-
 //         await updateTileQRCode(savedTile.id, qrCodeDataUrl);
-
 //         console.log("✅ Tile updated with QR code");
 //         qrCodeGenerated = true;
 //       } catch (qrError: any) {
@@ -384,9 +398,7 @@
 //       if (qrCodeGenerated) {
 //         setSuccess("✅ Tile added successfully with QR code!");
 //       } else {
-//         setSuccess(
-//           "✅ Tile added! QR code can be generated from QR Codes tab."
-//         );
+//         setSuccess("✅ Tile added! QR code can be generated from QR Codes tab.");
 //       }
 
 //       console.log("🎉 Tile creation completed!");
@@ -405,6 +417,7 @@
 //     });
 //     setIsAddingTile(false);
 //     setError(null);
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
 //   };
 
 //   const handleUpdateTile = async () => {
@@ -442,30 +455,22 @@
 //         editingTile.category !== newTile.category;
 
 //       if (criticalFieldsChanged) {
-//         console.log(
-//           "🔄 Critical fields changed, attempting QR regeneration..."
-//         );
+//         console.log("🔄 Critical fields changed, attempting QR regeneration...");
 
 //         setTimeout(async () => {
 //           try {
 //             if (typeof getTileById !== "function") {
-//               console.warn(
-//                 "⚠️ getTileById not available, skipping QR regeneration"
-//               );
+//               console.warn("⚠️ getTileById not available, skipping QR regeneration");
 //               return;
 //             }
 
 //             if (typeof generateTileQRCode !== "function") {
-//               console.warn(
-//                 "⚠️ generateTileQRCode not available, skipping QR regeneration"
-//               );
+//               console.warn("⚠️ generateTileQRCode not available, skipping QR regeneration");
 //               return;
 //             }
 
 //             if (typeof updateTileQRCode !== "function") {
-//               console.warn(
-//                 "⚠️ updateTileQRCode not available, skipping QR regeneration"
-//               );
+//               console.warn("⚠️ updateTileQRCode not available, skipping QR regeneration");
 //               return;
 //             }
 
@@ -473,9 +478,7 @@
 //             const updatedTileData = await getTileById(editingTile.id);
 
 //             if (!updatedTileData) {
-//               console.warn(
-//                 "⚠️ Could not fetch updated tile, skipping QR regeneration"
-//               );
+//               console.warn("⚠️ Could not fetch updated tile, skipping QR regeneration");
 //               return;
 //             }
 
@@ -494,10 +497,7 @@
 
 //             await loadData();
 //           } catch (qrError: any) {
-//             console.error(
-//               "⚠️ QR regeneration failed (non-critical):",
-//               qrError.message
-//             );
+//             console.error("⚠️ QR regeneration failed (non-critical):", qrError.message);
 //           }
 //         }, 0);
 //       } else {
@@ -549,6 +549,8 @@
 //       imageUrl: "",
 //       textureUrl: "",
 //       tileCode: "",
+//       tileSurface: "",
+//       tileMaterial: "",
 //     });
 //   };
 
@@ -728,22 +730,17 @@
 //             <User className="w-4 h-4" />
 //             Worker
 //           </button>
-
-// <button
-//   onClick={() => handleTabChange("customer-inquiries")}
-//   className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-//     activeTab === "customer-inquiries"
-//       ? "bg-green-600 text-white"
-//       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-//   }`}
-// >
-//   <Users className="w-4 h-4" />
-//   Customers
-// </button>
-
-
-
-
+//           <button
+//             onClick={() => handleTabChange("customer-inquiries")}
+//             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+//               activeTab === "customer-inquiries"
+//                 ? "bg-green-600 text-white"
+//                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+//             }`}
+//           >
+//             <Users className="w-4 h-4" />
+//             Customers
+//           </button>
 //           <button
 //             onClick={() => window.open("/scan", "_blank")}
 //             className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-purple-600 text-white hover:bg-purple-700 text-sm"
@@ -806,7 +803,6 @@
 //             <QrCode className="w-4 h-4" />
 //             QR Codes
 //           </button>
-        
 //         </div>
 
 //         {/* Navigation Tabs - Mobile Dropdown */}
@@ -824,16 +820,16 @@
 //               Tiles
 //             </button>
 //             <button
-//   onClick={() => handleTabChange("customer-inquiries")}
-//   className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-//     activeTab === "customer-inquiries"
-//       ? "bg-green-600 text-white"
-//       : "bg-white text-gray-700 hover:bg-gray-100"
-//   }`}
-// >
-//   <Users className="w-4 h-4" />
-//   Customers
-// </button>
+//               onClick={() => handleTabChange("customer-inquiries")}
+//               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+//                 activeTab === "customer-inquiries"
+//                   ? "bg-green-600 text-white"
+//                   : "bg-white text-gray-700 hover:bg-gray-100"
+//               }`}
+//             >
+//               <Users className="w-4 h-4" />
+//               Customers
+//             </button>
 //             <button
 //               onClick={() => handleTabChange("worker")}
 //               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
@@ -907,7 +903,6 @@
 //               <QrCode className="w-4 h-4" />
 //               QR
 //             </button>
-          
 //           </div>
 //         )}
 //       </div>
@@ -963,7 +958,7 @@
 //               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
 //               <input
 //                 type="text"
-//                 placeholder="Search tiles..."
+//                 placeholder="Search tiles by name, code, size, surface, material..."
 //                 value={searchTerm}
 //                 onChange={(e) => setSearchTerm(e.target.value)}
 //                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full text-sm sm:text-base"
@@ -1003,7 +998,12 @@
 //               </button>
 
 //               <button
-//                 onClick={() => setIsAddingTile(true)}
+//                 onClick={() => {
+//                   setIsAddingTile(true);
+//                   setEditingTile(null);
+//                   resetNewTile();
+//                   window.scrollTo({ top: 0, behavior: 'smooth' });
+//                 }}
 //                 className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
 //               >
 //                 <Plus className="w-4 h-4" />
@@ -1011,11 +1011,18 @@
 //               </button>
 //             </div>
 
-//             {/* Results Summary */}
-//             <div className="text-xs sm:text-sm text-gray-600">
-//               Showing {filteredTiles.length} of {tiles.length} tiles
-//               {searchTerm && (
-//                 <span className="font-medium"> matching "{searchTerm}"</span>
+//             {/* Results Summary with Pagination Info */}
+//             <div className="text-xs sm:text-sm text-gray-600 flex flex-wrap items-center justify-between gap-2">
+//               <div>
+//                 Showing {currentTiles.length > 0 ? indexOfFirstItem + 1 : 0} - {Math.min(indexOfLastItem, filteredTiles.length)} of {filteredTiles.length} tiles
+//                 {searchTerm && (
+//                   <span className="font-medium"> matching "{searchTerm}"</span>
+//                 )}
+//               </div>
+//               {totalPages > 1 && (
+//                 <div className="text-gray-500">
+//                   Page {currentPage} of {totalPages}
+//                 </div>
 //               )}
 //             </div>
 //           </div>
@@ -1039,7 +1046,6 @@
 
 //               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 //                 {/* Tile Name */}
-//                 {/* Tile Name */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
 //                     Tile Name *
@@ -1054,6 +1060,7 @@
 //                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
 //                   />
 //                 </div>
+
 //                 {/* Tile Code */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1069,6 +1076,7 @@
 //                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
 //                   />
 //                 </div>
+
 //                 {/* Category */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1089,8 +1097,8 @@
 //                     <option value="both">Floor & Wall</option>
 //                   </select>
 //                 </div>
+
 //                 {/* Size */}
-//                 {/* ✅ SIZE - WORKING DROPDOWN */}
 //                 <div className="space-y-2">
 //                   <label
 //                     htmlFor="tile-size-select"
@@ -1110,21 +1118,7 @@
 //                       onFocus={(e) => {
 //                         e.target.click();
 //                       }}
-//                       className="
-//           w-full px-3 py-2.5 
-//           border border-gray-300 rounded-lg 
-//           bg-white
-//           focus:ring-2 focus:ring-green-500 focus:border-green-500 
-//           text-sm
-//           appearance-none
-//           cursor-pointer
-//           active:border-green-500
-//           transition-all
-//           disabled:opacity-50 disabled:cursor-not-allowed
-//           touch-manipulation
-//           min-h-[44px]
-//           pr-10
-//         "
+//                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
 //                       style={{
 //                         WebkitAppearance: "none",
 //                         MozAppearance: "none",
@@ -1166,9 +1160,8 @@
 //                     </div>
 //                   )}
 //                 </div>
-//                 {/* ✅ NEW: TILE SURFACE */}
-//                 {/* ═══════════════════════════════════════════════════════════════ */}
-//                 {/* ✅ TILE SURFACE - WORKING DROPDOWN */}
+
+//                 {/* Tile Surface */}
 //                 <div className="space-y-2">
 //                   <label
 //                     htmlFor="tile-surface-select"
@@ -1191,21 +1184,7 @@
 //                       onFocus={(e) => {
 //                         e.target.click();
 //                       }}
-//                       className="
-//           w-full px-3 py-2.5 
-//           border border-gray-300 rounded-lg 
-//           bg-white
-//           focus:ring-2 focus:ring-green-500 focus:border-green-500 
-//           text-sm
-//           appearance-none
-//           cursor-pointer
-//           active:border-green-500
-//           transition-all
-//           disabled:opacity-50 disabled:cursor-not-allowed
-//           touch-manipulation
-//           min-h-[44px]
-//           pr-10
-//         "
+//                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
 //                       style={{
 //                         WebkitAppearance: "none",
 //                         MozAppearance: "none",
@@ -1236,10 +1215,8 @@
 //                     </div>
 //                   )}
 //                 </div>
-//                 {/* ═══════════════════════════════════════════════════════════════ */}
-//                 {/* ✅ NEW: TILE MATERIAL */}
-//                 {/* ═══════════════════════════════════════════════════════════════ */}
-//                 {/* ✅ TILE MATERIAL - WORKING DROPDOWN */}
+
+//                 {/* Tile Material */}
 //                 <div className="space-y-2">
 //                   <label
 //                     htmlFor="tile-material-select"
@@ -1262,21 +1239,7 @@
 //                       onFocus={(e) => {
 //                         e.target.click();
 //                       }}
-//                       className="
-//           w-full px-3 py-2.5 
-//           border border-gray-300 rounded-lg 
-//           bg-white
-//           focus:ring-2 focus:ring-green-500 focus:border-green-500 
-//           text-sm
-//           appearance-none
-//           cursor-pointer
-//           active:border-green-500
-//           transition-all
-//           disabled:opacity-50 disabled:cursor-not-allowed
-//           touch-manipulation
-//           min-h-[44px]
-//           pr-10
-//         "
+//                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
 //                       style={{
 //                         WebkitAppearance: "none",
 //                         MozAppearance: "none",
@@ -1305,7 +1268,8 @@
 //                       <span>Selected: {newTile.tileMaterial}</span>
 //                     </div>
 //                   )}
-//                 </div>{" "}
+//                 </div>
+
 //                 {/* Price */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1327,6 +1291,7 @@
 //                     step="0.01"
 //                   />
 //                 </div>
+
 //                 {/* Stock */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1347,6 +1312,7 @@
 //                     min="0"
 //                   />
 //                 </div>
+
 //                 {/* Main Image Upload */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1396,6 +1362,7 @@
 //                     )}
 //                   </div>
 //                 </div>
+
 //                 {/* Texture Image Upload */}
 //                 <div className="space-y-2">
 //                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -1449,15 +1416,6 @@
 
 //               {/* Form Actions */}
 //               <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-6">
-//                 {/* <button
-//                   onClick={editingTile ? handleUpdateTile : handleAddTile}
-//                   disabled={imageUploading || textureUploading}
-//                   className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
-//                 >
-//                   <Save className="w-4 h-4" />
-//                   {editingTile ? 'Update Tile' : 'Save Tile'}
-//                 </button> */}
-
 //                 <button
 //                   onClick={editingTile ? handleUpdateTile : handleAddTile}
 //                   disabled={imageUploading || textureUploading}
@@ -1481,106 +1439,50 @@
 //             </div>
 //           )}
 
-//           {/* ✅ VALIDATION ERROR - PROMINENT DISPLAY */}
-//           {error && (isAddingTile || editingTile) && (
-//             <div className="mb-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg animate-shake">
-//               <div className="flex items-start gap-3">
-//                 <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
-//                 <div className="flex-1">
-//                   <p className="text-red-800 font-bold text-base mb-1">
-//                     Cannot Save Tile
-//                   </p>
-//                   <p className="text-red-700 text-sm">{error}</p>
-//                 </div>
-//                 <button
-//                   onClick={() => setError(null)}
-//                   className="text-red-400 hover:text-red-600 font-bold text-xl"
-//                   aria-label="Close error"
-//                 >
-//                   ×
-//                 </button>
-//               </div>
-//             </div>
-//           )}
-//           {/* Tiles Display - Desktop Table / Mobile Cards */}
-
 //           {/* Desktop Table View */}
 //           <div className="hidden lg:block overflow-x-auto">
 //             <table className="w-full border-collapse bg-white rounded-lg border border-gray-200">
-           
-
 //               <thead>
 //                 <tr className="bg-gray-50 border-b border-gray-200">
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Image
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Name
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Code
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Category
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Size
-//                   </th>
-//                   {/* ✅ NEW COLUMNS */}
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Surface
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Material
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Price
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Stock
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Status
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     QR
-//                   </th>
-//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">
-//                     Actions
-//                   </th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Image</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Name</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Code</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Category</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Size</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Surface</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Material</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Price</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Stock</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Status</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">QR</th>
+//                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Actions</th>
 //                 </tr>
 //               </thead>
 
 //               <tbody>
-//                 {filteredTiles.length === 0 ? (
+//                 {currentTiles.length === 0 ? (
 //                   <tr>
-//                     <td colSpan={10} className="text-center p-8 text-gray-500">
+//                     <td colSpan={12} className="text-center p-8 text-gray-500">
 //                       {tiles.length === 0 ? (
 //                         <div className="space-y-2">
 //                           <Package className="w-12 h-12 text-gray-300 mx-auto" />
 //                           <p className="font-medium">No tiles found</p>
-//                           <p className="text-sm">
-//                             Start by adding your first tile!
-//                           </p>
+//                           <p className="text-sm">Start by adding your first tile!</p>
 //                         </div>
 //                       ) : (
 //                         <div className="space-y-2">
 //                           <Search className="w-12 h-12 text-gray-300 mx-auto" />
-//                           <p className="font-medium">
-//                             No tiles match your search
-//                           </p>
-//                           <p className="text-sm">
-//                             Try adjusting your search or filters
-//                           </p>
+//                           <p className="font-medium">No tiles match your search</p>
+//                           <p className="text-sm">Try adjusting your search or filters</p>
 //                         </div>
 //                       )}
 //                     </td>
 //                   </tr>
 //                 ) : (
-//                   filteredTiles.map((tile) => (
+//                   currentTiles.map((tile) => (
 //                     <tr
 //                       key={tile.id}
-//                       className="border-t border-gray-200 hover:bg-gray-50"
+//                       className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
 //                     >
 //                       <td className="p-3">
 //                         <img
@@ -1588,74 +1490,55 @@
 //                           alt={tile.name}
 //                           className="w-12 h-12 object-cover rounded-lg border border-gray-200"
 //                           onError={(e) => {
-//                             (e.target as HTMLImageElement).src =
-//                               "/placeholder-tile.png";
+//                             (e.target as HTMLImageElement).src = "/placeholder-tile.png";
 //                           }}
 //                         />
 //                       </td>
 //                       <td className="p-3">
 //                         <div>
-//                           <div className="font-medium text-gray-900 text-sm">
-//                             {tile.name}
-//                           </div>
+//                           <div className="font-medium text-gray-900 text-sm">{tile.name}</div>
 //                           {tile.textureUrl && (
-//                             <div className="text-xs text-green-600">
-//                               Has texture
-//                             </div>
+//                             <div className="text-xs text-green-600">Has texture</div>
 //                           )}
 //                         </div>
 //                       </td>
-//                       <td className="p-3 text-xs text-gray-600 font-mono">
-//                         {tile.tileCode}
-//                       </td>
+//                       <td className="p-3 text-xs text-gray-600 font-mono">{tile.tileCode}</td>
 //                       <td className="p-3">
 //                         <span
-//                           className={`
-//                           px-2 py-1 rounded-full text-xs font-medium
-//                           ${
+//                           className={`px-2 py-1 rounded-full text-xs font-medium ${
 //                             tile.category === "floor"
 //                               ? "bg-blue-100 text-blue-800"
 //                               : tile.category === "wall"
 //                               ? "bg-purple-100 text-purple-800"
 //                               : "bg-gray-100 text-gray-800"
-//                           }
-//                         `}
+//                           }`}
 //                         >
 //                           {tile.category === "both"
 //                             ? "Both"
-//                             : tile.category.charAt(0).toUpperCase() +
-//                               tile.category.slice(1)}
+//                             : tile.category.charAt(0).toUpperCase() + tile.category.slice(1)}
 //                         </span>
 //                       </td>
 //                       <td className="p-3 text-gray-600 text-sm">{tile.size}</td>
-
 //                       <td className="p-3 text-xs sm:text-sm">
 //                         {tile.tileSurface ? (
 //                           <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs">
 //                             <span>🔘</span>
-//                             <span className="hidden md:inline">
-//                               {tile.tileSurface}
-//                             </span>
+//                             <span>{tile.tileSurface}</span>
 //                           </span>
 //                         ) : (
 //                           <span className="text-gray-400 text-xs">—</span>
 //                         )}
 //                       </td>
-
-//                       {/* ✅ NEW: MATERIAL */}
 //                       <td className="p-3 text-xs sm:text-sm">
 //                         {tile.tileMaterial ? (
 //                           <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs">
 //                             <span>🧱</span>
-//                             <span className="hidden md:inline">
-//                               {tile.tileMaterial}
-//                             </span>
+//                             <span>{tile.tileMaterial}</span>
 //                           </span>
 //                         ) : (
 //                           <span className="text-gray-400 text-xs">—</span>
 //                         )}
 //                       </td>
-
 //                       <td className="p-3 font-semibold text-gray-900 text-sm">
 //                         ₹{tile.price.toLocaleString()}
 //                       </td>
@@ -1669,23 +1552,18 @@
 //                       </td>
 //                       <td className="p-3">
 //                         <span
-//                           className={`px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(
-//                             tile
-//                           )}`}
+//                           className={`px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(tile)}`}
 //                         >
 //                           {getStockStatusText(tile)}
 //                         </span>
 //                       </td>
 //                       <td className="p-3">
 //                         <span
-//                           className={`
-//                           px-2 py-1 rounded-full text-xs font-medium
-//                           ${
+//                           className={`px-2 py-1 rounded-full text-xs font-medium ${
 //                             tile.qrCode
 //                               ? "bg-green-100 text-green-800"
 //                               : "bg-orange-100 text-orange-800"
-//                           }
-//                         `}
+//                           }`}
 //                         >
 //                           {tile.qrCode ? "✓" : "○"}
 //                         </span>
@@ -1717,7 +1595,7 @@
 
 //           {/* Mobile/Tablet Card View */}
 //           <div className="lg:hidden space-y-3">
-//             {filteredTiles.length === 0 ? (
+//             {currentTiles.length === 0 ? (
 //               <div className="text-center py-12 text-gray-500">
 //                 {tiles.length === 0 ? (
 //                   <div className="space-y-2">
@@ -1729,14 +1607,12 @@
 //                   <div className="space-y-2">
 //                     <Search className="w-16 h-16 text-gray-300 mx-auto" />
 //                     <p className="font-medium">No tiles match your search</p>
-//                     <p className="text-sm">
-//                       Try adjusting your search or filters
-//                     </p>
+//                     <p className="text-sm">Try adjusting your search or filters</p>
 //                   </div>
 //                 )}
 //               </div>
 //             ) : (
-//               filteredTiles.map((tile) => (
+//               currentTiles.map((tile) => (
 //                 <div
 //                   key={tile.id}
 //                   className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow"
@@ -1749,8 +1625,7 @@
 //                         alt={tile.name}
 //                         className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border border-gray-200"
 //                         onError={(e) => {
-//                           (e.target as HTMLImageElement).src =
-//                             "/placeholder-tile.png";
+//                           (e.target as HTMLImageElement).src = "/placeholder-tile.png";
 //                         }}
 //                       />
 //                     </div>
@@ -1763,9 +1638,7 @@
 //                           <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
 //                             {tile.name}
 //                           </h3>
-//                           <p className="text-xs text-gray-500 font-mono">
-//                             {tile.tileCode}
-//                           </p>
+//                           <p className="text-xs text-gray-500 font-mono">{tile.tileCode}</p>
 //                         </div>
 //                         <div className="flex gap-1 flex-shrink-0">
 //                           <button
@@ -1783,36 +1656,27 @@
 //                         </div>
 //                       </div>
 
-                   
-
 //                       {/* Info Grid */}
 //                       <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
 //                         <div>
 //                           <span className="text-gray-500">Category:</span>
 //                           <div className="mt-0.5">
 //                             <span
-//                               className={`
-//         px-2 py-0.5 rounded-full text-xs font-medium
-//         ${
-//           tile.category === "floor"
-//             ? "bg-blue-100 text-blue-800"
-//             : tile.category === "wall"
-//             ? "bg-purple-100 text-purple-800"
-//             : "bg-gray-100 text-gray-800"
-//         }
-//       `}
+//                               className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+//                                 tile.category === "floor"
+//                                   ? "bg-blue-100 text-blue-800"
+//                                   : tile.category === "wall"
+//                                   ? "bg-purple-100 text-purple-800"
+//                                   : "bg-gray-100 text-gray-800"
+//                               }`}
 //                             >
-//                               {tile.category === "both"
-//                                 ? "Both"
-//                                 : tile.category}
+//                               {tile.category === "both" ? "Both" : tile.category}
 //                             </span>
 //                           </div>
 //                         </div>
 //                         <div>
 //                           <span className="text-gray-500">Size:</span>
-//                           <div className="font-medium text-gray-900">
-//                             {tile.size}
-//                           </div>
+//                           <div className="font-medium text-gray-900">{tile.size}</div>
 //                         </div>
 //                         <div>
 //                           <span className="text-gray-500">Price:</span>
@@ -1825,24 +1689,18 @@
 //                           <div className="font-medium text-gray-900">
 //                             {tile.stock || 0}
 //                             {(tile.stock || 0) < 10 && tile.inStock && (
-//                               <span className="text-orange-600 ml-1">
-//                                 (Low)
-//                               </span>
+//                               <span className="text-orange-600 ml-1">(Low)</span>
 //                             )}
 //                           </div>
 //                         </div>
 //                       </div>
 
-//                       {/* ═══════════════════════════════════════════════════════════════ */}
-//                       {/* ✅ NEW: SURFACE & MATERIAL ACCORDION (MOBILE ONLY) */}
-//                       {/* ═══════════════════════════════════════════════════════════════ */}
+//                       {/* Surface & Material Accordion */}
 //                       {(tile.tileSurface || tile.tileMaterial) && (
 //                         <div className="mt-3 border-t border-gray-200 pt-3">
 //                           <button
 //                             onClick={() =>
-//                               setExpandedTileId(
-//                                 expandedTileId === tile.id ? null : tile.id
-//                               )
+//                               setExpandedTileId(expandedTileId === tile.id ? null : tile.id)
 //                             }
 //                             className="w-full flex items-center justify-between text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
 //                           >
@@ -1885,24 +1743,20 @@
 //                           )}
 //                         </div>
 //                       )}
+
 //                       {/* Status Row */}
 //                       <div className="flex items-center gap-2 mt-2 flex-wrap">
 //                         <span
-//                           className={`px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(
-//                             tile
-//                           )}`}
+//                           className={`px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(tile)}`}
 //                         >
 //                           {getStockStatusText(tile)}
 //                         </span>
 //                         <span
-//                           className={`
-//                           px-2 py-1 rounded-full text-xs font-medium
-//                           ${
+//                           className={`px-2 py-1 rounded-full text-xs font-medium ${
 //                             tile.qrCode
 //                               ? "bg-green-100 text-green-800"
 //                               : "bg-orange-100 text-orange-800"
-//                           }
-//                         `}
+//                           }`}
 //                         >
 //                           QR: {tile.qrCode ? "Yes" : "No"}
 //                         </span>
@@ -1918,6 +1772,73 @@
 //               ))
 //             )}
 //           </div>
+
+//           {/* ✅ PAGINATION COMPONENT - RESPONSIVE */}
+//           {totalPages > 1 && (
+//             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4">
+//               {/* Page Info - Mobile */}
+//               <div className="text-xs sm:text-sm text-gray-600 order-2 sm:order-1">
+//                 Showing {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredTiles.length)} of {filteredTiles.length} tiles
+//               </div>
+
+//               {/* Pagination Controls */}
+//               <div className="flex items-center gap-2 order-1 sm:order-2">
+//                 {/* Previous Button */}
+//                 <button
+//                   onClick={goToPreviousPage}
+//                   disabled={currentPage === 1}
+//                   className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+//                     currentPage === 1
+//                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+//                       : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+//                   }`}
+//                 >
+//                   <ChevronLeft className="w-4 h-4" />
+//                   <span className="hidden sm:inline">Previous</span>
+//                 </button>
+
+//                 {/* Page Numbers */}
+//                 <div className="flex items-center gap-1">
+//                   {getPageNumbers().map((page, index) => {
+//                     if (page === '...') {
+//                       return (
+//                         <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
+//                           ...
+//                         </span>
+//                       );
+//                     }
+//                     return (
+//                       <button
+//                         key={page}
+//                         onClick={() => goToPage(page as number)}
+//                         className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-medium transition-colors ${
+//                           currentPage === page
+//                             ? "bg-green-600 text-white"
+//                             : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+//                         }`}
+//                       >
+//                         {page}
+//                       </button>
+//                     );
+//                   })}
+//                 </div>
+
+//                 {/* Next Button */}
+//                 <button
+//                   onClick={goToNextPage}
+//                   disabled={currentPage === totalPages}
+//                   className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+//                     currentPage === totalPages
+//                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+//                       : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+//                   }`}
+//                 >
+//                   <span className="hidden sm:inline">Next</span>
+//                   <ChevronRight className="w-4 h-4" />
+//                 </button>
+//               </div>
+//             </div>
+//           )}
 //         </>
 //       )}
 
@@ -1928,21 +1849,15 @@
 //         {activeTab === "excel" && <ExcelUpload onUploadComplete={loadData} />}
 //         {activeTab === "stock-analytics" && <SellerStockAnalytics />}
 //         {activeTab === "bulk" && <BulkUpload onUploadComplete={loadData} />}
-//         {activeTab === 'customer-inquiries' && <CustomerInquiriesManager />}
+//         {activeTab === "customer-inquiries" && <CustomerInquiriesManager />}
 //         {activeTab === "qrcodes" && (
-//           <QRCodeManager
-//             tiles={tiles}
-//             sellerId={currentUser?.user_id}
-//             onQRCodeGenerated={loadData}
-//           />
+//           <QRCodeManager tiles={tiles} sellerId={currentUser?.user_id} onQRCodeGenerated={loadData} />
 //         )}
-//         {activeTab === "analytics" && (
-//           <AnalyticsDashboard sellerId={currentUser?.user_id} />
-//         )}
+//         {activeTab === "analytics" && <AnalyticsDashboard sellerId={currentUser?.user_id} />}
 //       </div>
 //     </div>
 //   );
-// };
+// }; 
 import React, { useState, useEffect } from "react";
 import {
   Plus,
@@ -1950,7 +1865,6 @@ import {
   Trash2,
   Upload,
   Save,
-  BarChart3,
   Store,
   Package,
   FileSpreadsheet,
@@ -1984,6 +1898,18 @@ import { SellerProfile } from "./SellerProfile";
 import { WorkerManagement } from "./WorkerManagement";
 import { SellerStockAnalytics } from "./SellerStockAnalytics";
 import { CustomerInquiriesManager } from './CustomerInquiriesManager';
+import { PlanStatusBanner } from './PlanStatusBanner';
+// ═══════════════════════════════════════════════════════════════
+// ✅ PAYMENT SYSTEM IMPORTS (RAZORPAY)
+// ═══════════════════════════════════════════════════════════════
+import { PlansModal } from './Payment/PlansModal';
+import { PaymentConfirmationModal } from './Payment/PaymentConfirmationModal';
+import { PaymentCheckout } from './Payment/PaymentCheckout';
+import { initiatePayment } from '../lib/paymentService';
+import { getPlanById } from '../lib/planService';
+import type { Plan } from '../types/plan.types';
+import type { RazorpayCheckoutOptions } from '../types/payment.types';
+import { auth } from '../lib/firebase';
 
 import {
   uploadTile,
@@ -1997,8 +1923,18 @@ import {
 
 import { uploadToCloudinary } from "../utils/cloudinaryUtils";
 
+// ═══════════════════════════════════════════════════════════════
+// ✅ MAIN SELLER DASHBOARD COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
 export const SellerDashboard: React.FC = () => {
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ STATE MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════
+
   const { currentUser, isAuthenticated } = useAppStore();
+  
+  // Tab Management
   const [isAddingTile, setIsAddingTile] = useState(false);
   const [activeTab, setActiveTab] = useState<
     | "tiles"
@@ -2013,25 +1949,45 @@ export const SellerDashboard: React.FC = () => {
     | "customer-inquiries"
   >("tiles");
 
+  // Tile Management
   const [editingTile, setEditingTile] = useState<Tile | null>(null);
   const [sellerProfile, setSellerProfile] = useState<any>(null);
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [filteredTiles, setFilteredTiles] = useState<Tile[]>([]);
+  const [planRefreshTrigger, setPlanRefreshTrigger] = useState(0);
+  
+  // UI State
   const [loading, setLoading] = useState(true);
   const [imageUploading, setImageUploading] = useState(false);
   const [textureUploading, setTextureUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Filter State
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [stockFilter, setStockFilter] = useState<string>("all");
+  
+  // Mobile UI
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedTileId, setExpandedTileId] = useState<string | null>(null);
 
-  // ✅ PAGINATION STATE
+  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // Fixed at 10 items per page
+  const [itemsPerPage] = useState(10);
 
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ PAYMENT STATE (RAZORPAY)
+  // ═══════════════════════════════════════════════════════════════
+
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+  const [checkoutOptions, setCheckoutOptions] = useState<RazorpayCheckoutOptions | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  // New Tile Form State
   const [newTile, setNewTile] = useState<Partial<Tile>>({
     name: "",
     category: "both",
@@ -2046,6 +2002,11 @@ export const SellerDashboard: React.FC = () => {
     tileMaterial: "",
   });
 
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ EFFECTS
+  // ═══════════════════════════════════════════════════════════════
+
+  // Initial Load
   useEffect(() => {
     console.log("🔍 SellerDashboard Auth Check:", {
       currentUser: currentUser?.email || "null",
@@ -2060,12 +2021,13 @@ export const SellerDashboard: React.FC = () => {
     }
   }, [currentUser, isAuthenticated]);
 
-  // ✅ RESET TO PAGE 1 WHEN FILTERS CHANGE
+  // Filter and Reset Pagination
   useEffect(() => {
     filterTiles();
     setCurrentPage(1);
   }, [tiles, searchTerm, categoryFilter, stockFilter]);
 
+  // Auto-dismiss Alerts
   useEffect(() => {
     if (error || success) {
       const timer = setTimeout(() => {
@@ -2075,6 +2037,10 @@ export const SellerDashboard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error, success]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ DATA LOADING
+  // ═══════════════════════════════════════════════════════════════
 
   const loadData = async () => {
     try {
@@ -2119,6 +2085,10 @@ export const SellerDashboard: React.FC = () => {
     }
   };
 
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ FILTERING
+  // ═══════════════════════════════════════════════════════════════
+
   const filterTiles = () => {
     let filtered = tiles;
 
@@ -2146,13 +2116,15 @@ export const SellerDashboard: React.FC = () => {
     setFilteredTiles(filtered);
   };
 
-  // ✅ PAGINATION CALCULATIONS
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ PAGINATION
+  // ═══════════════════════════════════════════════════════════════
+
   const totalPages = Math.ceil(filteredTiles.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentTiles = filteredTiles.slice(indexOfFirstItem, indexOfLastItem);
 
-  // ✅ PAGINATION HANDLERS
   const goToPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2172,7 +2144,6 @@ export const SellerDashboard: React.FC = () => {
     }
   };
 
-  // ✅ GENERATE PAGE NUMBERS FOR PAGINATION
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
@@ -2201,6 +2172,94 @@ export const SellerDashboard: React.FC = () => {
 
     return pages;
   };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ PAYMENT HANDLERS
+  // ═══════════════════════════════════════════════════════════════
+
+  const handlePlanSelection = async (planId: string) => {
+    try {
+      console.log('📦 Selected plan:', planId);
+      
+      if (!isAuthenticated) {
+        console.log('🔐 User not authenticated');
+        setShowPlansModal(false);
+        setError('Please login to select a plan');
+        return;
+      }
+
+      console.log('📋 Fetching plan details...');
+      const plan = await getPlanById(planId);
+      
+      if (!plan) {
+        setError('❌ Plan not found. Please try again.');
+        return;
+      }
+
+      setSelectedPlan(plan);
+      setShowPlansModal(false);
+      setShowPaymentConfirmation(true);
+      
+    } catch (error: any) {
+      console.error('❌ Error selecting plan:', error);
+      setError(`❌ Error: ${error.message}`);
+    }
+  };
+
+  const handlePaymentConfirm = async () => {
+    if (!selectedPlan) {
+      setError('❌ No plan selected');
+      return;
+    }
+
+    setProcessingPayment(true);
+
+    try {
+      console.log('💳 Initiating payment for plan:', selectedPlan.plan_name);
+
+      const currentUserAuth = auth.currentUser;
+      if (!currentUserAuth) {
+        throw new Error('Please login first');
+      }
+
+      const result = await initiatePayment(
+        selectedPlan.id,
+        selectedPlan.plan_name,
+        selectedPlan.price
+      );
+
+      if (!result.success || !result.checkoutOptions || !result.paymentId) {
+        throw new Error(result.error || 'Failed to initiate payment');
+      }
+
+      console.log('✅ Payment initiated successfully');
+      console.log('📝 Payment ID:', result.paymentId);
+
+      setCheckoutOptions(result.checkoutOptions);
+      setPaymentId(result.paymentId);
+      setShowPaymentConfirmation(false);
+       setPlanRefreshTrigger(prev => prev + 1);
+
+    } catch (error: any) {
+      console.error('❌ Payment initiation error:', error);
+      setError(`❌ Payment Error: ${error.message}`);
+      setProcessingPayment(false);
+    }
+  };
+
+  const handlePaymentError = (error: string) => {
+    console.error('❌ Payment checkout error:', error);
+    setError(`❌ Payment Error: ${error}`);
+    
+    setCheckoutOptions(null);
+    setPaymentId(null);
+    setProcessingPayment(false);
+    setSelectedPlan(null);
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ TILE MANAGEMENT FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════
 
   const generateTileCode = (): string => {
     const prefix =
@@ -2519,6 +2578,10 @@ export const SellerDashboard: React.FC = () => {
     return "In Stock";
   };
 
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ RENDER GUARDS
+  // ═══════════════════════════════════════════════════════════════
+
   if (!isAuthenticated) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
@@ -2604,9 +2667,15 @@ export const SellerDashboard: React.FC = () => {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ MAIN RENDER
+  // ═══════════════════════════════════════════════════════════════
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 lg:p-6">
-      {/* Header */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ✅ HEADER */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col gap-4 mb-4 sm:mb-6">
         {/* Title Section */}
         <div className="flex items-start justify-between gap-3">
@@ -2620,7 +2689,6 @@ export const SellerDashboard: React.FC = () => {
                 {sellerProfile?.business_name || "Your Business"}
               </p>
 
-              {/* Stats - Mobile Optimized */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs sm:text-sm text-gray-500">
                 <span className="flex items-center gap-1 whitespace-nowrap">
                   <Package className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -2641,7 +2709,7 @@ export const SellerDashboard: React.FC = () => {
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden flex-shrink-0 p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="lg:hidden flex-shrink-0 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />
@@ -2650,98 +2718,123 @@ export const SellerDashboard: React.FC = () => {
             )}
           </button>
         </div>
-
-        {/* Navigation Tabs - Desktop */}
+        {/* ✅ PLAN STATUS BANNER */}
+<PlanStatusBanner 
+  sellerId={currentUser?.user_id || ''} 
+  onViewPlans={() => setShowPlansModal(true)}
+  forceRefresh={planRefreshTrigger}
+/>
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* ✅ NAVIGATION TABS - DESKTOP */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
         <div className="hidden lg:flex gap-2 flex-wrap">
           <button
             onClick={() => handleTabChange("tiles")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "tiles"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <Edit className="w-4 h-4" />
             My Tiles
           </button>
+          
           <button
             onClick={() => handleTabChange("worker")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "worker"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <User className="w-4 h-4" />
             Worker
           </button>
+          
           <button
             onClick={() => handleTabChange("customer-inquiries")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "customer-inquiries"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <Users className="w-4 h-4" />
             Customers
           </button>
+          
+          {/* ✅ VIEW PLANS BUTTON - BEFORE SCAN */}
+          <button
+            onClick={() => setShowPlansModal(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 text-sm font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Eye className="w-4 h-4" />
+            View Plans
+          </button>
+          
+          {/* SCAN BUTTON */}
           <button
             onClick={() => window.open("/scan", "_blank")}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-purple-600 text-white hover:bg-purple-700 text-sm"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium shadow-md hover:shadow-lg"
           >
             <QrCode className="w-4 h-4" />
             Scan
           </button>
+          
           <button
             onClick={() => handleTabChange("profile")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "profile"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <User className="w-4 h-4" />
             Profile
           </button>
+          
           <button
             onClick={() => handleTabChange("excel")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "excel"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <FileSpreadsheet className="w-4 h-4" />
             Excel
           </button>
+          
           <button
             onClick={() => handleTabChange("stock-analytics")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "stock-analytics"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <Package className="w-4 h-4" />
             Stock Analytics
           </button>
+          
           <button
             onClick={() => handleTabChange("bulk")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "bulk"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             <Upload className="w-4 h-4" />
             CSV
           </button>
+          
           <button
             onClick={() => handleTabChange("qrcodes")}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
               activeTab === "qrcodes"
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
@@ -2750,99 +2843,121 @@ export const SellerDashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Navigation Tabs - Mobile Dropdown */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* ✅ NAVIGATION TABS - MOBILE DROPDOWN */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
         {mobileMenuOpen && (
-          <div className="lg:hidden grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="lg:hidden grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
             <button
               onClick={() => handleTabChange("tiles")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "tiles"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <Edit className="w-4 h-4" />
               Tiles
             </button>
+            
             <button
               onClick={() => handleTabChange("customer-inquiries")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "customer-inquiries"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <Users className="w-4 h-4" />
               Customers
             </button>
+            
             <button
               onClick={() => handleTabChange("worker")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "worker"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <User className="w-4 h-4" />
               Worker
             </button>
+            
+            {/* ✅ VIEW PLANS BUTTON - MOBILE */}
+            <button
+              onClick={() => {
+                setShowPlansModal(true);
+                setMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 text-sm font-medium shadow-md"
+            >
+              <Eye className="w-4 h-4" />
+              Plans
+            </button>
+            
             <button
               onClick={() => window.open("/scan", "_blank")}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-purple-600 text-white hover:bg-purple-700 text-sm"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium shadow-md"
             >
               <QrCode className="w-4 h-4" />
               Scan
             </button>
+            
             <button
               onClick={() => handleTabChange("profile")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "profile"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <User className="w-4 h-4" />
               Profile
             </button>
+            
             <button
               onClick={() => handleTabChange("excel")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "excel"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               Excel
             </button>
+            
             <button
               onClick={() => handleTabChange("stock-analytics")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "stock-analytics"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <Package className="w-4 h-4" />
               Stock
             </button>
+            
             <button
               onClick={() => handleTabChange("bulk")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "bulk"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <Upload className="w-4 h-4" />
               CSV
             </button>
+            
             <button
               onClick={() => handleTabChange("qrcodes")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 activeTab === "qrcodes"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
               }`}
             >
               <QrCode className="w-4 h-4" />
@@ -2852,9 +2967,12 @@ export const SellerDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Alert Messages */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ✅ ALERT MESSAGES */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      
       {error && (
-        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 sm:gap-3">
+        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 sm:gap-3 animate-shake">
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-red-800 font-medium text-sm sm:text-base">
@@ -2866,7 +2984,7 @@ export const SellerDashboard: React.FC = () => {
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-red-400 hover:text-red-600 font-bold text-lg flex-shrink-0"
+            className="text-red-400 hover:text-red-600 font-bold text-lg flex-shrink-0 transition-colors"
           >
             ×
           </button>
@@ -2874,7 +2992,7 @@ export const SellerDashboard: React.FC = () => {
       )}
 
       {success && (
-        <div className="mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2 sm:gap-3">
+        <div className="mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2 sm:gap-3 animate-slide-down">
           <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-green-800 font-medium text-sm sm:text-base">
@@ -2886,14 +3004,17 @@ export const SellerDashboard: React.FC = () => {
           </div>
           <button
             onClick={() => setSuccess(null)}
-            className="text-green-400 hover:text-green-600 font-bold text-lg flex-shrink-0"
+            className="text-green-400 hover:text-green-600 font-bold text-lg flex-shrink-0 transition-colors"
           >
             ×
           </button>
         </div>
       )}
 
-      {/* Tiles Tab */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ✅ TILES TAB CONTENT */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      
       {activeTab === "tiles" && (
         <>
           {/* Controls - Responsive */}
@@ -2906,7 +3027,7 @@ export const SellerDashboard: React.FC = () => {
                 placeholder="Search tiles by name, code, size, surface, material..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full text-sm sm:text-base"
+                className="pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full text-sm sm:text-base transition-shadow"
               />
             </div>
 
@@ -2915,7 +3036,7 @@ export const SellerDashboard: React.FC = () => {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white cursor-pointer transition-shadow"
               >
                 <option value="all">All Categories</option>
                 <option value="floor">Floor Only</option>
@@ -2926,7 +3047,7 @@ export const SellerDashboard: React.FC = () => {
               <select
                 value={stockFilter}
                 onChange={(e) => setStockFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white cursor-pointer transition-shadow"
               >
                 <option value="all">All Stock</option>
                 <option value="in-stock">In Stock</option>
@@ -2935,7 +3056,7 @@ export const SellerDashboard: React.FC = () => {
 
               <button
                 onClick={loadData}
-                className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm font-medium"
                 title="Refresh Data"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -2949,7 +3070,7 @@ export const SellerDashboard: React.FC = () => {
                   resetNewTile();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
               >
                 <Plus className="w-4 h-4" />
                 Add New Tile
@@ -2978,12 +3099,12 @@ export const SellerDashboard: React.FC = () => {
               <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
                 {editingTile ? (
                   <>
-                    <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Edit className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                     <span className="truncate">Edit: {editingTile.name}</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                     Add New Tile
                   </>
                 )}
@@ -3002,7 +3123,7 @@ export const SellerDashboard: React.FC = () => {
                     onChange={(e) =>
                       setNewTile({ ...newTile, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm transition-shadow"
                   />
                 </div>
 
@@ -3018,7 +3139,7 @@ export const SellerDashboard: React.FC = () => {
                     onChange={(e) =>
                       setNewTile({ ...newTile, tileCode: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm transition-shadow"
                   />
                 </div>
 
@@ -3035,7 +3156,7 @@ export const SellerDashboard: React.FC = () => {
                         category: e.target.value as any,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white cursor-pointer transition-shadow"
                   >
                     <option value="floor">Floor Only</option>
                     <option value="wall">Wall Only</option>
@@ -3231,7 +3352,7 @@ export const SellerDashboard: React.FC = () => {
                           e.target.value === "" ? 0 : Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm transition-shadow"
                     min="0"
                     step="0.01"
                   />
@@ -3253,7 +3374,7 @@ export const SellerDashboard: React.FC = () => {
                           e.target.value === "" ? 0 : Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm transition-shadow"
                     min="0"
                   />
                 </div>
@@ -3276,7 +3397,7 @@ export const SellerDashboard: React.FC = () => {
                     />
                     <label
                       htmlFor="tile-image-upload"
-                      className={`flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-sm ${
+                      className={`flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm font-medium ${
                         imageUploading ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     >
@@ -3297,11 +3418,11 @@ export const SellerDashboard: React.FC = () => {
                         <img
                           src={newTile.imageUrl}
                           alt="Preview"
-                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
                         />
                         <div className="flex items-center gap-1 text-green-600">
                           <CheckCircle className="w-4 h-4" />
-                          <span className="text-xs">Uploaded</span>
+                          <span className="text-xs font-medium">Uploaded</span>
                         </div>
                       </div>
                     )}
@@ -3326,7 +3447,7 @@ export const SellerDashboard: React.FC = () => {
                     />
                     <label
                       htmlFor="texture-image-upload"
-                      className={`flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-sm ${
+                      className={`flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm font-medium ${
                         textureUploading ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     >
@@ -3347,11 +3468,11 @@ export const SellerDashboard: React.FC = () => {
                         <img
                           src={newTile.textureUrl}
                           alt="Texture"
-                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
                         />
                         <div className="flex items-center gap-1 text-green-600">
                           <CheckCircle className="w-4 h-4" />
-                          <span className="text-xs">Uploaded</span>
+                          <span className="text-xs font-medium">Uploaded</span>
                         </div>
                       </div>
                     )}
@@ -3364,7 +3485,7 @@ export const SellerDashboard: React.FC = () => {
                 <button
                   onClick={editingTile ? handleUpdateTile : handleAddTile}
                   disabled={imageUploading || textureUploading}
-                  className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base active:scale-95"
+                  className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-green-700 active:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <Save className="w-4 h-4" />
                   {editingTile ? "Update Tile" : "Save Tile"}
@@ -3376,7 +3497,7 @@ export const SellerDashboard: React.FC = () => {
                     resetNewTile();
                     setError(null);
                   }}
-                  className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                  className="px-4 sm:px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm sm:text-base font-medium"
                 >
                   Cancel
                 </button>
@@ -3385,8 +3506,8 @@ export const SellerDashboard: React.FC = () => {
           )}
 
           {/* Desktop Table View */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full border-collapse bg-white rounded-lg border border-gray-200">
+          <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <table className="w-full border-collapse bg-white">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left p-3 font-semibold text-gray-700 text-sm">Image</th>
@@ -3433,7 +3554,7 @@ export const SellerDashboard: React.FC = () => {
                         <img
                           src={tile.imageUrl}
                           alt={tile.name}
-                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                          className="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-sm"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "/placeholder-tile.png";
                           }}
@@ -3517,14 +3638,14 @@ export const SellerDashboard: React.FC = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditTile(tile)}
-                            className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors"
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteTile(tile.id, tile.name)}
-                            className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -3568,7 +3689,7 @@ export const SellerDashboard: React.FC = () => {
                       <img
                         src={tile.imageUrl}
                         alt={tile.name}
-                        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border border-gray-200"
+                        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border border-gray-200 shadow-sm"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "/placeholder-tile.png";
                         }}
@@ -3718,7 +3839,7 @@ export const SellerDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* ✅ PAGINATION COMPONENT - RESPONSIVE */}
+          {/* PAGINATION COMPONENT - RESPONSIVE */}
           {totalPages > 1 && (
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4">
               {/* Page Info - Mobile */}
@@ -3732,10 +3853,10 @@ export const SellerDashboard: React.FC = () => {
                 <button
                   onClick={goToPreviousPage}
                   disabled={currentPage === 1}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentPage === 1
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 shadow-sm hover:shadow"
                   }`}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -3756,10 +3877,10 @@ export const SellerDashboard: React.FC = () => {
                       <button
                         key={page}
                         onClick={() => goToPage(page as number)}
-                        className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-medium transition-all ${
                           currentPage === page
-                            ? "bg-green-600 text-white"
-                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                            ? "bg-green-600 text-white shadow-md"
+                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 shadow-sm hover:shadow"
                         }`}
                       >
                         {page}
@@ -3772,10 +3893,10 @@ export const SellerDashboard: React.FC = () => {
                 <button
                   onClick={goToNextPage}
                   disabled={currentPage === totalPages}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentPage === totalPages
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 shadow-sm hover:shadow"
                   }`}
                 >
                   <span className="hidden sm:inline">Next</span>
@@ -3787,7 +3908,10 @@ export const SellerDashboard: React.FC = () => {
         </>
       )}
 
-      {/* Other Tabs - Wrapped for Responsiveness */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ✅ OTHER TABS - WRAPPED FOR RESPONSIVENESS */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      
       <div className="overflow-hidden">
         {activeTab === "worker" && <WorkerManagement />}
         {activeTab === "profile" && <SellerProfile />}
@@ -3800,6 +3924,41 @@ export const SellerDashboard: React.FC = () => {
         )}
         {activeTab === "analytics" && <AnalyticsDashboard sellerId={currentUser?.user_id} />}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ✅ PAYMENT MODALS (RAZORPAY) */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+
+      {/* Plans Modal */}
+      <PlansModal
+        isOpen={showPlansModal}
+        onClose={() => setShowPlansModal(false)}
+        isLoggedIn={isAuthenticated}
+        onSelectPlan={handlePlanSelection}
+      />
+
+      {/* Payment Confirmation Modal */}
+      <PaymentConfirmationModal
+        isOpen={showPaymentConfirmation}
+        onClose={() => {
+          setShowPaymentConfirmation(false);
+          setSelectedPlan(null);
+        }}
+        plan={selectedPlan}
+        onConfirm={handlePaymentConfirm}
+        isProcessing={processingPayment}
+      />
+
+      {/* Payment Checkout - Show when checkout options are ready */}
+      {checkoutOptions && paymentId && selectedPlan && (
+        <PaymentCheckout
+          checkoutOptions={checkoutOptions}
+          paymentId={paymentId}
+          planId={selectedPlan.id}
+          sellerId={currentUser?.user_id || ''} 
+          onError={handlePaymentError}
+        />
+      )}
     </div>
   );
 };

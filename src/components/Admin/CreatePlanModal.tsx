@@ -1,10 +1,415 @@
+// // ═══════════════════════════════════════════════════════════════
+// // ✅ CREATE PLAN MODAL - PRODUCTION v1.0
+// // Admin only component
+// // ═══════════════════════════════════════════════════════════════
+
+// import React, { useState } from 'react';
+// import { X, Plus, Trash2 } from 'lucide-react';
+// import { createPlan, validatePlanData } from '../../lib/planService';
+// import type { CreatePlanData, PlanFeature, PlanValidationError } from '../../types/plan.types';
+
+// interface CreatePlanModalProps {
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onSuccess: () => void;
+// }
+
+// export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
+//   isOpen,
+//   onClose,
+//   onSuccess
+// }) => {
+//   const [formData, setFormData] = useState<CreatePlanData>({
+//     plan_name: '',
+//     price: 0,
+//     currency: 'INR',
+//     billing_cycle: 'monthly',
+//     features: [
+//       { title: '', description: '', included: true, icon: '' },
+//       { title: '', description: '', included: true, icon: '' },
+//       { title: '', description: '', included: true, icon: '' },
+//       { title: '', description: '', included: true, icon: '' },
+//       { title: '', description: '', included: true, icon: '' }
+//     ],
+//     limits: {
+//       max_tiles: -1,
+//       max_qr_codes: -1,
+//       max_workers: 1,
+//       analytics_retention_days: 365,
+//       customer_inquiries_limit: -1
+//     },
+//     is_active: true,
+//     is_popular: false,
+//     display_order: 1
+//   });
+
+//   const [errors, setErrors] = useState<PlanValidationError>({});
+//   const [creating, setCreating] = useState(false);
+//   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+//   const handleInputChange = (field: keyof CreatePlanData, value: any) => {
+//     setFormData(prev => ({ ...prev, [field]: value }));
+//     // Clear error for this field
+//     if (errors[field]) {
+//       setErrors(prev => ({ ...prev, [field]: undefined }));
+//     }
+//   };
+
+//   const handleFeatureChange = (index: number, field: keyof PlanFeature, value: any) => {
+//     const newFeatures = [...formData.features];
+//     newFeatures[index] = { ...newFeatures[index], [field]: value };
+//     setFormData(prev => ({ ...prev, features: newFeatures }));
+//   };
+
+//   const handleLimitChange = (field: keyof typeof formData.limits, value: number) => {
+//     setFormData(prev => ({
+//       ...prev,
+//       limits: { ...prev.limits, [field]: value }
+//     }));
+//   };
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+    
+//     // Validate
+//     const validationErrors = validatePlanData(formData);
+//     if (Object.keys(validationErrors).length > 0) {
+//       setErrors(validationErrors);
+//       alert('❌ Please fix validation errors');
+//       return;
+//     }
+    
+//     setCreating(true);
+    
+//     try {
+//       const result = await createPlan(formData);
+      
+//       if (result.success) {
+//         setSuccessMessage('✅ Plan created successfully!');
+//         setTimeout(() => {
+//           onSuccess();
+//           onClose();
+//           resetForm();
+//         }, 1500);
+//       } else {
+//         alert(`❌ Failed to create plan:\n${result.error}`);
+//       }
+//     } catch (error: any) {
+//       console.error('Error creating plan:', error);
+//       alert(`❌ Error: ${error.message}`);
+//     } finally {
+//       setCreating(false);
+//     }
+//   };
+
+//   const resetForm = () => {
+//     setFormData({
+//       plan_name: '',
+//       price: 0,
+//       currency: 'INR',
+//       billing_cycle: 'monthly',
+//       features: [
+//         { title: '', description: '', included: true, icon: '' },
+//         { title: '', description: '', included: true, icon: '' },
+//         { title: '', description: '', included: true, icon: '' },
+//         { title: '', description: '', included: true, icon: '' },
+//         { title: '', description: '', included: true, icon: '' }
+//       ],
+//       limits: {
+//         max_tiles: -1,
+//         max_qr_codes: -1,
+//         max_workers: 1,
+//         analytics_retention_days: 365,
+//         customer_inquiries_limit: -1
+//       },
+//       is_active: true,
+//       is_popular: false,
+//       display_order: 1
+//     });
+//     setErrors({});
+//     setSuccessMessage(null);
+//   };
+
+//   if (!isOpen) return null;
+
+//   return (
+//     <div className="fixed inset-0 z-50 overflow-y-auto">
+//       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+
+//       <div className="flex min-h-full items-center justify-center p-4">
+//         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+//           {/* Header */}
+//           <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 z-10">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <h2 className="text-2xl font-bold mb-1">➕ Create New Plan</h2>
+//                 <p className="text-purple-100 text-sm">Configure plan details and features</p>
+//               </div>
+//               <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2">
+//                 <X className="w-6 h-6" />
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Success Message */}
+//           {successMessage && (
+//             <div className="bg-green-50 border border-green-200 p-4 text-center">
+//               <p className="text-green-800 font-semibold">{successMessage}</p>
+//             </div>
+//           )}
+
+//           {/* Form */}
+//           <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+//             <div className="space-y-6">
+//               {/* Basic Info */}
+//               <div className="bg-gray-50 rounded-xl p-4">
+//                 <h3 className="font-semibold text-gray-800 mb-4">📋 Basic Information</h3>
+                
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                   {/* Plan Name */}
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Plan Name *
+//                     </label>
+//                     <input
+//                       type="text"
+//                       value={formData.plan_name}
+//                       onChange={(e) => handleInputChange('plan_name', e.target.value)}
+//                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+//                         errors.plan_name ? 'border-red-500' : 'border-gray-300'
+//                       }`}
+//                       placeholder="e.g., Premium"
+//                     />
+//                     {errors.plan_name && (
+//                       <p className="text-xs text-red-500 mt-1">{errors.plan_name}</p>
+//                     )}
+//                   </div>
+
+//                   {/* Price */}
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Price (₹) *
+//                     </label>
+//                     <input
+//                       type="number"
+//                       value={formData.price}
+//                       onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
+//                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+//                         errors.price ? 'border-red-500' : 'border-gray-300'
+//                       }`}
+//                       placeholder="1999"
+//                       min="0"
+//                     />
+//                     {errors.price && (
+//                       <p className="text-xs text-red-500 mt-1">{errors.price}</p>
+//                     )}
+//                   </div>
+
+//                   {/* Billing Cycle */}
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Billing Cycle *
+//                     </label>
+//                     <select
+//                       value={formData.billing_cycle}
+//                       onChange={(e) => handleInputChange('billing_cycle', e.target.value)}
+//                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+//                     >
+//                       <option value="monthly">Monthly</option>
+//                       <option value="yearly">Yearly</option>
+//                     </select>
+//                   </div>
+
+//                   {/* Display Order */}
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Display Order
+//                     </label>
+//                     <input
+//                       type="number"
+//                       value={formData.display_order}
+//                       onChange={(e) => handleInputChange('display_order', parseInt(e.target.value))}
+//                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+//                       min="1"
+//                     />
+//                   </div>
+//                 </div>
+
+//                 {/* Toggles */}
+//                 <div className="flex gap-6 mt-4">
+//                   <label className="flex items-center gap-2 cursor-pointer">
+//                     <input
+//                       type="checkbox"
+//                       checked={formData.is_active}
+//                       onChange={(e) => handleInputChange('is_active', e.target.checked)}
+//                       className="w-4 h-4 text-purple-600 rounded"
+//                     />
+//                     <span className="text-sm font-medium text-gray-700">Active Plan</span>
+//                   </label>
+
+//                   <label className="flex items-center gap-2 cursor-pointer">
+//                     <input
+//                       type="checkbox"
+//                       checked={formData.is_popular}
+//                       onChange={(e) => handleInputChange('is_popular', e.target.checked)}
+//                       className="w-4 h-4 text-purple-600 rounded"
+//                     />
+//                     <span className="text-sm font-medium text-gray-700">Mark as Popular</span>
+//                   </label>
+//                 </div>
+//               </div>
+
+//               {/* Features */}
+//               <div className="bg-gray-50 rounded-xl p-4">
+//                 <h3 className="font-semibold text-gray-800 mb-4">✨ Plan Features (5 Required)</h3>
+//                 {errors.features && (
+//                   <p className="text-xs text-red-500 mb-3">{errors.features}</p>
+//                 )}
+                
+//                 <div className="space-y-4">
+//                   {formData.features.map((feature, index) => (
+//                     <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+//                       <div className="flex items-center justify-between mb-3">
+//                         <h4 className="font-medium text-gray-700">Feature {index + 1}</h4>
+//                         <label className="flex items-center gap-2 cursor-pointer">
+//                           <input
+//                             type="checkbox"
+//                             checked={feature.included}
+//                             onChange={(e) => handleFeatureChange(index, 'included', e.target.checked)}
+//                             className="w-4 h-4 text-green-600 rounded"
+//                           />
+//                           <span className="text-sm text-gray-600">Included</span>
+//                         </label>
+//                       </div>
+
+//                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+//                         <div>
+//                           <input
+//                             type="text"
+//                             value={feature.title}
+//                             onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
+//                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+//                             placeholder="Feature title *"
+//                           />
+//                         </div>
+//                         <div>
+//                           <input
+//                             type="text"
+//                             value={feature.icon || ''}
+//                             onChange={(e) => handleFeatureChange(index, 'icon', e.target.value)}
+//                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+//                             placeholder="Icon emoji (optional)"
+//                           />
+//                         </div>
+//                       </div>
+
+//                       <textarea
+//                         value={feature.description}
+//                         onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
+//                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mt-3"
+//                         placeholder="Feature description *"
+//                         rows={2}
+//                       />
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+
+//               {/* Limits */}
+//               <div className="bg-gray-50 rounded-xl p-4">
+//                 <h3 className="font-semibold text-gray-800 mb-4">🔢 Plan Limits</h3>
+//                 <p className="text-xs text-gray-600 mb-3">Use -1 for unlimited</p>
+
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Max Tiles
+//                     </label>
+//                     <input
+//                       type="number"
+//                       value={formData.limits.max_tiles}
+//                       onChange={(e) => handleLimitChange('max_tiles', parseInt(e.target.value))}
+//                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+//                     />
+//                   </div>
+
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Max QR Codes
+//                     </label>
+//                     <input
+//                       type="number"
+//                       value={formData.limits.max_qr_codes}
+//                       onChange={(e) => handleLimitChange('max_qr_codes', parseInt(e.target.value))}
+//                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+//                     />
+//                   </div>
+
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Max Workers
+//                     </label>
+//                     <input
+//                       type="number"
+//                       value={formData.limits.max_workers}
+//                       onChange={(e) => handleLimitChange('max_workers', parseInt(e.target.value))}
+//                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+//                     />
+//                   </div>
+
+//                   <div>
+//                     <label className="block text-sm font-medium text-gray-700 mb-1">
+//                       Analytics Retention (days)
+//                     </label>
+//                     <input
+//                       type="number"
+//                       value={formData.limits.analytics_retention_days}
+//                       onChange={(e) => handleLimitChange('analytics_retention_days', parseInt(e.target.value))}
+//                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+//                     />
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Footer Buttons */}
+//             <div className="flex gap-3 mt-6 pt-6 border-t">
+//               <button
+//                 type="button"
+//                 onClick={onClose}
+//                 className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 type="submit"
+//                 disabled={creating}
+//                 className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50"
+//               >
+//                 {creating ? (
+//                   <div className="flex items-center justify-center gap-2">
+//                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+//                     Creating...
+//                   </div>
+//                 ) : (
+//                   '✅ Create Plan'
+//                 )}
+//               </button>
+//             </div>
+//           </form>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// console.log('✅ CreatePlanModal Component loaded - PRODUCTION v1.0'); 
 // ═══════════════════════════════════════════════════════════════
-// ✅ CREATE PLAN MODAL - PRODUCTION v1.0
-// Admin only component
+// ✅ CREATE PLAN MODAL - PRODUCTION v4.0 (MINUTES + DAYS SUPPORT)
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import { createPlan, validatePlanData } from '../../lib/planService';
 import type { CreatePlanData, PlanFeature, PlanValidationError } from '../../types/plan.types';
 
@@ -24,6 +429,8 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
     price: 0,
     currency: 'INR',
     billing_cycle: 'monthly',
+    validity_duration: 30,
+    validity_unit: 'days',
     features: [
       { title: '', description: '', included: true, icon: '' },
       { title: '', description: '', included: true, icon: '' },
@@ -33,8 +440,10 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
     ],
     limits: {
       max_tiles: -1,
+      max_collections: -1,
       max_qr_codes: -1,
       max_workers: 1,
+      max_storage_mb: 1000,
       analytics_retention_days: 365,
       customer_inquiries_limit: -1
     },
@@ -49,9 +458,10 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
 
   const handleInputChange = (field: keyof CreatePlanData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+    if (field in errors && errors[field as keyof PlanValidationError]) {
+      const newErrors = { ...errors };
+      delete newErrors[field as keyof PlanValidationError];
+      setErrors(newErrors);
     }
   };
 
@@ -68,10 +478,20 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
     }));
   };
 
+  const getValidityPreview = () => {
+    const { validity_duration, validity_unit } = formData;
+    if (!validity_duration || validity_duration <= 0) return 'Not set';
+    
+    if (validity_duration === 1) {
+      const singular = validity_unit.replace(/s$/, '');
+      return `${validity_duration} ${singular}`;
+    }
+    return `${validity_duration} ${validity_unit}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate
     const validationErrors = validatePlanData(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -108,6 +528,8 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
       price: 0,
       currency: 'INR',
       billing_cycle: 'monthly',
+      validity_duration: 30,
+      validity_unit: 'days',
       features: [
         { title: '', description: '', included: true, icon: '' },
         { title: '', description: '', included: true, icon: '' },
@@ -117,8 +539,10 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
       ],
       limits: {
         max_tiles: -1,
+        max_collections: -1,
         max_qr_codes: -1,
         max_workers: 1,
+        max_storage_mb: 1000,
         analytics_retention_days: 365,
         customer_inquiries_limit: -1
       },
@@ -136,17 +560,17 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
 
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 z-10">
+          <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 sm:p-6 z-10">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold mb-1">➕ Create New Plan</h2>
-                <p className="text-purple-100 text-sm">Configure plan details and features</p>
+                <h2 className="text-xl sm:text-2xl font-bold mb-1">➕ Create New Plan</h2>
+                <p className="text-purple-100 text-xs sm:text-sm">Configure plan details and validity</p>
               </div>
               <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2">
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           </div>
@@ -159,84 +583,66 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
             <div className="space-y-6">
               {/* Basic Info */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">📋 Basic Information</h3>
+              <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
+                <h3 className="font-semibold text-gray-800 mb-4 text-sm sm:text-base">📋 Basic Information</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Plan Name */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Plan Name *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name *</label>
                     <input
                       type="text"
                       value={formData.plan_name}
                       onChange={(e) => handleInputChange('plan_name', e.target.value)}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                      className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${
                         errors.plan_name ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="e.g., Premium"
                     />
-                    {errors.plan_name && (
-                      <p className="text-xs text-red-500 mt-1">{errors.plan_name}</p>
-                    )}
+                    {errors.plan_name && <p className="text-xs text-red-500 mt-1">{errors.plan_name}</p>}
                   </div>
 
-                  {/* Price */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Price (₹) *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
                     <input
                       type="number"
                       value={formData.price}
                       onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                      className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base ${
                         errors.price ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="1999"
                       min="0"
                     />
-                    {errors.price && (
-                      <p className="text-xs text-red-500 mt-1">{errors.price}</p>
-                    )}
                   </div>
 
-                  {/* Billing Cycle */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Billing Cycle *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Billing Cycle *</label>
                     <select
                       value={formData.billing_cycle}
                       onChange={(e) => handleInputChange('billing_cycle', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                     >
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
                   </div>
 
-                  {/* Display Order */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Display Order
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
                     <input
                       type="number"
                       value={formData.display_order}
                       onChange={(e) => handleInputChange('display_order', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                       min="1"
                     />
                   </div>
                 </div>
 
-                {/* Toggles */}
-                <div className="flex gap-6 mt-4">
+                <div className="flex flex-wrap gap-4 sm:gap-6 mt-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -259,18 +665,139 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
                 </div>
               </div>
 
-              {/* Features */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">✨ Plan Features (5 Required)</h3>
-                {errors.features && (
-                  <p className="text-xs text-red-500 mb-3">{errors.features}</p>
-                )}
+              {/* ✨ PLAN VALIDITY DURATION */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-4 sm:p-6 shadow-md">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 bg-blue-600 rounded-lg">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-base sm:text-lg">⏰ Plan Validity Period</h3>
+                    <p className="text-xs text-gray-600">Set how long this plan will remain active</p>
+                  </div>
+                </div>
                 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Duration Value */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      How many? *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.validity_duration}
+                      onChange={(e) => handleInputChange('validity_duration', parseInt(e.target.value))}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-semibold ${
+                        errors.validity_duration ? 'border-red-500' : 'border-blue-300'
+                      }`}
+                      placeholder="e.g., 30"
+                      min="1"
+                    />
+                    {errors.validity_duration && (
+                      <p className="text-xs text-red-500 mt-1">{errors.validity_duration}</p>
+                    )}
+                  </div>
+
+                  {/* Duration Unit */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Unit of Time *
+                    </label>
+                    <select
+                      value={formData.validity_unit}
+                      onChange={(e) => handleInputChange('validity_unit', e.target.value)}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-semibold ${
+                        errors.validity_unit ? 'border-red-500' : 'border-blue-300'
+                      }`}
+                    >
+                      <option value="minutes">Minutes (for testing)</option>
+                      <option value="hours">Hours</option>
+                      <option value="days">Days (recommended)</option>
+                      <option value="months">Months</option>
+                      <option value="years">Years</option>
+                    </select>
+                    {errors.validity_unit && (
+                      <p className="text-xs text-red-500 mt-1">{errors.validity_unit}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                <div className="mt-4 p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Plan will be valid for:</p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                        {getValidityPreview()}
+                      </p>
+                    </div>
+                    <div className="text-4xl">
+                      {formData.validity_unit === 'minutes' ? '⏱️' : 
+                       formData.validity_unit === 'hours' ? '🕐' :
+                       formData.validity_unit === 'days' ? '📅' :
+                       formData.validity_unit === 'months' ? '📆' : '🗓️'}
+                    </div>
+                  </div>
+                  
+                  {/* Examples */}
+                  <div className="mt-3 pt-3 border-t border-blue-100">
+                    <p className="text-xs text-gray-500 mb-2">💡 Quick Examples:</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange('validity_duration', 5);
+                          handleInputChange('validity_unit', 'minutes');
+                        }}
+                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        ⏱️ 5 minutes (test)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange('validity_duration', 1);
+                          handleInputChange('validity_unit', 'hours');
+                        }}
+                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        🕐 1 hour
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange('validity_duration', 30);
+                          handleInputChange('validity_unit', 'days');
+                        }}
+                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        📅 30 days
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange('validity_duration', 1);
+                          handleInputChange('validity_unit', 'years');
+                        }}
+                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        🗓️ 1 year
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
+                <h3 className="font-semibold text-gray-800 mb-4 text-sm sm:text-base">✨ Plan Features (5 Required)</h3>
+                {errors.features && <p className="text-xs text-red-500 mb-3">{errors.features}</p>}
+                
+                <div className="space-y-3 sm:space-y-4">
                   {formData.features.map((feature, index) => (
-                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-gray-700">Feature {index + 1}</h4>
+                        <h4 className="font-medium text-gray-700 text-sm">Feature {index + 1}</h4>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -278,35 +805,31 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
                             onChange={(e) => handleFeatureChange(index, 'included', e.target.checked)}
                             className="w-4 h-4 text-green-600 rounded"
                           />
-                          <span className="text-sm text-gray-600">Included</span>
+                          <span className="text-xs sm:text-sm text-gray-600">Included</span>
                         </label>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <input
-                            type="text"
-                            value={feature.title}
-                            onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                            placeholder="Feature title *"
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            value={feature.icon || ''}
-                            onChange={(e) => handleFeatureChange(index, 'icon', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                            placeholder="Icon emoji (optional)"
-                          />
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          value={feature.title}
+                          onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                          placeholder="Feature title *"
+                        />
+                        <input
+                          type="text"
+                          value={feature.icon || ''}
+                          onChange={(e) => handleFeatureChange(index, 'icon', e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                          placeholder="Icon emoji"
+                        />
                       </div>
 
                       <textarea
                         value={feature.description}
                         onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mt-3"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm mt-3"
                         placeholder="Feature description *"
                         rows={2}
                       />
@@ -316,56 +839,48 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
               </div>
 
               {/* Limits */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">🔢 Plan Limits</h3>
+              <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
+                <h3 className="font-semibold text-gray-800 mb-4 text-sm sm:text-base">🔢 Plan Limits</h3>
                 <p className="text-xs text-gray-600 mb-3">Use -1 for unlimited</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Tiles
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Tiles</label>
                     <input
                       type="number"
                       value={formData.limits.max_tiles}
                       onChange={(e) => handleLimitChange('max_tiles', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max QR Codes
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max QR Codes</label>
                     <input
                       type="number"
                       value={formData.limits.max_qr_codes}
                       onChange={(e) => handleLimitChange('max_qr_codes', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Workers
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Workers</label>
                     <input
                       type="number"
                       value={formData.limits.max_workers}
                       onChange={(e) => handleLimitChange('max_workers', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Analytics Retention (days)
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Analytics Retention (days)</label>
                     <input
                       type="number"
                       value={formData.limits.analytics_retention_days}
                       onChange={(e) => handleLimitChange('analytics_retention_days', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
                     />
                   </div>
                 </div>
@@ -373,18 +888,18 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex gap-3 mt-6 pt-6 border-t">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
+                className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={creating}
-                className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50"
+                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50 text-sm sm:text-base"
               >
                 {creating ? (
                   <div className="flex items-center justify-center gap-2">
@@ -403,4 +918,4 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
   );
 };
 
-console.log('✅ CreatePlanModal Component loaded - PRODUCTION v1.0');
+console.log('✅ CreatePlanModal Component loaded - PRODUCTION v4.0');
