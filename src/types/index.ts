@@ -149,11 +149,14 @@ export interface UserProfile {
   account_status?: 'active' | 'inactive' | 'suspended' | 'pending' | 'deleted';
   created_at: string;
   updated_at: string;
+  seller_plan_active?: boolean;
   last_login?: string;
   email_verified?: boolean;
   onboarding_completed?: boolean;
   created_by?: string;
   permissions?: string[];
+    disabled_reason?: string; // ✅ Optional: Also add this if not present
+  disabled_at?: string;
   
   // ✅ NEW: Worker-specific fields
   seller_id?: string; // For workers - parent seller ID

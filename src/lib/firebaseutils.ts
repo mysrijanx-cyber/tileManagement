@@ -27,11 +27,14 @@ import {
   query, 
   where,
   getDocs,
+  getDocsFromServer, 
+Timestamp,          // ✅ ADD THIS
+serverTimestamp, 
   addDoc,
   orderBy,
   limit, 
   writeBatch,
-   onSnapshot,     // ← YEH ADD KARO
+  onSnapshot,     // ← YEH ADD KARO
   Unsubscribe
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -4964,6 +4967,376 @@ export const generateWorkerPassword = (): string => {
  * @returns Worker details with generated password
  */
 
+// export const createWorkerAccount = async (
+//   sellerEmail: string,
+//   workerEmail: string
+// ): Promise<{
+//   success: boolean;
+//   workerId?: string;
+//   workerEmail?: string;
+//   generatedPassword?: string;
+//   error?: string;
+// }> => {
+  
+//   // ─────────────────────────────────────────────────────────────
+//   // 🔧 PHASE 1: VALIDATION & INITIALIZATION
+//   // ─────────────────────────────────────────────────────────────
+  
+//   const startTime = Date.now();
+//   let workerId: string | null = null;
+//   let secondaryApp: FirebaseApp | null = null;
+//   let authAccountCreated = false;
+
+//   try {
+//     console.log('🔄 Creating worker account...');
+//     console.log('📧 Seller:', sellerEmail);
+//     console.log('👤 Worker:', workerEmail);
+
+//     // ✅ Validate inputs
+//     if (!sellerEmail?.trim() || !workerEmail?.trim()) {
+//       throw new Error('Seller email and worker email are required');
+//     }
+
+//     if (!validateEmail(sellerEmail.trim())) {
+//       throw new Error('Invalid seller email format');
+//     }
+
+//     if (!validateEmail(workerEmail.trim())) {
+//       throw new Error('Invalid worker email format');
+//     }
+
+//     if (sellerEmail.toLowerCase().trim() === workerEmail.toLowerCase().trim()) {
+//       throw new Error('Worker email must be different from seller email');
+//     }
+
+//     // ✅ Get current authenticated seller
+//     const currentUser = auth.currentUser;
+//     if (!currentUser) {
+//       throw new Error('❌ No authenticated user. Please log in as seller.');
+//     }
+
+//     if (currentUser.email?.toLowerCase().trim() !== sellerEmail.toLowerCase().trim()) {
+//       throw new Error(
+//         `❌ Email mismatch. Logged in as ${currentUser.email}, but trying to create worker for ${sellerEmail}`
+//       );
+//     }
+
+//     const sellerId = currentUser.uid;
+//     console.log('✅ Seller authenticated:', sellerId);
+//     // ✅ 🔧 NEW: Ensure seller has user profile
+//     await ensureSellerUserProfile(sellerId);
+//     // ─────────────────────────────────────────────────────────────
+//     // 🔧 PHASE 2: SELLER VERIFICATION
+//     // ─────────────────────────────────────────────────────────────
+
+//     // ✅ Get seller profile
+//     const sellerQuery = query(
+//       collection(db, 'sellers'),
+//       where('email', '==', sellerEmail.toLowerCase().trim())
+//     );
+//     const sellerSnapshot = await getDocs(sellerQuery);
+
+//     if (sellerSnapshot.empty) {
+//       throw new Error('❌ Seller profile not found in database');
+//     }
+
+//     const sellerDoc = sellerSnapshot.docs[0];
+//     const sellerData = sellerDoc.data();
+
+//     console.log('✅ Seller profile loaded:', sellerData.business_name || 'Unknown');
+
+//     // ✅ Check if seller already has a worker
+//     if (sellerData.worker_id) {
+//       // Verify worker still exists
+//       try {
+//         const existingWorkerDoc = await getDoc(doc(db, 'users', sellerData.worker_id));
+        
+//         if (existingWorkerDoc.exists() && existingWorkerDoc.data().account_status !== 'deleted') {
+//           const existingWorkerData = existingWorkerDoc.data();
+//           throw new Error(
+//             `❌ You already have an active worker (${existingWorkerData.email}). Please delete the existing worker first.`
+//           );
+//         } else {
+//           // Orphaned worker_id - clear it
+//           console.log('⚠️ Orphaned worker_id found, clearing...');
+//           await updateDoc(doc(db, 'sellers', sellerDoc.id), {
+//             worker_id: null,
+//             worker_email: null,
+//             updated_at: new Date().toISOString()
+//           });
+//         }
+//       } catch (workerCheckError) {
+//         console.warn('⚠️ Could not verify existing worker:', workerCheckError);
+//       }
+//     }
+
+//     // ✅ Check if worker email already exists
+//     const existingUserQuery = query(
+//       collection(db, 'users'),
+//       where('email', '==', workerEmail.toLowerCase().trim())
+//     );
+//     const existingUserSnapshot = await getDocs(existingUserQuery);
+
+//     if (!existingUserSnapshot.empty) {
+//       throw new Error(`❌ Email "${workerEmail}" is already registered in the system`);
+//     }
+
+//     console.log('✅ Worker email available');
+
+//     // ─────────────────────────────────────────────────────────────
+//     // 🔧 PHASE 3: PASSWORD GENERATION
+//     // ─────────────────────────────────────────────────────────────
+
+//     const generatedPassword = generateWorkerPassword();
+//     console.log('✅ Secure password generated (12 characters)');
+
+//     // ─────────────────────────────────────────────────────────────
+//     // 🔧 PHASE 4: FIREBASE AUTH ACCOUNT CREATION
+//     // ─────────────────────────────────────────────────────────────
+
+//     console.log('🔄 Creating Firebase Auth account...');
+
+//     try {
+//       secondaryApp = initializeApp(
+//         {
+//           apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+//           authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+//           projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+//           storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+//           messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+//           appId: import.meta.env.VITE_FIREBASE_APP_ID
+//         },
+//         `secondary-worker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+//       );
+
+//       const secondaryAuth = getAuth(secondaryApp);
+
+//       const workerCredential = await createUserWithEmailAndPassword(
+//         secondaryAuth,
+//         workerEmail.trim(),
+//         generatedPassword
+//       );
+
+//       workerId = workerCredential.user.uid;
+//       authAccountCreated = true;
+
+//       console.log('✅ Firebase Auth account created:', workerId);
+
+//       // Immediately sign out to prevent session conflicts
+//       await firebaseSignOut(secondaryAuth);
+//       console.log('✅ Secondary auth signed out');
+
+//       // Cleanup secondary app
+//       await deleteApp(secondaryApp);
+//       secondaryApp = null;
+//       console.log('✅ Secondary app deleted');
+
+//     } catch (authError: any) {
+//       console.error('❌ Firebase Auth creation failed:', authError);
+
+//       // Cleanup secondary app if exists
+//       if (secondaryApp) {
+//         try {
+//           await deleteApp(secondaryApp);
+//           secondaryApp = null;
+//         } catch (cleanupError) {
+//           console.warn('⚠️ Secondary app cleanup warning:', cleanupError);
+//         }
+//       }
+
+//       // Better error messages
+//       if (authError.code === 'auth/email-already-in-use') {
+//         throw new Error('❌ Email already in use in Firebase Auth. Please use a different email.');
+//       } else if (authError.code === 'auth/weak-password') {
+//         throw new Error('❌ Generated password is too weak (this should not happen)');
+//       } else if (authError.code === 'auth/invalid-email') {
+//         throw new Error('❌ Invalid email format');
+//       } else {
+//         throw new Error(`❌ Auth creation failed: ${authError.message}`);
+//       }
+//     }
+
+//     // ✅ Verify main seller session still active
+//     if (!auth.currentUser || auth.currentUser.uid !== sellerId) {
+//       throw new Error('❌ Seller session lost during worker creation. Please log in again.');
+//     }
+
+//     console.log('✅ Seller session verified - still logged in');
+
+//     // ─────────────────────────────────────────────────────────────
+//     // 🔧 PHASE 5: FIRESTORE DATA CREATION
+//     // ─────────────────────────────────────────────────────────────
+
+//     console.log('🔄 Creating Firestore records...');
+
+//     try {
+//       // ✅ Create worker user profile
+//       const workerProfile: Partial<UserProfile> = {
+//         id: workerId!,
+//         user_id: workerId!,
+//         email: workerEmail.toLowerCase().trim(),
+//         full_name: `Worker - ${sellerData.business_name || sellerData.owner_name || 'Showroom'}`,
+//         role: 'worker',
+//         seller_id: sellerId,
+//         is_active: true,
+//         account_status: 'active',
+//         seller_plan_active: true,
+//         created_at: new Date().toISOString(),
+//         updated_at: new Date().toISOString(),
+//         created_by: sellerId,
+//         onboarding_completed: true,
+//         permissions: ['view_tiles', 'scan_qr', 'view_analytics']
+//       };
+
+//       await setDoc(doc(db, 'users', workerId!), workerProfile);
+//       console.log('✅ Worker user profile created');
+
+//       // ✅ Update seller document
+//       await updateDoc(doc(db, 'sellers', sellerDoc.id), {
+//         worker_id: workerId,
+//         worker_email: workerEmail.toLowerCase().trim(),
+//         worker_created_at: new Date().toISOString(),
+//         updated_at: new Date().toISOString()
+//       });
+//       console.log('✅ Seller document updated');
+
+//       // ✅ Store temporary credentials (expires in 24 hours)
+//       const expiresAt = new Date();
+//       expiresAt.setHours(expiresAt.getHours() + 24);
+
+//       await setDoc(doc(db, 'worker_credentials', workerId!), {
+//         worker_id: workerId,
+//         seller_id: sellerId,
+//         email: workerEmail.toLowerCase().trim(),
+//         generated_password: generatedPassword,
+//         created_at: new Date().toISOString(),
+//         viewed: false,
+//         expires_at: expiresAt.toISOString()
+//       });
+//       console.log('✅ Temporary credentials stored (expires in 24h)');
+
+//       // ✅ Log worker activity
+//       await addDoc(collection(db, 'workerActivity'), {
+//         worker_id: workerId,
+//         seller_id: sellerId,
+//         action: 'WORKER_ACCOUNT_CREATED',
+//         details: {
+//           worker_email: workerEmail,
+//           created_by: sellerEmail
+//         },
+//         timestamp: new Date().toISOString()
+//       });
+//       console.log('✅ Worker activity logged');
+
+//       // ✅ Log admin activity
+//       await addDoc(collection(db, 'adminLogs'), {
+//         action: 'worker_account_created',
+//         seller_id: sellerId,
+//         seller_email: sellerEmail,
+//         worker_id: workerId,
+//         worker_email: workerEmail,
+//         business_name: sellerData.business_name || 'Unknown',
+//         duration_ms: Date.now() - startTime,
+//         timestamp: new Date().toISOString(),
+//         success: true
+//       });
+//       console.log('✅ Admin log created');
+
+//     } catch (firestoreError: any) {
+//       console.error('❌ Firestore creation failed:', firestoreError);
+
+//       // ─────────────────────────────────────────────────────────────
+//       // 🔧 ROLLBACK: Delete Firebase Auth account if Firestore fails
+//       // ─────────────────────────────────────────────────────────────
+      
+//       if (authAccountCreated && workerId) {
+//         console.log('🔄 Rolling back Firebase Auth account...');
+        
+//         try {
+//           // Log orphaned account for admin cleanup
+//           await addDoc(collection(db, 'orphanedAccounts'), {
+//             userId: workerId,
+//             email: workerEmail,
+//             reason: 'firestore_creation_failed',
+//             error: firestoreError.message,
+//             createdAt: new Date().toISOString(),
+//             seller_id: sellerId,
+//             needs_cleanup: true
+//           });
+//           console.log('✅ Orphaned account logged for cleanup');
+//         } catch (logError) {
+//           console.error('⚠️ Could not log orphaned account:', logError);
+//         }
+//       }
+
+//       throw new Error(`❌ Failed to create worker profile: ${firestoreError.message}`);
+//     }
+
+//     // ─────────────────────────────────────────────────────────────
+//     // 🔧 PHASE 6: SUCCESS
+//     // ─────────────────────────────────────────────────────────────
+
+//     const totalTime = Date.now() - startTime;
+//     console.log(`🎉 Worker account created successfully in ${totalTime}ms`);
+
+//     return {
+//       success: true,
+//       workerId: workerId!,
+//       workerEmail: workerEmail.trim(),
+//       generatedPassword
+//     };
+
+//   } catch (error: any) {
+//     // ─────────────────────────────────────────────────────────────
+//     // 🔧 ERROR HANDLING
+//     // ─────────────────────────────────────────────────────────────
+
+//     console.error('❌ Worker account creation failed:', error);
+
+//     const totalTime = Date.now() - startTime;
+
+//     // Cleanup secondary app if still exists
+//     if (secondaryApp) {
+//       try {
+//         await deleteApp(secondaryApp);
+//         console.log('✅ Secondary app cleaned up after error');
+//       } catch (cleanupError) {
+//         console.warn('⚠️ Secondary app cleanup error:', cleanupError);
+//       }
+//     }
+
+//     // Log failure
+//     try {
+//       const currentUser = auth.currentUser;
+//       if (currentUser) {
+//         await addDoc(collection(db, 'adminLogs'), {
+//           action: 'worker_account_creation_failed',
+//           seller_id: currentUser.uid,
+//           seller_email: sellerEmail,
+//           attempted_worker_email: workerEmail,
+//           error_message: error.message,
+//           error_code: error.code || 'unknown',
+//           phase: authAccountCreated ? 'firestore_creation' : 'auth_creation',
+//           duration_ms: totalTime,
+//           timestamp: new Date().toISOString(),
+//           success: false
+//         });
+//       }
+//     } catch (logError) {
+//       console.warn('⚠️ Failed to log error:', logError);
+//     }
+
+//     return {
+//       success: false,
+//       error: error.message || 'Failed to create worker account. Please try again.'
+//     };
+//   }
+// }; 
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ CREATE WORKER ACCOUNT - PRODUCTION v7.0 (COMPLETE FIX)
+// ═══════════════════════════════════════════════════════════════
+
 export const createWorkerAccount = async (
   sellerEmail: string,
   workerEmail: string
@@ -5020,8 +5393,10 @@ export const createWorkerAccount = async (
 
     const sellerId = currentUser.uid;
     console.log('✅ Seller authenticated:', sellerId);
-    // ✅ 🔧 NEW: Ensure seller has user profile
+    
+    // ✅ Ensure seller has user profile
     await ensureSellerUserProfile(sellerId);
+    
     // ─────────────────────────────────────────────────────────────
     // 🔧 PHASE 2: SELLER VERIFICATION
     // ─────────────────────────────────────────────────────────────
@@ -5167,25 +5542,46 @@ export const createWorkerAccount = async (
     console.log('🔄 Creating Firestore records...');
 
     try {
-      // ✅ Create worker user profile
+      // ✅ CRITICAL: Create worker user profile with SELLER_ID
       const workerProfile: Partial<UserProfile> = {
         id: workerId!,
         user_id: workerId!,
         email: workerEmail.toLowerCase().trim(),
         full_name: `Worker - ${sellerData.business_name || sellerData.owner_name || 'Showroom'}`,
         role: 'worker',
-        seller_id: sellerId,
-        is_active: true,
+        
+        // ✅✅✅ CRITICAL FIX: SET SELLER_ID (MULTIPLE WAYS)
+        seller_id: sellerId,           // ✅ PRIMARY - Used by WorkerProtectedRoute
+        created_by: sellerId,          // ✅ BACKUP - Fallback field
+        
         account_status: 'active',
+        is_active: true,
+        email_verified: false,
+        onboarding_completed: true,
+        
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        created_by: sellerId,
-        onboarding_completed: true,
-        permissions: ['view_tiles', 'scan_qr', 'view_analytics']
+        last_login: null,
+        
+        permissions: ['view_tiles', 'scan_qr', 'view_analytics', 'create_inquiry']
       };
 
       await setDoc(doc(db, 'users', workerId!), workerProfile);
-      console.log('✅ Worker user profile created');
+      console.log('✅ Worker user profile created with seller_id:', sellerId);
+
+      // ✅ Verify the document was created correctly
+      const verifyDoc = await getDoc(doc(db, 'users', workerId!));
+      if (verifyDoc.exists()) {
+        const verifyData = verifyDoc.data();
+        console.log('✅ Verification - seller_id in document:', verifyData.seller_id);
+        console.log('✅ Verification - created_by in document:', verifyData.created_by);
+        
+        if (!verifyData.seller_id && !verifyData.created_by) {
+          throw new Error('❌ CRITICAL: seller_id was not saved to Firestore!');
+        }
+      } else {
+        throw new Error('❌ Worker document was not created');
+      }
 
       // ✅ Update seller document
       await updateDoc(doc(db, 'sellers', sellerDoc.id), {
@@ -5218,7 +5614,8 @@ export const createWorkerAccount = async (
         action: 'WORKER_ACCOUNT_CREATED',
         details: {
           worker_email: workerEmail,
-          created_by: sellerEmail
+          created_by: sellerEmail,
+          seller_id_set: true // ✅ Track that seller_id was set
         },
         timestamp: new Date().toISOString()
       });
@@ -5232,6 +5629,7 @@ export const createWorkerAccount = async (
         worker_id: workerId,
         worker_email: workerEmail,
         business_name: sellerData.business_name || 'Unknown',
+        seller_id_verified: true, // ✅ Confirmation flag
         duration_ms: Date.now() - startTime,
         timestamp: new Date().toISOString(),
         success: true
@@ -5274,6 +5672,8 @@ export const createWorkerAccount = async (
 
     const totalTime = Date.now() - startTime;
     console.log(`🎉 Worker account created successfully in ${totalTime}ms`);
+    console.log(`✅ Worker seller_id: ${sellerId}`);
+    console.log(`✅ Worker ID: ${workerId}`);
 
     return {
       success: true,
@@ -5328,6 +5728,8 @@ export const createWorkerAccount = async (
     };
   }
 };
+
+console.log('✅ createWorkerAccount loaded - PRODUCTION v7.0 (SELLER_ID FIX)');
 /**
  * Get seller's worker account
  * @param sellerId - Seller's user ID
@@ -8025,3 +8427,337 @@ console.log('✅ Seller Inactive/Active Management functions loaded');
 if (typeof window !== 'undefined') {
   console.log('🔧 FirebaseUtils initialized - Production Ready v2.0.0 - CLEANED ✅');
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ BULK WORKER MANAGEMENT BASED ON SELLER PLAN STATUS
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Disable all workers for a seller (when plan expires)
+ */
+export const disableAllSellersWorkers = async (sellerId: string): Promise<{
+  success: boolean;
+  count: number;
+  error?: string;
+}> => {
+  try {
+    console.log('🔒 Disabling all workers for seller:', sellerId);
+    
+    // Get all workers for this seller
+    const workersQuery = query(
+      collection(db, 'workers'),
+      where('seller_id', '==', sellerId),
+      where('role', '==', 'worker')
+    );
+    
+    const workersSnapshot = await getDocs(workersQuery);
+    
+    if (workersSnapshot.empty) {
+      console.log('ℹ️ No workers found to disable');
+      return { success: true, count: 0 };
+    }
+    
+    // Batch update all workers
+    const batch = writeBatch(db);
+    let count = 0;
+    
+    workersSnapshot.docs.forEach((workerDoc) => {
+      batch.update(workerDoc.ref, {
+        is_active: false,
+        disabled_reason: 'seller_plan_expired',
+        disabled_at: new Date().toISOString(),
+        seller_plan_active: false, // NEW FIELD - mirrors seller plan status
+        updated_at: new Date().toISOString()
+      });
+      count++;
+    });
+    
+    await batch.commit();
+    
+    console.log(`✅ Disabled ${count} workers for seller:`, sellerId);
+    
+    // Log activity
+    try {
+      await addDoc(collection(db, 'adminLogs'), {
+        action: 'bulk_workers_disabled',
+        seller_id: sellerId,
+        workers_count: count,
+        reason: 'seller_plan_expired',
+        timestamp: new Date().toISOString()
+      });
+    } catch (logError) {
+      console.warn('⚠️ Could not log activity:', logError);
+    }
+    
+    return { success: true, count };
+    
+  } catch (error: any) {
+    console.error('❌ Error disabling workers:', error);
+    return { success: false, count: 0, error: error.message };
+  }
+};
+
+/**
+ * Enable all workers for a seller (when plan is renewed)
+ */
+export const enableAllSellersWorkers = async (sellerId: string): Promise<{
+  success: boolean;
+  count: number;
+  error?: string;
+}> => {
+  try {
+    console.log('🔓 Enabling all workers for seller:', sellerId);
+    
+    // Get all workers for this seller that were disabled due to plan expiry
+    const workersQuery = query(
+      collection(db, 'workers'),
+      where('seller_id', '==', sellerId),
+      where('role', '==', 'worker')
+    );
+    
+    const workersSnapshot = await getDocs(workersQuery);
+    
+    if (workersSnapshot.empty) {
+      console.log('ℹ️ No workers found to enable');
+      return { success: true, count: 0 };
+    }
+    
+    // Batch update all workers
+    const batch = writeBatch(db);
+    let count = 0;
+    
+    workersSnapshot.docs.forEach((workerDoc) => {
+      const workerData = workerDoc.data();
+      
+      // Only enable if it was disabled due to plan expiry
+      if (workerData.disabled_reason === 'seller_plan_expired' || 
+          workerData.seller_plan_active === false) {
+        batch.update(workerDoc.ref, {
+          is_active: true,
+          disabled_reason: null,
+          disabled_at: null,
+          seller_plan_active: true, // NEW FIELD
+          updated_at: new Date().toISOString()
+        });
+        count++;
+      }
+    });
+    
+    if (count > 0) {
+      await batch.commit();
+      console.log(`✅ Enabled ${count} workers for seller:`, sellerId);
+    } else {
+      console.log('ℹ️ No workers needed enabling');
+    }
+    
+    // Log activity
+    if (count > 0) {
+      try {
+        await addDoc(collection(db, 'adminLogs'), {
+          action: 'bulk_workers_enabled',
+          seller_id: sellerId,
+          workers_count: count,
+          reason: 'seller_plan_renewed',
+          timestamp: new Date().toISOString()
+        });
+      } catch (logError) {
+        console.warn('⚠️ Could not log activity:', logError);
+      }
+    }
+    
+    return { success: true, count };
+    
+  } catch (error: any) {
+    console.error('❌ Error enabling workers:', error);
+    return { success: false, count: 0, error: error.message };
+  }
+};
+// ═══════════════════════════════════════════════════════════════
+// ✅ ENHANCED SELLER PLAN STATUS CHECK - PRODUCTION v6.0
+// ═══════════════════════════════════════════════════════════════
+
+export interface PlanStatusOptions {
+  source?: 'cache' | 'server' | 'default';
+  checkExpiry?: boolean;
+}
+
+export const checkSellerPlanStatus = async (
+  sellerId: string,
+  options: PlanStatusOptions = {}
+): Promise<{ isActive: boolean; subscription?: any; error?: string }> => {
+  try {
+    if (!sellerId || sellerId.trim() === '') {
+      console.error('❌ Invalid seller ID');
+      return { isActive: false, error: 'Invalid seller ID' };
+    }
+
+    console.log(`🔍 Checking plan status for seller: ${sellerId}`);
+    console.log(`📊 Options:`, options);
+
+    const subscriptionQuery = query(
+      collection(db, 'subscriptions'),
+      where('seller_id', '==', sellerId),
+      where('status', '==', 'active')
+    );
+
+    let snapshot;
+
+    // ✅ Support for cache bypass
+    if (options.source === 'server') {
+      console.log('🔄 Forcing server fetch (bypassing cache)...');
+      snapshot = await getDocsFromServer(subscriptionQuery);
+    } else {
+      snapshot = await getDocs(subscriptionQuery);
+    }
+
+    if (snapshot.empty) {
+      console.log('⚠️ No active subscription found');
+      return { isActive: false };
+    }
+
+    const subscriptionData = snapshot.docs[0].data();
+    const subscription = {
+      id: snapshot.docs[0].id,
+      ...subscriptionData
+    };
+
+    console.log('✅ Active subscription found:', subscription.id);
+
+    // ✅ Check expiry if requested
+    if (options.checkExpiry && subscriptionData.end_date) {
+      const endDate = new Date(subscriptionData.end_date);
+      const now = new Date();
+
+      if (now > endDate) {
+        console.log('⚠️ Subscription expired');
+        return { isActive: false, subscription };
+      }
+    }
+
+    console.log('✅ Plan status: ACTIVE');
+    return { isActive: true, subscription };
+
+  } catch (error: any) {
+    console.error('❌ Error checking plan status:', error);
+    return { isActive: false, error: error.message };
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ NEW: REAL-TIME PLAN STATUS LISTENER
+// ═══════════════════════════════════════════════════════════════
+
+export const subscribeToSellerPlanStatus = (
+  sellerId: string,
+  onStatusChange: (isActive: boolean, subscription?: any) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  try {
+    console.log('🔔 Setting up real-time plan status listener for:', sellerId);
+
+    const subscriptionQuery = query(
+      collection(db, 'subscriptions'),
+      where('seller_id', '==', sellerId),
+      where('status', '==', 'active')
+    );
+
+    const unsubscribe = onSnapshot(
+      subscriptionQuery,
+      {
+        includeMetadataChanges: false // ✅ Only server changes
+      },
+      (snapshot) => {
+        console.log('📡 Real-time update received');
+
+        if (snapshot.empty) {
+          console.log('⚠️ No active subscription (real-time)');
+          onStatusChange(false);
+          return;
+        }
+
+        const subscriptionData = snapshot.docs[0].data();
+        const subscription = {
+          id: snapshot.docs[0].id,
+          ...subscriptionData
+        };
+
+        // Check expiry
+        if (subscriptionData.end_date) {
+          const endDate = new Date(subscriptionData.end_date);
+          const now = new Date();
+
+          if (now > endDate) {
+            console.log('⚠️ Subscription expired (real-time)');
+            onStatusChange(false, subscription);
+            return;
+          }
+        }
+
+        console.log('✅ Plan active (real-time)');
+        onStatusChange(true, subscription);
+      },
+      (error) => {
+        console.error('❌ Real-time listener error:', error);
+        if (onError) {
+          onError(error);
+        }
+      }
+    );
+
+    return unsubscribe;
+
+  } catch (error: any) {
+    console.error('❌ Error setting up listener:', error);
+    if (onError) {
+      onError(error);
+    }
+    return () => {}; // Empty cleanup function
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ NEW: BROADCAST PLAN ACTIVATION
+// ═══════════════════════════════════════════════════════════════
+
+export const broadcastPlanActivation = async (
+  sellerId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    console.log('📢 Broadcasting plan activation for seller:', sellerId);
+
+    // Update seller document with activation timestamp
+    const sellerQuery = query(
+      collection(db, 'sellers'),
+      where('user_id', '==', sellerId),
+      limit(1)
+    );
+
+    const sellerSnapshot = await getDocs(sellerQuery);
+
+    if (!sellerSnapshot.empty) {
+      const sellerDoc = sellerSnapshot.docs[0];
+      
+      await updateDoc(doc(db, 'sellers', sellerDoc.id), {
+        plan_activation_broadcast: serverTimestamp(),
+        subscription_status: 'active',
+        updated_at: new Date().toISOString()
+      });
+
+      console.log('✅ Plan activation broadcasted');
+
+      // Also set localStorage flag for same-browser detection
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('seller_plan_activated', Date.now().toString());
+        console.log('✅ LocalStorage flag set');
+      }
+
+      return { success: true };
+    }
+
+    return { success: false, error: 'Seller not found' };
+
+  } catch (error: any) {
+    console.error('❌ Error broadcasting activation:', error);
+    return { success: false, error: error.message };
+  }
+};

@@ -296,93 +296,242 @@ export const useAuth = (securityOptions: Partial<SecurityConfig> = {}) => {
   }, [setCurrentUser, setIsAuthenticated, validateUser, logSecurityEvent, updateActivity]);
 
   // ✅ Enhanced login
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+  // const login = useCallback(async (email: string, password: string) => {
+  //   try {
+  //     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      console.log('🔐 Attempting login for:', email);
-      logSecurityEvent('login_attempt', { email });
+  //     console.log('🔐 Attempting login for:', email);
+  //     logSecurityEvent('login_attempt', { email });
 
-      const { signIn } = await import('../lib/firebaseutils');
+  //     const { signIn } = await import('../lib/firebaseutils');
       
-      const firebaseResult = await signIn(email, password);
-      if (!firebaseResult?.user) {
-        throw new Error('Firebase authentication failed');
-      }
+  //     const firebaseResult = await signIn(email, password);
+  //     if (!firebaseResult?.user) {
+  //       throw new Error('Firebase authentication failed');
+  //     }
 
-      const userProfile = await getFirebaseUser();
-      if (!userProfile || !validateUser(userProfile)) {
-        throw new Error('User profile validation failed');
-      }
+  //     const userProfile = await getFirebaseUser();
+  //     if (!userProfile || !validateUser(userProfile)) {
+  //       throw new Error('User profile validation failed');
+  //     }
 
-      // ✅ NEW: Check worker status
-      if (userProfile.role === 'worker') {
-        if (userProfile.is_active === false) {
-          throw new Error('Your account has been disabled by the seller. Please contact them.');
-        }
-        if (userProfile.account_status === 'deleted') {
-          throw new Error('Your account has been deactivated. Please contact the seller.');
-        }
-      }
+  //     // ✅ NEW: Check worker status
+  //     if (userProfile.role === 'worker') {
+  //       if (userProfile.is_active === false) {
+  //         throw new Error('Your account has been disabled by the seller. Please contact them.');
+  //       }
+  //       if (userProfile.account_status === 'deleted') {
+  //         throw new Error('Your account has been deactivated. Please contact the seller.');
+  //       }
+  //     }
 
-      const tokens = jwtService.generateTokens({
-        user_id: userProfile.user_id,
-        email: userProfile.email,
-        role: userProfile.role,
-        business_id: userProfile.business_id,
-        permissions: userProfile.permissions || ROLE_PERMISSIONS[userProfile.role as keyof typeof ROLE_PERMISSIONS] || []
-      });
+  //     const tokens = jwtService.generateTokens({
+  //       user_id: userProfile.user_id,
+  //       email: userProfile.email,
+  //       role: userProfile.role,
+  //       business_id: userProfile.business_id,
+  //       permissions: userProfile.permissions || ROLE_PERMISSIONS[userProfile.role as keyof typeof ROLE_PERMISSIONS] || []
+  //     });
 
-      jwtService.storeTokens(tokens);
+  //     jwtService.storeTokens(tokens);
 
-      setCurrentUser(userProfile);
-      setIsAuthenticated(true);
-      setAuthState({
-        isAuthenticated: true,
-        isLoading: false,
-        user: userProfile,
-        error: null,
-        isRefreshing: false
-      });
+  //     setCurrentUser(userProfile);
+  //     setIsAuthenticated(true);
+  //     setAuthState({
+  //       isAuthenticated: true,
+  //       isLoading: false,
+  //       user: userProfile,
+  //       error: null,
+  //       isRefreshing: false
+  //     });
 
-      updateActivity();
-      logSecurityEvent('login_success', { 
-        userId: userProfile.user_id, 
-        role: userProfile.role 
-      });
+  //     updateActivity();
+  //     logSecurityEvent('login_success', { 
+  //       userId: userProfile.user_id, 
+  //       role: userProfile.role 
+  //     });
       
-      console.log('✅ Login successful');
+  //     console.log('✅ Login successful');
 
-      // ✅ ENHANCED: Worker redirect logic
-      const redirectUrl = 
-        userProfile.role === 'admin' 
-          ? '/admin' 
-          : userProfile.role === 'seller' 
-          ? '/seller' 
-          : userProfile.role === 'worker'  // ✅ NEW: Worker redirect
-          ? '/scan' 
-          : '/';
+  //     // ✅ ENHANCED: Worker redirect logic
+  //     const redirectUrl = 
+  //       userProfile.role === 'admin' 
+  //         ? '/admin' 
+  //         : userProfile.role === 'seller' 
+  //         ? '/seller' 
+  //         : userProfile.role === 'worker'  // ✅ NEW: Worker redirect
+  //         ? '/scan' 
+  //         : '/';
       
-      console.log('🔄 Redirecting to:', redirectUrl);
-      window.location.replace(redirectUrl);
+  //     console.log('🔄 Redirecting to:', redirectUrl);
+  //     window.location.replace(redirectUrl);
 
-      return userProfile;
+  //     return userProfile;
 
-    } catch (error: any) {
-      console.error('❌ Login failed:', error);
-      logSecurityEvent('login_failed', { email, error: error.message });
+  //   } catch (error: any) {
+  //     console.error('❌ Login failed:', error);
+  //     logSecurityEvent('login_failed', { email, error: error.message });
       
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error.message || 'Login failed',
-        isAuthenticated: false,
-        user: null
-      }));
+  //     setAuthState(prev => ({
+  //       ...prev,
+  //       isLoading: false,
+  //       error: error.message || 'Login failed',
+  //       isAuthenticated: false,
+  //       user: null
+  //     }));
       
-      throw error;
+  //     throw error;
+  //   }
+  // }, [setCurrentUser, setIsAuthenticated, validateUser, logSecurityEvent, updateActivity]);
+
+
+  // ═══════════════════════════════════════════════════════════════
+// ✅ ENHANCED LOGIN - PRODUCTION v8.0 (COMPLETE seller_id FIX)
+// ═══════════════════════════════════════════════════════════════
+
+const login = useCallback(async (email: string, password: string) => {
+  try {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    console.log('🔐 Attempting login for:', email);
+    logSecurityEvent('login_attempt', { email });
+
+    const { signIn } = await import('../lib/firebaseutils');
+    
+    const firebaseResult = await signIn(email, password);
+    if (!firebaseResult?.user) {
+      throw new Error('Firebase authentication failed');
     }
-  }, [setCurrentUser, setIsAuthenticated, validateUser, logSecurityEvent, updateActivity]);
+
+    const userProfile = await getFirebaseUser();
+    if (!userProfile || !validateUser(userProfile)) {
+      throw new Error('User profile validation failed');
+    }
+
+    console.log('✅ User profile loaded:', {
+      id: userProfile.user_id,
+      email: userProfile.email,
+      role: userProfile.role,
+      seller_id: userProfile.seller_id || 'N/A',
+      created_by: userProfile.created_by || 'N/A'
+    });
+
+    // ✅ Worker status checks
+    if (userProfile.role === 'worker') {
+      console.log('🔍 Checking worker account status...');
+      
+      if (userProfile.is_active === false) {
+        throw new Error('Your account has been disabled by the seller. Please contact them.');
+      }
+      if (userProfile.account_status === 'deleted') {
+        throw new Error('Your account has been deactivated. Please contact the seller.');
+      }
+      
+      // ✅ CRITICAL: Verify seller_id exists in Firestore
+      if (!userProfile.seller_id && !userProfile.created_by) {
+        console.error('❌ Worker missing seller_id in Firestore!');
+        console.error('📊 User profile:', userProfile);
+        throw new Error(
+          'Account configuration error: Missing seller information.\n\n' +
+          'Please contact your seller to recreate your account.'
+        );
+      }
+      
+      console.log('✅ Worker seller_id found:', userProfile.seller_id || userProfile.created_by);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ✅✅✅ CRITICAL FIX: Pass ALL user fields to token generator
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🔐 Generating authentication tokens with COMPLETE user data...');
+    
+    const tokens = jwtService.generateTokens({
+      user_id: userProfile.user_id,
+      email: userProfile.email,
+      role: userProfile.role,
+      permissions: userProfile.permissions || ROLE_PERMISSIONS[userProfile.role as keyof typeof ROLE_PERMISSIONS] || [],
+      
+      // ✅ Optional fields
+      business_id: userProfile.business_id,
+      
+      // ✅✅✅ CRITICAL FOR WORKERS: Include seller identification
+      seller_id: userProfile.seller_id,           // ✅ Primary field
+      created_by: userProfile.created_by,         // ✅ Backup field
+      
+      // ✅ Additional profile fields
+      full_name: userProfile.full_name,
+      account_status: userProfile.account_status,
+      is_active: userProfile.is_active
+    });
+
+    // ✅ CRITICAL VERIFICATION: Check token includes seller_id for workers
+    if (userProfile.role === 'worker') {
+      const decodedToken: any = jwtService.verifyToken(tokens.accessToken);
+      console.log('🔍 Verifying worker token contents...');
+      console.log('📊 Token fields:', Object.keys(decodedToken || {}));
+      console.log('🔑 Token seller_id:', decodedToken?.seller_id || 'MISSING');
+      console.log('🔑 Token created_by:', decodedToken?.created_by || 'MISSING');
+      
+      if (!decodedToken?.seller_id && !decodedToken?.created_by) {
+        console.error('❌ CRITICAL: Token missing seller_id after generation!');
+        throw new Error('Token generation failed: seller_id not included');
+      }
+      
+      console.log('✅ Worker token verified - seller_id present');
+    }
+
+    jwtService.storeTokens(tokens);
+
+    setCurrentUser(userProfile);
+    setIsAuthenticated(true);
+    setAuthState({
+      isAuthenticated: true,
+      isLoading: false,
+      user: userProfile,
+      error: null,
+      isRefreshing: false
+    });
+
+    updateActivity();
+    logSecurityEvent('login_success', { 
+      userId: userProfile.user_id, 
+      role: userProfile.role,
+      seller_id: userProfile.seller_id || 'N/A'
+    });
+    
+    console.log('✅ Login successful');
+
+    // ✅ Role-based redirect
+    const redirectUrl = 
+      userProfile.role === 'admin' 
+        ? '/admin' 
+        : userProfile.role === 'seller' 
+        ? '/seller' 
+        : userProfile.role === 'worker'
+        ? '/scan' 
+        : '/';
+    
+    console.log('🔄 Redirecting to:', redirectUrl);
+    window.location.replace(redirectUrl);
+
+    return userProfile;
+
+  } catch (error: any) {
+    console.error('❌ Login failed:', error);
+    logSecurityEvent('login_failed', { email, error: error.message });
+    
+    setAuthState(prev => ({
+      ...prev,
+      isLoading: false,
+      error: error.message || 'Login failed',
+      isAuthenticated: false,
+      user: null
+    }));
+    
+    throw error;
+  }
+}, [setCurrentUser, setIsAuthenticated, validateUser, logSecurityEvent, updateActivity]);
 
   // ✅ Enhanced logout
   const logout = useCallback(async () => {

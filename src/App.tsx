@@ -393,13 +393,13 @@ function AppContent() {
           {/* ✅ ACTION BUTTONS */}
           <div className="flex gap-3 w-full lg:w-auto">
             {/* View Plans Button */}
-            <button
+            {/* <button
               onClick={() => setShowPlansModal(true)}
               className="flex-1 lg:flex-none bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl hover:from-purple-700 hover:to-indigo-700 active:from-purple-800 active:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 font-medium text-sm sm:text-base flex items-center justify-center gap-2 touch-manipulation"
             >
               <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>View Plans</span>
-            </button>
+            </button> */}
 
             {/* Sign In Button - Only if not logged in */}
             {!isAuthenticated && (
