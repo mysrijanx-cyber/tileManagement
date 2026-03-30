@@ -4031,7 +4031,11 @@ import { uploadToCloudinary } from "../utils/cloudinaryUtils";
 // ✅✅✅ NEW: Firestore imports for plan checking
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
-
+import { 
+  getSellerSubscription, 
+  isSubscriptionExpired,
+  getDaysUntilExpiry 
+} from "../lib/subscriptionService"
 // ═══════════════════════════════════════════════════════════════
 // ✅ PLAN STATUS INTERFACE
 // ═══════════════════════════════════════════════════════════════
@@ -4290,78 +4294,99 @@ const handlePaymentSuccess = async () => {
 
 
 
-  const checkSellerPlanStatus = async (sellerId: string): Promise<SellerPlanStatus> => {
-    try {
-      console.log('🔍 Checking plan status for seller:', sellerId);
+  // const checkSellerPlanStatus = async (sellerId: string): Promise<SellerPlanStatus> => {
+  //   try {
+  //     console.log('🔍 Checking plan status for seller:', sellerId);
 
-      setPlanStatus(prev => ({ ...prev, loading: true }));
+  //     setPlanStatus(prev => ({ ...prev, loading: true }));
 
-      const subscriptionsRef = collection(db, 'subscriptions');
-      const q = query(
-        subscriptionsRef,
-        where('seller_id', '==', sellerId),
-        where('status', '==', 'active'),
-        orderBy('end_date', 'desc'),
-        limit(1)
-      );
+  //     const subscriptionsRef = collection(db, 'subscriptions');
+  //     const q = query(
+  //       subscriptionsRef,
+  //       where('seller_id', '==', sellerId),
+  //       where('status', '==', 'active'),
+  //       orderBy('end_date', 'desc'),
+  //       limit(1)
+  //     );
 
-      const snapshot = await getDocs(q);
+  //     const snapshot = await getDocs(q);
 
-      if (snapshot.empty) {
-        console.log('❌ No active plan found for seller:', sellerId);
-        return {
-          isActive: false,
-          expiresAt: null,
-          planName: null,
-          planId: null,
-          daysRemaining: 0,
-          loading: false,
-          lastChecked: new Date()
-        };
-      }
+  //     if (snapshot.empty) {
+  //       console.log('❌ No active plan found for seller:', sellerId);
+  //       return {
+  //         isActive: false,
+  //         expiresAt: null,
+  //         planName: null,
+  //         planId: null,
+  //         daysRemaining: 0,
+  //         loading: false,
+  //         lastChecked: new Date()
+  //       };
+  //     }
 
-      const subscription = snapshot.docs[0].data();
-      const endDate = subscription.end_date?.toDate ? subscription.end_date.toDate() : null;
-      const now = new Date();
+  //     const subscription = snapshot.docs[0].data();
+  //     const endDate = subscription.end_date?.toDate ? subscription.end_date.toDate() : null;
+  //     const now = new Date();
 
-      const isExpired = endDate ? endDate < now : true;
+  //     const isExpired = endDate ? endDate < now : true;
 
-      if (isExpired) {
-        console.log('⏰ Plan expired on:', endDate);
-        return {
-          isActive: false,
-          expiresAt: endDate,
-          planName: subscription.plan_name || null,
-          planId: subscription.plan_id || null,
-          daysRemaining: 0,
-          loading: false,
-          lastChecked: new Date()
-        };
-      }
+  //     if (isExpired) {
+  //       console.log('⏰ Plan expired on:', endDate);
+  //       return {
+  //         isActive: false,
+  //         expiresAt: endDate,
+  //         planName: subscription.plan_name || null,
+  //         planId: subscription.plan_id || null,
+  //         daysRemaining: 0,
+  //         loading: false,
+  //         lastChecked: new Date()
+  //       };
+  //     }
 
-      const daysRemaining = endDate 
-        ? Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
+  //     const daysRemaining = endDate 
+  //       ? Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  //       : 0;
 
-      console.log('✅ Active plan found:', {
-        planName: subscription.plan_name,
-        expiresAt: endDate,
-        daysRemaining
-      });
+  //     console.log('✅ Active plan found:', {
+  //       planName: subscription.plan_name,
+  //       expiresAt: endDate,
+  //       daysRemaining
+  //     });
 
-      return {
-        isActive: true,
-        expiresAt: endDate,
-        planName: subscription.plan_name || null,
-        planId: subscription.plan_id || null,
-        daysRemaining,
-        loading: false,
-        lastChecked: new Date()
-      };
+  //     return {
+  //       isActive: true,
+  //       expiresAt: endDate,
+  //       planName: subscription.plan_name || null,
+  //       planId: subscription.plan_id || null,
+  //       daysRemaining,
+  //       loading: false,
+  //       lastChecked: new Date()
+  //     };
 
-    } catch (error: any) {
-      console.error('❌ Error checking plan status:', error);
+  //   } catch (error: any) {
+  //     console.error('❌ Error checking plan status:', error);
       
+  //     return {
+  //       isActive: false,
+  //       expiresAt: null,
+  //       planName: null,
+  //       planId: null,
+  //       daysRemaining: 0,
+  //       loading: false,
+  //       lastChecked: new Date()
+  //     };
+  //   }
+  // }; 
+
+const checkSellerPlanStatus = async (sellerId: string): Promise<SellerPlanStatus> => {
+  try {
+    console.log('🔍 Checking plan status via subscriptionService:', sellerId);
+    
+    // ✅ Use robust service function with fallback
+    const subscription = await getSellerSubscription(sellerId);
+    
+    if (!subscription) {
+      console.log('❌ No subscription found');
       return {
         isActive: false,
         expiresAt: null,
@@ -4372,8 +4397,47 @@ const handlePaymentSuccess = async () => {
         lastChecked: new Date()
       };
     }
-  };
-
+    
+    // ✅ Check expiry using service helper
+    const expired = isSubscriptionExpired(subscription);
+    const daysRemaining = getDaysUntilExpiry(subscription);
+    
+    const endDate = subscription.end_date 
+      ? new Date(subscription.end_date) 
+      : null;
+    
+    console.log('✅ Plan status checked:', {
+      isActive: !expired,
+      planName: subscription.plan_name,
+      daysRemaining,
+      expired
+    });
+    
+    return {
+      isActive: !expired,
+      expiresAt: endDate,
+      planName: subscription.plan_name || null,
+      planId: subscription.plan_id || null,
+      daysRemaining,
+      loading: false,
+      lastChecked: new Date()
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Error checking plan status:', error);
+    
+    // ✅ Even on error, return safe default
+    return {
+      isActive: false,
+      expiresAt: null,
+      planName: null,
+      planId: null,
+      daysRemaining: 0,
+      loading: false,
+      lastChecked: new Date()
+    };
+  }
+};
   // ✅ LOAD PLAN STATUS
   const loadPlanStatus = async () => {
     if (!currentUser?.user_id) {

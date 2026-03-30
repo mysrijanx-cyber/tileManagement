@@ -8427,56 +8427,66 @@ console.log('✅ Seller Inactive/Active Management functions loaded');
 if (typeof window !== 'undefined') {
   console.log('🔧 FirebaseUtils initialized - Production Ready v2.0.0 - CLEANED ✅');
 }
-
 // ═══════════════════════════════════════════════════════════════
-// ✅ BULK WORKER MANAGEMENT BASED ON SELLER PLAN STATUS
+// ✅ DISABLE ALL WORKERS FOR SELLER (PLAN EXPIRY)
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Disable all workers for a seller (when plan expires)
- */
-export const disableAllSellersWorkers = async (sellerId: string): Promise<{
-  success: boolean;
-  count: number;
-  error?: string;
-}> => {
+export const disableAllSellersWorkers = async (
+  sellerId: string
+): Promise<{ success: boolean; count: number; error?: string }> => {
   try {
     console.log('🔒 Disabling all workers for seller:', sellerId);
-    
-    // Get all workers for this seller
+
+    if (!sellerId || sellerId.trim() === '') {
+      throw new Error('Invalid seller ID');
+    }
+
+    // ✅ FIXED: Query 'users' collection, not 'workers'
+    // Workers are stored in 'users' with role='worker'
+    const usersRef = collection(db, 'users');
     const workersQuery = query(
-      collection(db, 'workers'),
+      usersRef,
       where('seller_id', '==', sellerId),
-      where('role', '==', 'worker')
+      where('role', '==', 'worker') // ✅ Critical: Filter by role
     );
-    
+
     const workersSnapshot = await getDocs(workersQuery);
-    
+
     if (workersSnapshot.empty) {
       console.log('ℹ️ No workers found to disable');
       return { success: true, count: 0 };
     }
-    
-    // Batch update all workers
+
+    // ✅ Batch update for atomic operation
     const batch = writeBatch(db);
     let count = 0;
-    
+
     workersSnapshot.docs.forEach((workerDoc) => {
-      batch.update(workerDoc.ref, {
-        is_active: false,
-        disabled_reason: 'seller_plan_expired',
-        disabled_at: new Date().toISOString(),
-        seller_plan_active: false, // NEW FIELD - mirrors seller plan status
-        updated_at: new Date().toISOString()
-      });
-      count++;
+      const workerData = workerDoc.data();
+
+      // ✅ Only disable if currently active
+      if (workerData.is_active !== false) {
+        batch.update(workerDoc.ref, {
+          is_active: false,
+          disabled_reason: 'seller_plan_expired',
+          disabled_at: new Date().toISOString(),
+          seller_plan_active: false,
+          updated_at: new Date().toISOString()
+        });
+        count++;
+      }
     });
-    
+
+    if (count === 0) {
+      console.log('ℹ️ All workers already disabled');
+      return { success: true, count: 0 };
+    }
+
     await batch.commit();
-    
-    console.log(`✅ Disabled ${count} workers for seller:`, sellerId);
-    
-    // Log activity
+
+    console.log(`✅ Disabled ${count} worker(s) for seller:`, sellerId);
+
+    // ✅ Log activity
     try {
       await addDoc(collection(db, 'adminLogs'), {
         action: 'bulk_workers_disabled',
@@ -8488,92 +8498,101 @@ export const disableAllSellersWorkers = async (sellerId: string): Promise<{
     } catch (logError) {
       console.warn('⚠️ Could not log activity:', logError);
     }
-    
+
     return { success: true, count };
-    
+
   } catch (error: any) {
     console.error('❌ Error disabling workers:', error);
     return { success: false, count: 0, error: error.message };
   }
-};
+}; 
+// ═══════════════════════════════════════════════════════════════
+// ✅ ENABLE ALL WORKERS FOR SELLER (PLAN RENEWAL)
+// ═══════════════════════════════════════════════════════════════
 
-/**
- * Enable all workers for a seller (when plan is renewed)
- */
-export const enableAllSellersWorkers = async (sellerId: string): Promise<{
-  success: boolean;
-  count: number;
-  error?: string;
-}> => {
+export const enableAllSellersWorkers = async (
+  sellerId: string
+): Promise<{ success: boolean; count: number; error?: string }> => {
   try {
     console.log('🔓 Enabling all workers for seller:', sellerId);
-    
-    // Get all workers for this seller that were disabled due to plan expiry
+
+    if (!sellerId || sellerId.trim() === '') {
+      throw new Error('Invalid seller ID');
+    }
+
+    // ✅ FIXED: Query 'users' collection
+    const usersRef = collection(db, 'users');
     const workersQuery = query(
-      collection(db, 'workers'),
+      usersRef,
       where('seller_id', '==', sellerId),
       where('role', '==', 'worker')
     );
-    
+
     const workersSnapshot = await getDocs(workersQuery);
-    
+
     if (workersSnapshot.empty) {
       console.log('ℹ️ No workers found to enable');
       return { success: true, count: 0 };
     }
-    
-    // Batch update all workers
+
     const batch = writeBatch(db);
     let count = 0;
-    
+
     workersSnapshot.docs.forEach((workerDoc) => {
       const workerData = workerDoc.data();
-      
-      // Only enable if it was disabled due to plan expiry
-      if (workerData.disabled_reason === 'seller_plan_expired' || 
-          workerData.seller_plan_active === false) {
+
+      // ✅ Enable if:
+      // 1. Currently disabled, OR
+      // 2. Was disabled due to plan expiry, OR
+      // 3. seller_plan_active is false
+      const shouldEnable =
+        workerData.is_active === false ||
+        workerData.disabled_reason === 'seller_plan_expired' ||
+        workerData.seller_plan_active === false;
+
+      if (shouldEnable) {
         batch.update(workerDoc.ref, {
           is_active: true,
           disabled_reason: null,
           disabled_at: null,
-          seller_plan_active: true, // NEW FIELD
+          seller_plan_active: true,
           updated_at: new Date().toISOString()
         });
         count++;
       }
     });
-    
-    if (count > 0) {
-      await batch.commit();
-      console.log(`✅ Enabled ${count} workers for seller:`, sellerId);
-    } else {
-      console.log('ℹ️ No workers needed enabling');
+
+    if (count === 0) {
+      console.log('ℹ️ All workers already enabled');
+      return { success: true, count: 0 };
     }
-    
-    // Log activity
-    if (count > 0) {
-      try {
-        await addDoc(collection(db, 'adminLogs'), {
-          action: 'bulk_workers_enabled',
-          seller_id: sellerId,
-          workers_count: count,
-          reason: 'seller_plan_renewed',
-          timestamp: new Date().toISOString()
-        });
-      } catch (logError) {
-        console.warn('⚠️ Could not log activity:', logError);
-      }
+
+    await batch.commit();
+
+    console.log(`✅ Enabled ${count} worker(s) for seller:`, sellerId);
+
+    // ✅ Log activity
+    try {
+      await addDoc(collection(db, 'adminLogs'), {
+        action: 'bulk_workers_enabled',
+        seller_id: sellerId,
+        workers_count: count,
+        reason: 'seller_plan_renewed',
+        timestamp: new Date().toISOString()
+      });
+    } catch (logError) {
+      console.warn('⚠️ Could not log activity:', logError);
     }
-    
+
     return { success: true, count };
-    
+
   } catch (error: any) {
     console.error('❌ Error enabling workers:', error);
     return { success: false, count: 0, error: error.message };
   }
-};
+}; 
 // ═══════════════════════════════════════════════════════════════
-// ✅ ENHANCED SELLER PLAN STATUS CHECK - PRODUCTION v6.0
+// ✅ CHECK SELLER PLAN STATUS (WITH FALLBACK)
 // ═══════════════════════════════════════════════════════════════
 
 export interface PlanStatusOptions {
@@ -8587,64 +8606,101 @@ export const checkSellerPlanStatus = async (
 ): Promise<{ isActive: boolean; subscription?: any; error?: string }> => {
   try {
     if (!sellerId || sellerId.trim() === '') {
-      console.error('❌ Invalid seller ID');
       return { isActive: false, error: 'Invalid seller ID' };
     }
 
     console.log(`🔍 Checking plan status for seller: ${sellerId}`);
-    console.log(`📊 Options:`, options);
 
-    const subscriptionQuery = query(
-      collection(db, 'subscriptions'),
-      where('seller_id', '==', sellerId),
-      where('status', '==', 'active')
-    );
+    const subscriptionsRef = collection(db, 'subscriptions');
 
-    let snapshot;
+    // ✅ Try composite query first
+    try {
+      const compositeQuery = query(
+        subscriptionsRef,
+        where('seller_id', '==', sellerId),
+        where('status', '==', 'active')
+      );
 
-    // ✅ Support for cache bypass
-    if (options.source === 'server') {
-      console.log('🔄 Forcing server fetch (bypassing cache)...');
-      snapshot = await getDocsFromServer(subscriptionQuery);
-    } else {
-      snapshot = await getDocs(subscriptionQuery);
-    }
+      let snapshot;
 
-    if (snapshot.empty) {
-      console.log('⚠️ No active subscription found');
-      return { isActive: false };
-    }
-
-    const subscriptionData = snapshot.docs[0].data();
-    const subscription = {
-      id: snapshot.docs[0].id,
-      ...subscriptionData
-    };
-
-    console.log('✅ Active subscription found:', subscription.id);
-
-    // ✅ Check expiry if requested
-    if (options.checkExpiry && subscriptionData.end_date) {
-      const endDate = new Date(subscriptionData.end_date);
-      const now = new Date();
-
-      if (now > endDate) {
-        console.log('⚠️ Subscription expired');
-        return { isActive: false, subscription };
+      if (options.source === 'server') {
+        snapshot = await getDocsFromServer(compositeQuery);
+      } else {
+        snapshot = await getDocs(compositeQuery);
       }
-    }
 
-    console.log('✅ Plan status: ACTIVE');
-    return { isActive: true, subscription };
+      if (!snapshot.empty) {
+        const subscriptionData = snapshot.docs[0].data();
+        const subscription = { id: snapshot.docs[0].id, ...subscriptionData };
+
+        // ✅ Check expiry
+        if (options.checkExpiry && subscriptionData.end_date) {
+          const endDate = new Date(subscriptionData.end_date);
+          if (new Date() > endDate) {
+            console.log('⚠️ Subscription expired');
+            return { isActive: false, subscription };
+          }
+        }
+
+        console.log('✅ Plan active (composite query)');
+        return { isActive: true, subscription };
+      }
+
+      console.log('ℹ️ No active subscription found');
+      return { isActive: false };
+
+    } catch (indexError: any) {
+      // ✅ FALLBACK: Index missing, use simple query + client-side filter
+      if (indexError.message?.includes('index') || indexError.code === 'failed-precondition') {
+        console.warn('⚠️ Index missing, using fallback query...');
+
+        const simpleQuery = query(
+          subscriptionsRef,
+          where('seller_id', '==', sellerId)
+        );
+
+        const snapshot = await getDocs(simpleQuery);
+
+        // ✅ Filter client-side
+        const activeSubs = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(sub => sub.status === 'active')
+          .sort((a, b) => {
+            const dateA = a.end_date ? new Date(a.end_date).getTime() : 0;
+            const dateB = b.end_date ? new Date(b.end_date).getTime() : 0;
+            return dateB - dateA; // Latest first
+          });
+
+        if (activeSubs.length > 0) {
+          const subscription = activeSubs[0];
+
+          if (options.checkExpiry && subscription.end_date) {
+            const endDate = new Date(subscription.end_date);
+            if (new Date() > endDate) {
+              console.log('⚠️ Subscription expired (fallback)');
+              return { isActive: false, subscription };
+            }
+          }
+
+          console.log('✅ Plan active (fallback query)');
+          return { isActive: true, subscription };
+        }
+
+        console.log('ℹ️ No active subscription (fallback)');
+        return { isActive: false };
+      }
+
+      // ✅ Re-throw if not index error
+      throw indexError;
+    }
 
   } catch (error: any) {
     console.error('❌ Error checking plan status:', error);
     return { isActive: false, error: error.message };
   }
-};
-
+}; 
 // ═══════════════════════════════════════════════════════════════
-// ✅ NEW: REAL-TIME PLAN STATUS LISTENER
+// ✅ REAL-TIME PLAN STATUS LISTENER
 // ═══════════════════════════════════════════════════════════════
 
 export const subscribeToSellerPlanStatus = (
@@ -8653,40 +8709,34 @@ export const subscribeToSellerPlanStatus = (
   onError?: (error: Error) => void
 ): (() => void) => {
   try {
-    console.log('🔔 Setting up real-time plan status listener for:', sellerId);
+    console.log('🔔 Setting up real-time listener for:', sellerId);
 
+    const subscriptionsRef = collection(db, 'subscriptions');
     const subscriptionQuery = query(
-      collection(db, 'subscriptions'),
+      subscriptionsRef,
       where('seller_id', '==', sellerId),
       where('status', '==', 'active')
     );
 
     const unsubscribe = onSnapshot(
       subscriptionQuery,
-      {
-        includeMetadataChanges: false // ✅ Only server changes
-      },
+      { includeMetadataChanges: false },
       (snapshot) => {
         console.log('📡 Real-time update received');
 
         if (snapshot.empty) {
-          console.log('⚠️ No active subscription (real-time)');
+          console.log('⚠️ No active subscription');
           onStatusChange(false);
           return;
         }
 
         const subscriptionData = snapshot.docs[0].data();
-        const subscription = {
-          id: snapshot.docs[0].id,
-          ...subscriptionData
-        };
+        const subscription = { id: snapshot.docs[0].id, ...subscriptionData };
 
-        // Check expiry
+        // ✅ Check expiry
         if (subscriptionData.end_date) {
           const endDate = new Date(subscriptionData.end_date);
-          const now = new Date();
-
-          if (now > endDate) {
+          if (new Date() > endDate) {
             console.log('⚠️ Subscription expired (real-time)');
             onStatusChange(false, subscription);
             return;
@@ -8701,6 +8751,8 @@ export const subscribeToSellerPlanStatus = (
         if (onError) {
           onError(error);
         }
+        // ✅ Fallback: Report inactive on error
+        onStatusChange(false);
       }
     );
 
@@ -8711,12 +8763,11 @@ export const subscribeToSellerPlanStatus = (
     if (onError) {
       onError(error);
     }
-    return () => {}; // Empty cleanup function
+    return () => {};
   }
-};
-
+}; 
 // ═══════════════════════════════════════════════════════════════
-// ✅ NEW: BROADCAST PLAN ACTIVATION
+// ✅ BROADCAST PLAN ACTIVATION
 // ═══════════════════════════════════════════════════════════════
 
 export const broadcastPlanActivation = async (
@@ -8725,36 +8776,36 @@ export const broadcastPlanActivation = async (
   try {
     console.log('📢 Broadcasting plan activation for seller:', sellerId);
 
-    // Update seller document with activation timestamp
+    const sellersRef = collection(db, 'sellers');
     const sellerQuery = query(
-      collection(db, 'sellers'),
+      sellersRef,
       where('user_id', '==', sellerId),
       limit(1)
     );
 
     const sellerSnapshot = await getDocs(sellerQuery);
 
-    if (!sellerSnapshot.empty) {
-      const sellerDoc = sellerSnapshot.docs[0];
-      
-      await updateDoc(doc(db, 'sellers', sellerDoc.id), {
-        plan_activation_broadcast: serverTimestamp(),
-        subscription_status: 'active',
-        updated_at: new Date().toISOString()
-      });
-
-      console.log('✅ Plan activation broadcasted');
-
-      // Also set localStorage flag for same-browser detection
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('seller_plan_activated', Date.now().toString());
-        console.log('✅ LocalStorage flag set');
-      }
-
-      return { success: true };
+    if (sellerSnapshot.empty) {
+      console.warn('⚠️ Seller document not found');
+      return { success: false, error: 'Seller not found' };
     }
 
-    return { success: false, error: 'Seller not found' };
+    const sellerDoc = sellerSnapshot.docs[0];
+
+    await updateDoc(doc(db, 'sellers', sellerDoc.id), {
+      plan_activation_broadcast: serverTimestamp(),
+      subscription_status: 'active',
+      updated_at: new Date().toISOString()
+    });
+
+    console.log('✅ Plan activation broadcasted');
+
+    // ✅ LocalStorage flag for same-tab detection
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('seller_plan_activated', Date.now().toString());
+    }
+
+    return { success: true };
 
   } catch (error: any) {
     console.error('❌ Error broadcasting activation:', error);
