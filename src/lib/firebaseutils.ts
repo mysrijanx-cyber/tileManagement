@@ -35,7 +35,7 @@ serverTimestamp,
   limit, 
   writeBatch,
   onSnapshot,     // ← YEH ADD KARO
-  Unsubscribe
+  Unsubscribe, writeBatch
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile, TileSeller } from '../types';
@@ -8509,7 +8509,9 @@ export const disableAllSellersWorkers = async (
 // ═══════════════════════════════════════════════════════════════
 // ✅ ENABLE ALL WORKERS FOR SELLER (PLAN RENEWAL)
 // ═══════════════════════════════════════════════════════════════
-
+/**
+ * Enable all workers for a seller (when plan is renewed)
+ */
 export const enableAllSellersWorkers = async (
   sellerId: string
 ): Promise<{ success: boolean; count: number; error?: string }> => {
@@ -8520,7 +8522,7 @@ export const enableAllSellersWorkers = async (
       throw new Error('Invalid seller ID');
     }
 
-    // ✅ FIXED: Query 'users' collection
+    // Query workers
     const usersRef = collection(db, 'users');
     const workersQuery = query(
       usersRef,
@@ -8531,20 +8533,20 @@ export const enableAllSellersWorkers = async (
     const workersSnapshot = await getDocs(workersQuery);
 
     if (workersSnapshot.empty) {
-      console.log('ℹ️ No workers found to enable');
+      console.log('ℹ️ No workers found');
       return { success: true, count: 0 };
     }
 
+    console.log(`📋 Found ${workersSnapshot.size} worker(s)`);
+
+    // Use batch for atomic update
     const batch = writeBatch(db);
     let count = 0;
 
     workersSnapshot.docs.forEach((workerDoc) => {
       const workerData = workerDoc.data();
 
-      // ✅ Enable if:
-      // 1. Currently disabled, OR
-      // 2. Was disabled due to plan expiry, OR
-      // 3. seller_plan_active is false
+      // Enable if disabled or plan was inactive
       const shouldEnable =
         workerData.is_active === false ||
         workerData.disabled_reason === 'seller_plan_expired' ||
@@ -8556,9 +8558,14 @@ export const enableAllSellersWorkers = async (
           disabled_reason: null,
           disabled_at: null,
           seller_plan_active: true,
+          plan_reactivated_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
         count++;
+        
+        console.log(`  ✅ Enabling: ${workerData.email || workerDoc.id}`);
+      } else {
+        console.log(`  ⏭️ Already active: ${workerData.email || workerDoc.id}`);
       }
     });
 
@@ -8567,11 +8574,17 @@ export const enableAllSellersWorkers = async (
       return { success: true, count: 0 };
     }
 
+    // Commit batch
     await batch.commit();
 
-    console.log(`✅ Enabled ${count} worker(s) for seller:`, sellerId);
+    console.log(`✅ Successfully enabled ${count} worker(s)`);
 
-    // ✅ Log activity
+    // Verify
+    const verifySnapshot = await getDocs(workersQuery);
+    const activeCount = verifySnapshot.docs.filter(doc => doc.data().is_active === true).length;
+    console.log(`🔍 Verification: ${activeCount}/${verifySnapshot.size} active`);
+
+    // Log activity
     try {
       await addDoc(collection(db, 'adminLogs'), {
         action: 'bulk_workers_enabled',
@@ -8581,7 +8594,7 @@ export const enableAllSellersWorkers = async (
         timestamp: new Date().toISOString()
       });
     } catch (logError) {
-      console.warn('⚠️ Could not log activity:', logError);
+      console.warn('⚠️ Could not log activity');
     }
 
     return { success: true, count };
@@ -8590,7 +8603,90 @@ export const enableAllSellersWorkers = async (
     console.error('❌ Error enabling workers:', error);
     return { success: false, count: 0, error: error.message };
   }
-}; 
+};
+// export const enableAllSellersWorkers = async (
+//   sellerId: string
+// ): Promise<{ success: boolean; count: number; error?: string }> => {
+//   try {
+//     console.log('🔓 Enabling all workers for seller:', sellerId);
+
+//     if (!sellerId || sellerId.trim() === '') {
+//       throw new Error('Invalid seller ID');
+//     }
+
+//     // ✅ FIXED: Query 'users' collection
+//     const usersRef = collection(db, 'users');
+//     const workersQuery = query(
+//       usersRef,
+//       where('seller_id', '==', sellerId),
+//       where('role', '==', 'worker')
+//     );
+
+//     const workersSnapshot = await getDocs(workersQuery);
+
+//     if (workersSnapshot.empty) {
+//       console.log('ℹ️ No workers found to enable');
+//       return { success: true, count: 0 };
+//     }
+
+//     const batch = writeBatch(db);
+//     let count = 0;
+
+//     workersSnapshot.docs.forEach((workerDoc) => {
+//       const workerData = workerDoc.data();
+
+//       // ✅ Enable if:
+//       // 1. Currently disabled, OR
+//       // 2. Was disabled due to plan expiry, OR
+//       // 3. seller_plan_active is false
+//       const shouldEnable =
+//         workerData.is_active === false ||
+//         workerData.disabled_reason === 'seller_plan_expired' ||
+//         workerData.seller_plan_active === false;
+
+//       if (shouldEnable) {
+//         batch.update(workerDoc.ref, {
+//           is_active: true,
+//           disabled_reason: null,
+//           disabled_at: null,
+//           seller_plan_active: true,
+//           updated_at: new Date().toISOString()
+//         });
+//         count++;
+//       }
+//     });
+
+//     if (count === 0) {
+//       console.log('ℹ️ All workers already enabled');
+//       return { success: true, count: 0 };
+//     }
+
+//     await batch.commit();
+
+//     console.log(`✅ Enabled ${count} worker(s) for seller:`, sellerId);
+
+//     // ✅ Log activity
+//     try {
+//       await addDoc(collection(db, 'adminLogs'), {
+//         action: 'bulk_workers_enabled',
+//         seller_id: sellerId,
+//         workers_count: count,
+//         reason: 'seller_plan_renewed',
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log activity:', logError);
+//     }
+
+//     return { success: true, count };
+
+//   } catch (error: any) {
+//     console.error('❌ Error enabling workers:', error);
+//     return { success: false, count: 0, error: error.message };
+//   }
+// };  
+
+
 // ═══════════════════════════════════════════════════════════════
 // ✅ CHECK SELLER PLAN STATUS (WITH FALLBACK)
 // ═══════════════════════════════════════════════════════════════

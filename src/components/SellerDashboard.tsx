@@ -4212,85 +4212,196 @@ export const SellerDashboard: React.FC = () => {
 //     setError('Payment successful but dashboard refresh failed. Please reload the page manually.');
 //   }
 // }; 
+// const handlePaymentSuccess = async () => {
+//   console.log('═══════════════════════════════════════════════════════');
+//   console.log('🎉 PAYMENT SUCCESS - Starting dashboard refresh sequence');
+//   console.log('═══════════════════════════════════════════════════════');
+  
+//   try {
+//     // Step 1: Close all payment modals
+//     console.log('🔄 Step 1/7: Closing payment modals...');
+//     setCheckoutOptions(null);
+//     setPaymentId(null);
+//     setProcessingPayment(false);
+//     setSelectedPlan(null);
+//     setShowPaymentConfirmation(false);
+//     setShowPlansModal(false);
+//     console.log('✅ Payment modals closed');
+    
+//     // Step 2: Show initial success message
+//     console.log('🔄 Step 2/7: Showing success message...');
+//     setSuccess('🎉 Payment successful! Activating your plan and enabling features...');
+//     console.log('✅ Success message displayed');
+    
+//     // Step 3: Force increment plan refresh trigger
+//     console.log('🔄 Step 3/7: Incrementing plan refresh trigger...');
+//     setPlanRefreshTrigger(prev => prev + 1);
+//     console.log('✅ Refresh trigger incremented');
+    
+//     // ✅✅✅ NEW STEP 4: Enable all workers ✅✅✅
+//     console.log('🔄 Step 4/7: Enabling all worker accounts...');
+//     try {
+//       const { enableAllSellersWorkers } = await import('../lib/firebaseutils');
+//       const result = await enableAllSellersWorkers(currentUser?.user_id || '');
+      
+//       if (result.success && result.count > 0) {
+//         console.log(`✅ Enabled ${result.count} worker account(s)`);
+//         setSuccess(`🎉 Plan activated! ${result.count} worker account(s) re-enabled.`);
+//       } else {
+//         console.log('ℹ️ No workers to enable');
+//       }
+//     } catch (workerError: any) {
+//       console.warn('⚠️ Could not enable workers:', workerError);
+//       // Don't fail the whole process
+//     }
+//     console.log('✅ Worker enablement complete');
+    
+//     // Step 5: Wait for Firestore sync
+//     console.log('🔄 Step 5/7: Waiting for Firestore sync (1.5s)...');
+//     await new Promise(resolve => setTimeout(resolve, 1500));
+//     console.log('✅ Firestore sync wait complete');
+    
+//     // Step 6: Reload plan status
+//     console.log('🔄 Step 6/7: Reloading plan status...');
+//     await loadPlanStatus();
+//     console.log('✅ Plan status reloaded');
+    
+//     // Step 7: Reload dashboard data
+//     console.log('🔄 Step 7/7: Reloading dashboard data...');
+//     await loadData();
+//     console.log('✅ Dashboard data reloaded');
+    
+//     // Final success message
+//     console.log('🎉 Dashboard refresh sequence COMPLETE!');
+//     setSuccess('✅ Plan activated successfully! All features unlocked. Workers can now login.');
+    
+//     // Clear success message after 7 seconds
+//     setTimeout(() => {
+//       setSuccess(null);
+//     }, 7000);
+    
+//     console.log('═══════════════════════════════════════════════════════');
+//     console.log('✅ PAYMENT SUCCESS HANDLER COMPLETED SUCCESSFULLY');
+//     console.log('═══════════════════════════════════════════════════════');
+    
+//   } catch (error: any) {
+//     console.error('═══════════════════════════════════════════════════════');
+//     console.error('❌ ERROR in handlePaymentSuccess:', error);
+//     console.error('═══════════════════════════════════════════════════════');
+//     setError('Payment successful but dashboard refresh failed. Please reload manually.');
+//   }
+// };  
+
 const handlePaymentSuccess = async () => {
   console.log('═══════════════════════════════════════════════════════');
-  console.log('🎉 PAYMENT SUCCESS - Starting dashboard refresh sequence');
+  console.log('🎉 PAYMENT SUCCESS HANDLER STARTED');
   console.log('═══════════════════════════════════════════════════════');
   
   try {
-    // Step 1: Close all payment modals
-    console.log('🔄 Step 1/7: Closing payment modals...');
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 1: CLOSE MODALS
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🔄 Step 1/8: Closing modals...');
     setCheckoutOptions(null);
     setPaymentId(null);
     setProcessingPayment(false);
     setSelectedPlan(null);
     setShowPaymentConfirmation(false);
     setShowPlansModal(false);
-    console.log('✅ Payment modals closed');
+    console.log('✅ Modals closed');
     
-    // Step 2: Show initial success message
-    console.log('🔄 Step 2/7: Showing success message...');
-    setSuccess('🎉 Payment successful! Activating your plan and enabling features...');
-    console.log('✅ Success message displayed');
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 2: SHOW SUCCESS MESSAGE
+    // ═══════════════════════════════════════════════════════════════
     
-    // Step 3: Force increment plan refresh trigger
-    console.log('🔄 Step 3/7: Incrementing plan refresh trigger...');
-    setPlanRefreshTrigger(prev => prev + 1);
-    console.log('✅ Refresh trigger incremented');
+    console.log('🔄 Step 2/8: Showing success message...');
+    setSuccess('🎉 Payment successful! Activating plan...');
+    console.log('✅ Success message shown');
     
-    // ✅✅✅ NEW STEP 4: Enable all workers ✅✅✅
-    console.log('🔄 Step 4/7: Enabling all worker accounts...');
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ STEP 3: ENABLE WORKERS FIRST (BEFORE REFRESH!)
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🔄 Step 3/8: Enabling workers (BEFORE refresh)...');
+    
     try {
       const { enableAllSellersWorkers } = await import('../lib/firebaseutils');
       const result = await enableAllSellersWorkers(currentUser?.user_id || '');
       
       if (result.success && result.count > 0) {
-        console.log(`✅ Enabled ${result.count} worker account(s)`);
-        setSuccess(`🎉 Plan activated! ${result.count} worker account(s) re-enabled.`);
+        console.log(`✅ Enabled ${result.count} worker(s)`);
+        setSuccess(`🎉 Plan activated! ${result.count} worker(s) enabled.`);
       } else {
         console.log('ℹ️ No workers to enable');
       }
     } catch (workerError: any) {
-      console.warn('⚠️ Could not enable workers:', workerError);
-      // Don't fail the whole process
+      console.warn('⚠️ Worker enable failed:', workerError);
     }
+    
     console.log('✅ Worker enablement complete');
     
-    // Step 5: Wait for Firestore sync
-    console.log('🔄 Step 5/7: Waiting for Firestore sync (1.5s)...');
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log('✅ Firestore sync wait complete');
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 4: WAIT FOR FIRESTORE PROPAGATION
+    // ═══════════════════════════════════════════════════════════════
     
-    // Step 6: Reload plan status
-    console.log('🔄 Step 6/7: Reloading plan status...');
+    console.log('🔄 Step 4/8: Waiting for Firestore (2s)...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('✅ Firestore wait complete');
+    
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ STEP 5: NOW TRIGGER REFRESH (SAFE - WORKERS ALREADY ENABLED)
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🔄 Step 5/8: Triggering refresh (NOW SAFE)...');
+    setPlanRefreshTrigger(prev => prev + 1);
+    console.log('✅ Refresh triggered');
+    
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 6: UI SYNC WAIT
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🔄 Step 6/8: UI sync (1s)...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('✅ UI sync complete');
+    
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 7: RELOAD PLAN STATUS
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🔄 Step 7/8: Reloading plan status...');
     await loadPlanStatus();
     console.log('✅ Plan status reloaded');
     
-    // Step 7: Reload dashboard data
-    console.log('🔄 Step 7/7: Reloading dashboard data...');
-    await loadData();
-    console.log('✅ Dashboard data reloaded');
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 8: RELOAD DASHBOARD
+    // ═══════════════════════════════════════════════════════════════
     
-    // Final success message
-    console.log('🎉 Dashboard refresh sequence COMPLETE!');
-    setSuccess('✅ Plan activated successfully! All features unlocked. Workers can now login.');
+    console.log('🔄 Step 8/8: Reloading dashboard...');
+    await loadData();  // ✅ CORRECT - No parameters needed
+    console.log('✅ Dashboard reloaded');
     
-    // Clear success message after 7 seconds
-    setTimeout(() => {
-      setSuccess(null);
-    }, 7000);
+    // ═══════════════════════════════════════════════════════════════
+    // FINAL SUCCESS
+    // ═══════════════════════════════════════════════════════════════
+    
+    console.log('🎉 All steps complete!');
+    setSuccess('✅ Plan activated! Workers can now login.');
+    
+    setTimeout(() => setSuccess(null), 7000);
     
     console.log('═══════════════════════════════════════════════════════');
-    console.log('✅ PAYMENT SUCCESS HANDLER COMPLETED SUCCESSFULLY');
+    console.log('✅ PAYMENT SUCCESS HANDLER COMPLETED');
     console.log('═══════════════════════════════════════════════════════');
     
   } catch (error: any) {
     console.error('═══════════════════════════════════════════════════════');
-    console.error('❌ ERROR in handlePaymentSuccess:', error);
+    console.error('❌ ERROR:', error);
     console.error('═══════════════════════════════════════════════════════');
-    setError('Payment successful but dashboard refresh failed. Please reload manually.');
+    setError('Payment successful but refresh failed. Reload page manually.');
   }
 };
+
 
 
 
