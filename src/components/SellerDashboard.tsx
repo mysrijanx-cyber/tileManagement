@@ -6749,7 +6749,7 @@ import { getPlanById } from '../lib/planService';
 import type { Plan } from '../types/plan.types';
 import type { RazorpayCheckoutOptions } from '../types/payment.types';
 import { auth } from '../lib/firebase';
-
+import { HistoryTab } from "./HistoryTab";
 import {
   uploadTile,
   updateTile,
@@ -6803,6 +6803,7 @@ export const SellerDashboard: React.FC = () => {
     | "scan"
     | "stock-analytics"
     | "customer-inquiries"
+    | "history"
   >("tiles");
 
   // Tile Management
@@ -7862,7 +7863,17 @@ export const SellerDashboard: React.FC = () => {
             <Edit className="w-4 h-4" />
             My Tiles
           </button>
-          
+          <button
+  onClick={() => handleTabChange("history")}
+  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+    activeTab === "history"
+      ? "bg-green-600 text-white shadow-md"
+      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+  }`}
+>
+  <Clock className="w-4 h-4" />
+  History
+</button>
           <button
             onClick={() => isWorkerAllowed ? handleTabChange("worker") : setShowPlansModal(true)}
             disabled={!isWorkerAllowed}
@@ -7894,13 +7905,7 @@ export const SellerDashboard: React.FC = () => {
             Customers
           </button>
           
-          <button
-            onClick={() => setShowPlansModal(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 text-sm font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Eye className="w-4 h-4" />
-            View Plans
-          </button>
+         
           
           <button
             onClick={() => isScanAllowed ? window.open("/scan", "_blank") : setShowPlansModal(true)}
@@ -8009,7 +8014,18 @@ export const SellerDashboard: React.FC = () => {
               <Users className="w-4 h-4" />
               Customers
             </button>
-            
+            <button
+  onClick={() => handleTabChange("history")}
+  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+    activeTab === "history"
+      ? "bg-green-600 text-white shadow-md"
+      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+  }`}
+>
+  <Clock className="w-4 h-4" />
+  History
+</button>
+
             <button
               onClick={() => {
                 if (isWorkerAllowed) {
@@ -9097,6 +9113,7 @@ export const SellerDashboard: React.FC = () => {
         {activeTab === "qrcodes" && (
           <QRCodeManager tiles={tiles} sellerId={currentUser?.user_id} onQRCodeGenerated={loadData} />
         )}
+        {activeTab === "history" && <HistoryTab />}
         {activeTab === "analytics" && <AnalyticsDashboard sellerId={currentUser?.user_id} />}
       </div>
 

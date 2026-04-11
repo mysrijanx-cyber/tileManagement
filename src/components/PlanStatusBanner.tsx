@@ -1,16 +1,23 @@
 
+// // console.log('✅ PlanStatusBanner loaded - PRODUCTION v7.0'); 
 // import React, { useState, useEffect, useRef, useCallback } from 'react';
-// import { Clock, AlertTriangle, CheckCircle, RefreshCw, Eye, X } from 'lucide-react';
+// import { Clock, AlertTriangle, CheckCircle, RefreshCw, Eye, X,TrendingUp  } from 'lucide-react';
 // import { getSellerSubscription, isSubscriptionExpired } from '../lib/subscriptionService';
 // import { getPlanById } from '../lib/planService';
 // import { disableAllSellersWorkers } from '../lib/firebaseutils';
 // import type { Subscription } from '../types/payment.types';
 // import type { Plan } from '../types/plan.types';
+// import { getRemainingScanCount } from '../lib/subscriptionService';
+// import { QrCode } from 'lucide-react';
+// // ═══════════════════════════════════════════════════════════════
+// // ✅ INTERFACE
+// // ═══════════════════════════════════════════════════════════════
 
 // interface PlanStatusBannerProps {
 //   sellerId: string;
 //   onViewPlans: () => void;
 //   forceRefresh?: number;
+//   onPlanStatusChange?: (isActive: boolean, isExpired: boolean) => void; // ✅ NEW CALLBACK
 // }
 
 // interface TimeRemaining {
@@ -20,10 +27,15 @@
 //   seconds: number;
 // }
 
+// // ═══════════════════════════════════════════════════════════════
+// // ✅ COMPONENT
+// // ═══════════════════════════════════════════════════════════════
+
 // export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
 //   sellerId,
 //   onViewPlans,
-//   forceRefresh = 0
+//   forceRefresh = 0,
+//   onPlanStatusChange // ✅ NEW PROP
 // }) => {
 //   // ═══════════════════════════════════════════════════════════════
 //   // STATE
@@ -43,17 +55,21 @@
 //     type: 'success' | 'error' | null;
 //     message: string;
 //   }>({ type: null, message: '' });
-
-//   // ✅ NEW: Payment processing detection
 //   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   
-//   // ✅ Refs
 //   const disableTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 //   const isLoadingRef = useRef(false);
 //   const lastSubscriptionIdRef = useRef<string | null>(null);
-
+//   const lastExpiredStateRef = useRef<boolean>(false); // ✅ Track expiry changes
+// const [scanStats, setScanStats] = useState<{
+//   remaining: number;
+//   total: number;
+//   used: number;
+//   unlimited: boolean;
+//   limitReached: boolean;
+// } | null>(null);
 //   // ═══════════════════════════════════════════════════════════════
-//   // ✅ DETECT PAYMENT PROCESSING VIA LOCALSTORAGE
+//   // ✅ DETECT PAYMENT PROCESSING
 //   // ═══════════════════════════════════════════════════════════════
   
 //   useEffect(() => {
@@ -74,42 +90,50 @@
 //   }, [isPaymentProcessing]);
 
 //   // ═══════════════════════════════════════════════════════════════
-//   // ✅ LOAD SUBSCRIPTION (NO AUTO-REFRESH INTERVAL)
+//   // ✅ LOAD SUBSCRIPTION
 //   // ═══════════════════════════════════════════════════════════════
   
 //   useEffect(() => {
 //     console.log('🔄 PlanStatusBanner: Loading subscription (forceRefresh:', forceRefresh, ')');
-    
-//     // ✅ Force server fetch when forceRefresh changes
 //     const shouldForceRefresh = forceRefresh > 0;
 //     loadSubscription(shouldForceRefresh);
-    
-//     // ✅ NO AUTO-REFRESH INTERVAL - Only manual refresh
-    
 //   }, [sellerId, forceRefresh]);
 
 //   // ═══════════════════════════════════════════════════════════════
-//   // ✅ DISABLE WORKERS EFFECT (WITH GUARDS)
+//   // ✅ NOTIFY PARENT ON EXPIRY CHANGE
 //   // ═══════════════════════════════════════════════════════════════
   
 //   useEffect(() => {
-//     // ✅ GUARD 1: Payment processing
+//     if (lastExpiredStateRef.current !== isExpired) {
+//       console.log('🔔 Plan status changed - Notifying parent:', {
+//         isExpired,
+//         hasSubscription: !!subscription
+//       });
+      
+//       lastExpiredStateRef.current = isExpired;
+      
+//       // ✅ Notify parent immediately
+//       if (onPlanStatusChange) {
+//         const isActive = !isExpired && !!subscription;
+//         onPlanStatusChange(isActive, isExpired);
+//       }
+//     }
+//   }, [isExpired, subscription, onPlanStatusChange]);
+
+//   // ═══════════════════════════════════════════════════════════════
+//   // ✅ DISABLE WORKERS ON EXPIRY
+//   // ═══════════════════════════════════════════════════════════════
+  
+//   useEffect(() => {
 //     if (isPaymentProcessing) {
 //       console.log('⏸️ PAYMENT PROCESSING - Skipping disable check');
 //       return;
 //     }
 
-//     // ✅ GUARD 2: Already disabled
-//     if (hasDisabledWorkers) {
+//     if (hasDisabledWorkers || !isExpired || !subscription) {
 //       return;
 //     }
 
-//     // ✅ GUARD 3: Not expired or no subscription
-//     if (!isExpired || !subscription) {
-//       return;
-//     }
-
-//     // ✅ GUARD 4: Debounce 3 seconds
 //     console.log('⏰ Plan expired - Scheduling disable in 3 seconds...');
     
 //     if (disableTimeoutRef.current) {
@@ -117,17 +141,11 @@
 //     }
 
 //     disableTimeoutRef.current = setTimeout(async () => {
-//       // ✅ Re-check all conditions
-//       if (isPaymentProcessing) {
-//         console.log('⏸️ Payment started - Aborting disable');
+//       if (isPaymentProcessing || hasDisabledWorkers) {
+//         console.log('⏸️ Aborting disable');
 //         return;
 //       }
 
-//       if (hasDisabledWorkers) {
-//         return;
-//       }
-
-//       // ✅ Verify still expired
 //       try {
 //         const freshSub = await getSellerSubscription(sellerId, true);
 //         if (!freshSub || !isSubscriptionExpired(freshSub)) {
@@ -136,7 +154,6 @@
 //         }
 
 //         console.log('⚠️ Disabling workers (verified expired)...');
-        
 //         const result = await disableAllSellersWorkers(sellerId);
         
 //         if (result.success && result.count > 0) {
@@ -147,7 +164,7 @@
 //       } catch (error: any) {
 //         console.error('❌ Disable failed:', error);
 //       }
-//     }, 3000); // ✅ 3 second debounce
+//     }, 3000);
 
 //     return () => {
 //       if (disableTimeoutRef.current) {
@@ -157,7 +174,7 @@
 //   }, [isExpired, subscription, sellerId, hasDisabledWorkers, isPaymentProcessing]);
 
 //   // ═══════════════════════════════════════════════════════════════
-//   // TIMER EFFECT
+//   // ✅ TIMER EFFECT (UPDATES EVERY SECOND)
 //   // ═══════════════════════════════════════════════════════════════
   
 //   useEffect(() => {
@@ -192,8 +209,22 @@
 //     }
 //   }, [notification]);
 
+
+//   const loadScanStats = async (sellerId: string) => {
+//   try {
+//     console.log('📊 Loading scan stats for seller:', sellerId);
+//     const stats = await getRemainingScanCount(sellerId);
+    
+//     console.log('📊 Scan stats:', stats);
+//     setScanStats(stats);
+    
+//   } catch (error) {
+//     console.error('❌ Failed to load scan stats:', error);
+//     setScanStats(null);
+//   }
+// };
 //   // ═══════════════════════════════════════════════════════════════
-//   // ✅ LOAD SUBSCRIPTION FUNCTION (WITH FORCE REFRESH)
+//   // ✅ LOAD SUBSCRIPTION FUNCTION
 //   // ═══════════════════════════════════════════════════════════════
   
 //   const loadSubscription = useCallback(async (forceServerFetch: boolean = false) => {
@@ -207,12 +238,9 @@
 //       setLoading(true);
       
 //       console.log('🔍 Fetching subscription (force:', forceServerFetch, ')');
-      
-//       // ✅ Pass forceRefresh to service
 //       const sub = await getSellerSubscription(sellerId, forceServerFetch);
       
 //       if (sub) {
-//         // ✅ Track subscription changes
 //         const changed = lastSubscriptionIdRef.current !== sub.id;
         
 //         if (changed) {
@@ -226,7 +254,7 @@
 //         }
 
 //         setSubscription(sub);
-        
+//         await loadScanStats(sellerId);
 //         const planData = await getPlanById(sub.plan_id);
 //         setPlan(planData);
         
@@ -273,7 +301,10 @@
 
 //     if (diffMs <= 0) {
 //       setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-//       if (!isExpired) setIsExpired(true);
+//       if (!isExpired) {
+//         console.log('⏰ Timer reached 0 - Setting expired state');
+//         setIsExpired(true);
+//       }
 //       return;
 //     }
 
@@ -318,7 +349,7 @@
 //   };
 
 //   // ═══════════════════════════════════════════════════════════════
-//   // RENDER LOADING
+//   // ✅ RENDER: LOADING
 //   // ═══════════════════════════════════════════════════════════════
   
 //   if (loading) {
@@ -331,7 +362,7 @@
 //   }
 
 //   // ═══════════════════════════════════════════════════════════════
-//   // RENDER NO SUBSCRIPTION
+//   // ✅ RENDER: NO SUBSCRIPTION
 //   // ═══════════════════════════════════════════════════════════════
   
 //   if (!subscription || !plan) {
@@ -360,7 +391,59 @@
 //   }
 
 //   // ═══════════════════════════════════════════════════════════════
-//   // RENDER MAIN BANNER
+//   // ✅ RENDER: EXPIRED PLAN
+//   // ═══════════════════════════════════════════════════════════════
+  
+//   if (isExpired) {
+//     return (
+//       <>
+//         {notification.type && (
+//           <div className={`mb-4 p-3 sm:p-4 rounded-xl shadow-lg ${
+//             notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+//           }`}>
+//             <div className="flex items-start justify-between gap-3">
+//               <p className="text-sm sm:text-base flex-1">{notification.message}</p>
+//               <button onClick={() => setNotification({ type: null, message: '' })}>
+//                 <X className="w-4 h-4" />
+//               </button>
+//             </div>
+//           </div>
+//         )}
+
+//         <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl shadow-lg animate-pulse">
+//           <div className="flex flex-col gap-3">
+//             <div className="flex items-start justify-between gap-3">
+//               <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+//                 <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 mt-0.5 flex-shrink-0" />
+//                 <div className="flex-1 min-w-0">
+//                   <h3 className="font-bold text-base sm:text-lg">❌ Plan Expired</h3>
+//                   <p className="text-xs sm:text-sm opacity-90 mt-0.5">{plan.plan_name}</p>
+//                   <p className="text-xs mt-1">Expired: {formatDate(subscription.end_date)}</p>
+//                 </div>
+//               </div>
+//               <button 
+//                 onClick={() => loadSubscription(true)} 
+//                 className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0"
+//               >
+//                 <RefreshCw className="w-4 h-4" />
+//               </button>
+//             </div>
+
+//             <button
+//               onClick={onViewPlans}
+//               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-red-600 px-4 py-2.5 rounded-lg hover:bg-red-50 transition-all font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base"
+//             >
+//               <RefreshCw className="w-4 h-4" />
+//               Renew Plan Now
+//             </button>
+//           </div>
+//         </div>
+//       </>
+//     );
+//   }
+
+//   // ═══════════════════════════════════════════════════════════════
+//   // ✅ RENDER: ACTIVE PLAN
 //   // ═══════════════════════════════════════════════════════════════
   
 //   return (
@@ -384,47 +467,95 @@
 //         <div className="flex flex-col gap-3">
 //           <div className="flex items-start justify-between gap-3">
 //             <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-//               {isExpired ? (
-//                 <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 mt-0.5" />
-//               ) : (
-//                 <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 mt-0.5" />
-//               )}
+//               <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 mt-0.5 flex-shrink-0" />
 //               <div className="flex-1 min-w-0">
 //                 <h3 className="font-bold text-base sm:text-lg truncate">
-//                   {isExpired ? '❌ Plan Expired' : `✅ ${plan.plan_name}`}
+//                   ✅ {plan.plan_name}
 //                 </h3>
 //                 <p className="text-xs sm:text-sm opacity-90 mt-0.5">
-//                   {isExpired ? 'Subscription ended' : `₹${plan.price.toLocaleString()}`}
+//                   ₹{plan.price.toLocaleString()}
 //                 </p>
 //               </div>
 //             </div>
-//             <button onClick={() => loadSubscription(true)} className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg">
+//             <button 
+//               onClick={() => loadSubscription(true)} 
+//               className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0"
+//             >
 //               <RefreshCw className="w-4 h-4" />
 //             </button>
 //           </div>
 
+// {/* ✅ Scan Count Display */}
+// {scanStats && !scanStats.unlimited && (
+//   <div className="flex items-center gap-2 border-t border-white border-opacity-20 pt-3 mt-3">
+//     <QrCode className="w-4 h-4 flex-shrink-0" />
+//     <div className="text-xs sm:text-sm flex-1">
+//       <div className="flex items-center justify-between">
+//         <span>Scans:</span>
+//         <span className="font-mono font-bold">
+//           {scanStats.used} / {scanStats.total}
+//         </span>
+//       </div>
+//       {scanStats.limitReached ? (
+//         <div className="text-red-300 text-xs mt-1 font-semibold">
+//           ⚠️ Limit reached - Subscription expired
+//         </div>
+//       ) : scanStats.remaining > 0 ? (
+//         <div className={`text-xs mt-1 ${
+//           scanStats.remaining <= 2 ? 'text-yellow-300' : 'text-green-300'
+//         }`}>
+//           {scanStats.remaining} scan{scanStats.remaining !== 1 ? 's' : ''} remaining
+//         </div>
+//       ) : (
+//         <div className="text-red-300 text-xs mt-1 font-semibold">
+//           ⚠️ Last scan used
+//         </div>
+//       )}
+//     </div>
+//   </div>
+// )}
+
+// {scanStats && scanStats.unlimited && (
+//   <div className="flex items-center gap-2 border-t border-white border-opacity-20 pt-3 mt-3">
+//     <QrCode className="w-4 h-4 flex-shrink-0" />
+//     <div className="text-xs sm:text-sm">
+//       Scans: <span className="font-mono font-bold">Unlimited ∞</span>
+//       {scanStats.used > 0 && (
+//         <span className="text-green-200 ml-2">({scanStats.used} used)</span>
+//       )}
+//     </div>
+//   </div>
+// )}
 //           <div className="flex items-center gap-2 border-t border-white border-opacity-20 pt-3">
-//             <Clock className="w-4 h-4" />
+//             <Clock className="w-4 h-4 flex-shrink-0" />
 //             <div className="text-xs sm:text-sm">
-//               {isExpired ? (
-//                 <>Expired: {formatDate(subscription.end_date)}</>
-//               ) : (
-//                 <>Time Left: <span className="font-mono font-bold">{getTimerDisplay()}</span></>
-//               )}
+//               Time Left: <span className="font-mono font-bold">{getTimerDisplay()}</span>
 //             </div>
 //           </div>
+
+//           <button
+//             onClick={onViewPlans}
+//             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all font-medium text-sm backdrop-blur-sm"
+//           >
+//             <TrendingUp className="w-4 h-4" />
+//             Upgrade Plan
+//           </button>
 //         </div>
 //       </div>
 //     </>
 //   );
 // };
 
-// console.log('✅ PlanStatusBanner loaded - PRODUCTION v7.0'); 
+// console.log('✅ PlanStatusBanner loaded - PRODUCTION v8.0'); 
+// ✅ PRODUCTION v9.1 - NOTHING MISSED
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Clock, AlertTriangle, CheckCircle, RefreshCw, Eye, X,TrendingUp  } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle, RefreshCw, Eye, X, TrendingUp, QrCode } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { getSellerSubscription, isSubscriptionExpired } from '../lib/subscriptionService';
 import { getPlanById } from '../lib/planService';
 import { disableAllSellersWorkers } from '../lib/firebaseutils';
+import { getRemainingScanCount } from '../lib/subscriptionService';
 import type { Subscription } from '../types/payment.types';
 import type { Plan } from '../types/plan.types';
 
@@ -436,7 +567,7 @@ interface PlanStatusBannerProps {
   sellerId: string;
   onViewPlans: () => void;
   forceRefresh?: number;
-  onPlanStatusChange?: (isActive: boolean, isExpired: boolean) => void; // ✅ NEW CALLBACK
+  onPlanStatusChange?: (isActive: boolean, isExpired: boolean) => void;
 }
 
 interface TimeRemaining {
@@ -444,6 +575,14 @@ interface TimeRemaining {
   hours: number;
   minutes: number;
   seconds: number;
+}
+
+interface ScanStats {
+  remaining: number;
+  total: number;
+  used: number;
+  unlimited: boolean;
+  limitReached: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -454,10 +593,10 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   sellerId,
   onViewPlans,
   forceRefresh = 0,
-  onPlanStatusChange // ✅ NEW PROP
+  onPlanStatusChange
 }) => {
   // ═══════════════════════════════════════════════════════════════
-  // STATE
+  // STATE (सब कुछ OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -468,21 +607,296 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     days: 0, hours: 0, minutes: 0, seconds: 0
   });
   const [isExpired, setIsExpired] = useState(false);
-  const [showExpiryPopup, setShowExpiryPopup] = useState(false);
-  const [lastChecked, setLastChecked] = useState<Date>(new Date());
+  const [showExpiryPopup, setShowExpiryPopup] = useState(false); // ✅ OLD से
+  const [lastChecked, setLastChecked] = useState<Date>(new Date()); // ✅ OLD से
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | null;
     message: string;
   }>({ type: null, message: '' });
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [scanStats, setScanStats] = useState<ScanStats | null>(null);
   
   const disableTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLoadingRef = useRef(false);
   const lastSubscriptionIdRef = useRef<string | null>(null);
-  const lastExpiredStateRef = useRef<boolean>(false); // ✅ Track expiry changes
+  const lastExpiredStateRef = useRef<boolean>(false);
+  const unsubscribeFirestoreRef = useRef<(() => void) | null>(null);
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ DETECT PAYMENT PROCESSING
+  // ✅ 1. REAL-TIME FIRESTORE LISTENER (CORRECTED)
+  // ═══════════════════════════════════════════════════════════════
+  
+  useEffect(() => {
+    if (!sellerId) return;
+
+    console.log('🔥 [REAL-TIME] Setting up Firestore listener for seller:', sellerId);
+
+    const setupListener = async () => {
+      try {
+        setLoading(true);
+        
+        console.log('🔍 [REAL-TIME] Initial fetch...');
+        const sub = await getSellerSubscription(sellerId, true);
+        
+        if (!sub || !sub.id) {
+          console.log('ℹ️ [REAL-TIME] No subscription found');
+          setSubscription(null);
+          setPlan(null);
+          setIsExpired(false);
+          setScanStats(null);
+          setLoading(false);
+          return;
+        }
+
+        console.log('✅ [REAL-TIME] Initial subscription loaded:', sub.id);
+
+        // ✅ FIXED: Load scan stats IMMEDIATELY (like OLD code)
+        console.log('📊 [REAL-TIME] Loading initial scan stats...');
+        await loadScanStats(sellerId);
+
+        // Load plan
+        const planData = await getPlanById(sub.plan_id);
+        setPlan(planData);
+
+        // Set initial state
+        setSubscription(sub);
+        const expired = isSubscriptionExpired(sub);
+        setIsExpired(expired);
+        setLastChecked(new Date()); // ✅ OLD से
+        
+        if (!expired) {
+          sessionStorage.removeItem('expiry_popup_shown');
+          setHasDisabledWorkers(false);
+        }
+
+        console.log('✅ [REAL-TIME] Initial state set:', {
+          id: sub.id,
+          plan: planData?.plan_name,
+          expired,
+          count: sub.current_scan_count
+        });
+
+        // Notify parent
+        if (onPlanStatusChange) {
+          const isActive = !expired && sub.status !== 'completed';
+          onPlanStatusChange(isActive, expired);
+          console.log('📢 [REAL-TIME] Initial parent notification:', { isActive, expired });
+        }
+
+        setLoading(false);
+
+        // ✅ NOW setup real-time listener for future changes
+        console.log('📍 [REAL-TIME] Setting up listener on:', `subscriptions/${sub.id}`);
+
+        // const unsubscribe = onSnapshot(
+        //   doc(db, 'subscriptions', sub.id),
+        //   async (snapshot) => {
+        //     console.log('🔔 [REAL-TIME] Firestore update detected!');
+            
+        //     if (!snapshot.exists()) {
+        //       console.log('⚠️ [REAL-TIME] Subscription deleted');
+        //       setSubscription(null);
+        //       setPlan(null);
+        //       setIsExpired(false);
+        //       setScanStats(null);
+        //       return;
+        //     }
+
+        //     const data = snapshot.data() as Subscription;
+        //     console.log('📊 [REAL-TIME] Updated data:', {
+        //       id: data.id,
+        //       status: data.status,
+        //       count: data.current_scan_count,
+        //       limit: data.scan_limit
+        //     });
+
+        //     // Update subscription
+        //     setSubscription(data);
+        //     setLastChecked(new Date()); // ✅ OLD से
+
+        //     // Update plan if changed
+        //     if (data.plan_id !== plan?.id) {
+        //       const planData = await getPlanById(data.plan_id);
+        //       setPlan(planData);
+        //     }
+
+        //     // Check expiry
+        //     const expired = isSubscriptionExpired(data);
+        //     setIsExpired(expired);
+
+        //     // ✅ Reload scan stats (REAL-TIME UPDATE)
+        //     console.log('📊 [REAL-TIME] Reloading scan stats...');
+        //     await loadScanStats(sellerId);
+
+        //     console.log('✅ [REAL-TIME] State updated:', {
+        //       expired,
+        //       status: data.status
+        //     });
+
+        //     // Notify parent
+        //     if (onPlanStatusChange) {
+        //       const isActive = !expired && data.status !== 'completed';
+        //       onPlanStatusChange(isActive, expired);
+        //       console.log('📢 [REAL-TIME] Parent notified:', { isActive, expired });
+        //     }
+        //   },
+        //   (error) => {
+        //     console.error('❌ [REAL-TIME] Listener error:', error);
+        //   }
+        // );
+        const unsubscribe = onSnapshot(
+  doc(db, 'subscriptions', sub.id),
+  async (snapshot) => {
+    console.log('🔔 [REAL-TIME] Firestore update detected!');
+    
+    if (!snapshot.exists()) {
+      console.log('⚠️ [REAL-TIME] Subscription deleted');
+      setSubscription(null);
+      setPlan(null);
+      setIsExpired(false);
+      setScanStats(null);
+      return;
+    }
+
+    const data = snapshot.data() as Subscription;
+    console.log('📊 [REAL-TIME] Updated data:', {
+      id: data.id,
+      status: data.status,
+      count: data.current_scan_count,
+      limit: data.scan_limit
+    });
+
+    // Update subscription
+    setSubscription(data);
+    setLastChecked(new Date());
+
+    // Update plan if changed
+    if (data.plan_id !== plan?.id) {
+      const planData = await getPlanById(data.plan_id);
+      setPlan(planData);
+    }
+
+    // ✅ FIX: Check BOTH time-based AND status-based expiry
+    const timeExpired = isSubscriptionExpired(data);
+    const statusCompleted = data.status === 'completed';
+    const expired = timeExpired || statusCompleted;
+    
+    setIsExpired(expired);
+
+    console.log('🔍 [REAL-TIME] Expiry check:', {
+      timeExpired,
+      statusCompleted,
+      finalExpired: expired,
+      reason: expired ? (timeExpired ? 'TIME_EXPIRED' : 'SCAN_LIMIT_REACHED') : 'ACTIVE'
+    });
+
+    // ✅ Reload scan stats (especially important when limit reached)
+    console.log('📊 [REAL-TIME] Reloading scan stats...');
+    await loadScanStats(sellerId);
+
+    console.log('✅ [REAL-TIME] State updated:', {
+      expired,
+      status: data.status
+    });
+
+    // Notify parent
+    if (onPlanStatusChange) {
+      const isActive = !expired && data.status !== 'completed';
+      onPlanStatusChange(isActive, expired);
+      console.log('📢 [REAL-TIME] Parent notified:', { 
+        isActive, 
+        expired,
+        reason: !isActive ? (expired ? 'EXPIRED' : 'STATUS_NOT_ACTIVE') : 'ACTIVE'
+      });
+    }
+  },
+  (error) => {
+    console.error('❌ [REAL-TIME] Listener error:', error);
+  }
+);
+
+        unsubscribeFirestoreRef.current = unsubscribe;
+        console.log('✅ [REAL-TIME] Listener active');
+
+      } catch (error) {
+        console.error('❌ [REAL-TIME] Setup failed:', error);
+        setLoading(false);
+      }
+    };
+
+    setupListener();
+
+    // Cleanup
+    return () => {
+      if (unsubscribeFirestoreRef.current) {
+        console.log('🧹 [REAL-TIME] Cleaning up listener');
+        unsubscribeFirestoreRef.current();
+        unsubscribeFirestoreRef.current = null;
+      }
+    };
+  }, [sellerId]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ 2. CROSS-TAB COMMUNICATION
+  // ═══════════════════════════════════════════════════════════════
+  
+  useEffect(() => {
+    console.log('📡 [CROSS-TAB] Setting up localStorage listener');
+
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'scan_completed' || e.key === 'scan_limit_reached') {
+        console.log('🔔 [CROSS-TAB] Scan event from another tab:', e.key);
+        console.log('📊 [CROSS-TAB] Event data:', e.newValue);
+
+        // Force immediate refresh
+        setTimeout(() => {
+          console.log('🔄 [CROSS-TAB] Triggering manual refresh...');
+          loadSubscription(true);
+        }, 500); // Small delay to ensure Firestore write completed
+      }
+    };
+
+    window.addEventListener('storage', handleStorageEvent);
+
+    return () => {
+      console.log('🧹 [CROSS-TAB] Cleaning up listener');
+      window.removeEventListener('storage', handleStorageEvent);
+    };
+  }, [sellerId]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ 3. WINDOW FOCUS DETECTION
+  // ═══════════════════════════════════════════════════════════════
+  
+  useEffect(() => {
+    console.log('👁️ [FOCUS] Setting up focus listener');
+
+    const handleFocus = () => {
+      console.log('👁️ [FOCUS] Window focused - Checking updates...');
+      
+      const lastScanEvent = localStorage.getItem('last_scan_timestamp');
+      const bannerLastChecked = lastChecked.toISOString();
+      
+      if (lastScanEvent && new Date(lastScanEvent) > new Date(bannerLastChecked)) {
+        console.log('🔄 [FOCUS] New scan detected - Refreshing...');
+        loadSubscription(true);
+      } else {
+        console.log('✅ [FOCUS] No new scans');
+      }
+
+      setLastChecked(new Date());
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      console.log('🧹 [FOCUS] Cleaning up listener');
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [sellerId, lastChecked]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ 4. PAYMENT PROCESSING (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
@@ -491,7 +905,7 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
       const isProcessing = flag === 'true';
       
       if (isProcessing !== isPaymentProcessing) {
-        console.log('🚩 Payment processing flag changed:', isProcessing);
+        console.log('💳 [PAYMENT] Flag changed:', isProcessing);
         setIsPaymentProcessing(isProcessing);
       }
     };
@@ -503,43 +917,44 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   }, [isPaymentProcessing]);
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ LOAD SUBSCRIPTION
+  // ✅ 5. FORCE REFRESH PROP (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
-    console.log('🔄 PlanStatusBanner: Loading subscription (forceRefresh:', forceRefresh, ')');
-    const shouldForceRefresh = forceRefresh > 0;
-    loadSubscription(shouldForceRefresh);
-  }, [sellerId, forceRefresh]);
+    if (forceRefresh > 0) {
+      console.log('🔄 [FORCE] Force refresh triggered:', forceRefresh);
+      loadSubscription(true);
+    }
+  }, [forceRefresh]);
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ NOTIFY PARENT ON EXPIRY CHANGE
+  // ✅ 6. NOTIFY PARENT (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
     if (lastExpiredStateRef.current !== isExpired) {
-      console.log('🔔 Plan status changed - Notifying parent:', {
-        isExpired,
-        hasSubscription: !!subscription
+      console.log('🔔 [CALLBACK] Expiry changed:', {
+        was: lastExpiredStateRef.current,
+        now: isExpired
       });
       
       lastExpiredStateRef.current = isExpired;
       
-      // ✅ Notify parent immediately
       if (onPlanStatusChange) {
-        const isActive = !isExpired && !!subscription;
+        const isActive = !isExpired && !!subscription && subscription.status !== 'completed';
         onPlanStatusChange(isActive, isExpired);
+        console.log('📢 [CALLBACK] Parent notified:', { isActive, isExpired });
       }
     }
   }, [isExpired, subscription, onPlanStatusChange]);
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ DISABLE WORKERS ON EXPIRY
+  // ✅ 7. DISABLE WORKERS (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
     if (isPaymentProcessing) {
-      console.log('⏸️ PAYMENT PROCESSING - Skipping disable check');
+      console.log('⏸️ [WORKER] Payment processing - Skip');
       return;
     }
 
@@ -547,7 +962,7 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
       return;
     }
 
-    console.log('⏰ Plan expired - Scheduling disable in 3 seconds...');
+    console.log('⏰ [WORKER] Plan expired - Scheduling disable (3s)...');
     
     if (disableTimeoutRef.current) {
       clearTimeout(disableTimeoutRef.current);
@@ -555,27 +970,27 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
 
     disableTimeoutRef.current = setTimeout(async () => {
       if (isPaymentProcessing || hasDisabledWorkers) {
-        console.log('⏸️ Aborting disable');
+        console.log('⏸️ [WORKER] Aborting');
         return;
       }
 
       try {
         const freshSub = await getSellerSubscription(sellerId, true);
         if (!freshSub || !isSubscriptionExpired(freshSub)) {
-          console.log('✅ Subscription now active - Aborting disable');
+          console.log('✅ [WORKER] Now active - Abort');
           return;
         }
 
-        console.log('⚠️ Disabling workers (verified expired)...');
+        console.log('⚠️ [WORKER] Disabling...');
         const result = await disableAllSellersWorkers(sellerId);
         
         if (result.success && result.count > 0) {
-          console.log(`✅ Disabled ${result.count} worker(s)`);
+          console.log(`✅ [WORKER] Disabled ${result.count}`);
           setHasDisabledWorkers(true);
           showNotification('success', `🔒 ${result.count} worker(s) disabled.`);
         }
       } catch (error: any) {
-        console.error('❌ Disable failed:', error);
+        console.error('❌ [WORKER] Error:', error);
       }
     }, 3000);
 
@@ -587,11 +1002,11 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   }, [isExpired, subscription, sellerId, hasDisabledWorkers, isPaymentProcessing]);
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ TIMER EFFECT (UPDATES EVERY SECOND)
+  // ✅ 8. TIMER UPDATE (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
-    if (subscription) {
+    if (subscription && subscription.end_date) {
       updateTimer();
       const interval = setInterval(updateTimer, 1000);
       return () => clearInterval(interval);
@@ -599,7 +1014,7 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   }, [subscription]);
 
   // ═══════════════════════════════════════════════════════════════
-  // POPUP EFFECT
+  // ✅ 9. EXPIRY POPUP (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
@@ -607,10 +1022,10 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
       setShowExpiryPopup(true);
       sessionStorage.setItem('expiry_popup_shown', 'true');
     }
-  }, [isExpired]);
+  }, [isExpired, subscription]);
 
   // ═══════════════════════════════════════════════════════════════
-  // NOTIFICATION AUTO-HIDE
+  // ✅ 10. NOTIFICATION AUTO-HIDE (OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
   
   useEffect(() => {
@@ -623,12 +1038,24 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   }, [notification]);
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ LOAD SUBSCRIPTION FUNCTION
+  // ✅ HELPER FUNCTIONS (सब OLD CODE से)
   // ═══════════════════════════════════════════════════════════════
-  
+
+  const loadScanStats = async (sellerId: string) => {
+    try {
+      console.log('📊 [STATS] Loading...');
+      const stats = await getRemainingScanCount(sellerId);
+      console.log('📊 [STATS] Loaded:', stats);
+      setScanStats(stats);
+    } catch (error) {
+      console.error('❌ [STATS] Error:', error);
+      setScanStats(null);
+    }
+  };
+
   const loadSubscription = useCallback(async (forceServerFetch: boolean = false) => {
     if (isLoadingRef.current) {
-      console.log('⏭️ Already loading');
+      console.log('⏭️ [LOAD] Already loading');
       return;
     }
 
@@ -636,14 +1063,14 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
       isLoadingRef.current = true;
       setLoading(true);
       
-      console.log('🔍 Fetching subscription (force:', forceServerFetch, ')');
+      console.log('🔍 [LOAD] Fetching (force:', forceServerFetch, ')');
       const sub = await getSellerSubscription(sellerId, forceServerFetch);
       
       if (sub) {
         const changed = lastSubscriptionIdRef.current !== sub.id;
         
         if (changed) {
-          console.log('🔄 Subscription changed:', {
+          console.log('🔄 [LOAD] Subscription changed:', {
             old: lastSubscriptionIdRef.current,
             new: sub.id
           });
@@ -653,6 +1080,7 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
         }
 
         setSubscription(sub);
+        await loadScanStats(sellerId);
         
         const planData = await getPlanById(sub.plan_id);
         setPlan(planData);
@@ -665,21 +1093,24 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
           setHasDisabledWorkers(false);
         }
         
-        setLastChecked(new Date());
+        setLastChecked(new Date()); // ✅ OLD से
         
-        console.log('✅ Subscription loaded:', {
+        console.log('✅ [LOAD] Loaded:', {
           id: sub.id,
           plan: planData?.plan_name,
-          expired
+          expired,
+          count: sub.current_scan_count
         });
       } else {
+        console.log('ℹ️ [LOAD] No subscription');
         setSubscription(null);
         setPlan(null);
         setIsExpired(false);
+        setScanStats(null);
         lastSubscriptionIdRef.current = null;
       }
     } catch (error) {
-      console.error('❌ Load error:', error);
+      console.error('❌ [LOAD] Error:', error);
       showNotification('error', 'Failed to load subscription');
     } finally {
       setLoading(false);
@@ -701,7 +1132,7 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     if (diffMs <= 0) {
       setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       if (!isExpired) {
-        console.log('⏰ Timer reached 0 - Setting expired state');
+        console.log('⏰ [TIMER] Reached 0 - Expired');
         setIsExpired(true);
       }
       return;
@@ -748,7 +1179,7 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ RENDER: LOADING
+  // ✅ RENDER (सब OLD CODE जैसा)
   // ═══════════════════════════════════════════════════════════════
   
   if (loading) {
@@ -760,10 +1191,6 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // ✅ RENDER: NO SUBSCRIPTION
-  // ═══════════════════════════════════════════════════════════════
-  
   if (!subscription || !plan) {
     return (
       <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-lg">
@@ -789,10 +1216,6 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // ✅ RENDER: EXPIRED PLAN
-  // ═══════════════════════════════════════════════════════════════
-  
   if (isExpired) {
     return (
       <>
@@ -841,10 +1264,6 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // ✅ RENDER: ACTIVE PLAN
-  // ═══════════════════════════════════════════════════════════════
-  
   return (
     <>
       {notification.type && (
@@ -884,6 +1303,48 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
             </button>
           </div>
 
+          {/* ✅ Scan Count - REAL-TIME */}
+          {scanStats && !scanStats.unlimited && (
+            <div className="flex items-center gap-2 border-t border-white border-opacity-20 pt-3 mt-3">
+              <QrCode className="w-4 h-4 flex-shrink-0" />
+              <div className="text-xs sm:text-sm flex-1">
+                <div className="flex items-center justify-between">
+                  <span>Scans:</span>
+                  <span className="font-mono font-bold">
+                    {scanStats.used} / {scanStats.total}
+                  </span>
+                </div>
+                {scanStats.limitReached ? (
+                  <div className="text-red-300 text-xs mt-1 font-semibold">
+                    ⚠️ Limit reached - Subscription expired
+                  </div>
+                ) : scanStats.remaining > 0 ? (
+                  <div className={`text-xs mt-1 ${
+                    scanStats.remaining <= 2 ? 'text-yellow-300' : 'text-green-300'
+                  }`}>
+                    {scanStats.remaining} scan{scanStats.remaining !== 1 ? 's' : ''} remaining
+                  </div>
+                ) : (
+                  <div className="text-red-300 text-xs mt-1 font-semibold">
+                    ⚠️ Last scan used
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {scanStats && scanStats.unlimited && (
+            <div className="flex items-center gap-2 border-t border-white border-opacity-20 pt-3 mt-3">
+              <QrCode className="w-4 h-4 flex-shrink-0" />
+              <div className="text-xs sm:text-sm">
+                Scans: <span className="font-mono font-bold">Unlimited ∞</span>
+                {scanStats.used > 0 && (
+                  <span className="text-green-200 ml-2">({scanStats.used} used)</span>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 border-t border-white border-opacity-20 pt-3">
             <Clock className="w-4 h-4 flex-shrink-0" />
             <div className="text-xs sm:text-sm">
@@ -904,4 +1365,4 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
   );
 };
 
-console.log('✅ PlanStatusBanner loaded - PRODUCTION v8.0');
+console.log('✅ PlanStatusBanner loaded - PRODUCTION v9.1 - Complete & Verified');

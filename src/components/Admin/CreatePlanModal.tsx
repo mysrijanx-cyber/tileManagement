@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { X, Clock, Plus, Trash2 } from 'lucide-react';
 import { createPlan, validatePlanData } from '../../lib/planService';
 import type { CreatePlanData, PlanFeature, PlanValidationError } from '../../types/plan.types';
-
+import { Package, QrCode } from 'lucide-react';
+import type { PlanLimits } from '../../types/plan.types';
 interface CreatePlanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,7 +34,8 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
       max_workers: 1,
       max_storage_mb: 1000,
       analytics_retention_days: 365,
-      customer_inquiries_limit: -1
+      customer_inquiries_limit: -1,
+      max_scans: 2
     },
     is_active: true,
     is_popular: false,
@@ -86,6 +88,16 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
     }
     return `${validity_duration} ${validity_unit}`;
   };
+
+  const handleLimitChange = (field: keyof PlanLimits, value: number) => {
+  setFormData(prev => ({
+    ...prev,
+    limits: {
+      ...prev.limits!,
+      [field]: value
+    }
+  }));
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,7 +165,8 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
         max_workers: 1,
         max_storage_mb: 1000,
         analytics_retention_days: 365,
-        customer_inquiries_limit: -1
+        customer_inquiries_limit: -1,
+        max_scans: -1 
       },
       is_active: true,
       is_popular: false,
@@ -279,6 +292,153 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
                 </div>
               </div>
 
+{/* ═══════════════════════════════════════════════════════════════
+    PLAN LIMITS
+    ═══════════════════════════════════════════════════════════════ */}
+<div className="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-300 rounded-xl p-4 sm:p-6 shadow-md">
+  <div className="flex items-center gap-2 mb-4">
+    <div className="p-2 bg-orange-600 rounded-lg">
+      <Package className="w-5 h-5 text-white" />
+    </div>
+    <div>
+      <h3 className="font-bold text-gray-800 text-base sm:text-lg">🔢 Plan Limits</h3>
+      <p className="text-xs text-gray-600">Set usage restrictions for this plan</p>
+    </div>
+  </div>
+  
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {/* Max Scans - HIGHLIGHTED */}
+    <div className="sm:col-span-2 bg-white border-2 border-orange-400 rounded-lg p-4 shadow-sm">
+      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <QrCode className="w-4 h-4 text-orange-600" />
+        Max Scans Per Plan ⭐ (CRITICAL)
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.max_scans}
+        onChange={(e) => handleLimitChange('max_scans', parseInt(e.target.value) || -1)}
+        className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-base font-semibold bg-orange-50"
+        placeholder="-1 for unlimited scans"
+        min="-1"
+      />
+      <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded text-xs">
+        <p className="font-semibold text-orange-800 mb-2">⚠️ How Scan Limits Work:</p>
+        <ul className="space-y-1 text-orange-700">
+          <li>• <strong>-1</strong> = Unlimited scans (no restriction)</li>
+          <li>• <strong>10</strong> = Seller can scan only 10 tiles total</li>
+          <li>• <strong>50</strong> = Seller + Worker combined can scan 50 tiles</li>
+          <li>• <strong>When limit reached</strong> = Subscription auto-expires ⚠️</li>
+          <li>• <strong>Reset</strong> = Only when new plan purchased</li>
+        </ul>
+      </div>
+    </div>
+
+    {/* Other Limits */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Max Tiles
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.max_tiles}
+        onChange={(e) => handleLimitChange('max_tiles', parseInt(e.target.value) || -1)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="-1 unlimited"
+        min="-1"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Max Workers
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.max_workers}
+        onChange={(e) => handleLimitChange('max_workers', parseInt(e.target.value) || 1)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="Default: 1"
+        min="0"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Max Collections
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.max_collections}
+        onChange={(e) => handleLimitChange('max_collections', parseInt(e.target.value) || -1)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="-1 unlimited"
+        min="-1"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Max QR Codes
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.max_qr_codes}
+        onChange={(e) => handleLimitChange('max_qr_codes', parseInt(e.target.value) || -1)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="-1 unlimited"
+        min="-1"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Max Storage (MB)
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.max_storage_mb}
+        onChange={(e) => handleLimitChange('max_storage_mb', parseInt(e.target.value) || 1000)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="1000"
+        min="0"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Analytics Retention (days)
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.analytics_retention_days}
+        onChange={(e) => handleLimitChange('analytics_retention_days', parseInt(e.target.value) || 365)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="365"
+        min="0"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Customer Inquiries Limit
+      </label>
+      <input
+        type="number"
+        value={formData.limits?.customer_inquiries_limit}
+        onChange={(e) => handleLimitChange('customer_inquiries_limit', parseInt(e.target.value) || -1)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        placeholder="-1 unlimited"
+        min="-1"
+      />
+    </div>
+  </div>
+
+  <div className="mt-4 p-3 bg-white rounded-lg border border-orange-200">
+    <p className="text-xs text-gray-600">
+      💡 <strong>Tip:</strong> Use -1 for unlimited. Use 0 to completely block a feature.
+    </p>
+  </div>
+</div>
               {/* ═══════════════════════════════════════════════════════════ */}
               {/* PLAN VALIDITY DURATION */}
               {/* ═══════════════════════════════════════════════════════════ */}

@@ -6032,7 +6032,7 @@ export const resetWorkerPassword = async (
     
     const sellerQuery = query(
       collection(db, 'sellers'),
-      where('worker_id', '==', workerId)
+      where('worker_id', '==', workerId) 
     );
     const sellerSnapshot = await getDocs(sellerQuery);
 
