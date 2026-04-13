@@ -744,7 +744,77 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
         //     console.error('❌ [REAL-TIME] Listener error:', error);
         //   }
         // );
-        const unsubscribe = onSnapshot(
+//         const unsubscribe = onSnapshot(
+//   doc(db, 'subscriptions', sub.id),
+//   async (snapshot) => {
+//     console.log('🔔 [REAL-TIME] Firestore update detected!');
+    
+//     if (!snapshot.exists()) {
+//       console.log('⚠️ [REAL-TIME] Subscription deleted');
+//       setSubscription(null);
+//       setPlan(null);
+//       setIsExpired(false);
+//       setScanStats(null);
+//       return;
+//     }
+
+//     const data = snapshot.data() as Subscription;
+//     console.log('📊 [REAL-TIME] Updated data:', {
+//       id: data.id,
+//       status: data.status,
+//       count: data.current_scan_count,
+//       limit: data.scan_limit
+//     });
+
+//     // Update subscription
+//     setSubscription(data);
+//     setLastChecked(new Date());
+
+//     // Update plan if changed
+//     if (data.plan_id !== plan?.id) {
+//       const planData = await getPlanById(data.plan_id);
+//       setPlan(planData);
+//     }
+
+//     // ✅ FIX: Check BOTH time-based AND status-based expiry
+//     const timeExpired = isSubscriptionExpired(data);
+//     const statusCompleted = data.status === 'completed';
+//     const expired = timeExpired || statusCompleted;
+    
+//     setIsExpired(expired);
+
+//     console.log('🔍 [REAL-TIME] Expiry check:', {
+//       timeExpired,
+//       statusCompleted,
+//       finalExpired: expired,
+//       reason: expired ? (timeExpired ? 'TIME_EXPIRED' : 'SCAN_LIMIT_REACHED') : 'ACTIVE'
+//     });
+
+//     // ✅ Reload scan stats (especially important when limit reached)
+//     console.log('📊 [REAL-TIME] Reloading scan stats...');
+//     await loadScanStats(sellerId);
+
+//     console.log('✅ [REAL-TIME] State updated:', {
+//       expired,
+//       status: data.status
+//     });
+
+//     // Notify parent
+//     if (onPlanStatusChange) {
+//       const isActive = !expired && data.status !== 'completed';
+//       onPlanStatusChange(isActive, expired);
+//       console.log('📢 [REAL-TIME] Parent notified:', { 
+//         isActive, 
+//         expired,
+//         reason: !isActive ? (expired ? 'EXPIRED' : 'STATUS_NOT_ACTIVE') : 'ACTIVE'
+//       });
+//     }
+//   },
+//   (error) => {
+//     console.error('❌ [REAL-TIME] Listener error:', error);
+//   }
+// ); 
+const unsubscribe = onSnapshot(
   doc(db, 'subscriptions', sub.id),
   async (snapshot) => {
     console.log('🔔 [REAL-TIME] Firestore update detected!');
@@ -814,6 +884,8 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     console.error('❌ [REAL-TIME] Listener error:', error);
   }
 );
+
+
 
         unsubscribeFirestoreRef.current = unsubscribe;
         console.log('✅ [REAL-TIME] Listener active');
@@ -1053,70 +1125,143 @@ export const PlanStatusBanner: React.FC<PlanStatusBannerProps> = ({
     }
   };
 
-  const loadSubscription = useCallback(async (forceServerFetch: boolean = false) => {
-    if (isLoadingRef.current) {
-      console.log('⏭️ [LOAD] Already loading');
-      return;
-    }
+  // const loadSubscription = useCallback(async (forceServerFetch: boolean = false) => {
+  //   if (isLoadingRef.current) {
+  //     console.log('⏭️ [LOAD] Already loading');
+  //     return;
+  //   }
 
-    try {
-      isLoadingRef.current = true;
-      setLoading(true);
+  //   try {
+  //     isLoadingRef.current = true;
+  //     setLoading(true);
       
-      console.log('🔍 [LOAD] Fetching (force:', forceServerFetch, ')');
-      const sub = await getSellerSubscription(sellerId, forceServerFetch);
+  //     console.log('🔍 [LOAD] Fetching (force:', forceServerFetch, ')');
+  //     const sub = await getSellerSubscription(sellerId, forceServerFetch);
       
-      if (sub) {
-        const changed = lastSubscriptionIdRef.current !== sub.id;
+  //     if (sub) {
+  //       const changed = lastSubscriptionIdRef.current !== sub.id;
         
-        if (changed) {
-          console.log('🔄 [LOAD] Subscription changed:', {
-            old: lastSubscriptionIdRef.current,
-            new: sub.id
-          });
-          lastSubscriptionIdRef.current = sub.id;
-          setHasDisabledWorkers(false);
-          sessionStorage.removeItem('expiry_popup_shown');
-        }
+  //       if (changed) {
+  //         console.log('🔄 [LOAD] Subscription changed:', {
+  //           old: lastSubscriptionIdRef.current,
+  //           new: sub.id
+  //         });
+  //         lastSubscriptionIdRef.current = sub.id;
+  //         setHasDisabledWorkers(false);
+  //         sessionStorage.removeItem('expiry_popup_shown');
+  //       }
 
-        setSubscription(sub);
-        await loadScanStats(sellerId);
+  //       setSubscription(sub);
+  //       await loadScanStats(sellerId);
         
-        const planData = await getPlanById(sub.plan_id);
-        setPlan(planData);
+  //       const planData = await getPlanById(sub.plan_id);
+  //       setPlan(planData);
         
-        const expired = isSubscriptionExpired(sub);
-        setIsExpired(expired);
+  //       const expired = isSubscriptionExpired(sub);
+  //       setIsExpired(expired);
         
-        if (!expired) {
-          sessionStorage.removeItem('expiry_popup_shown');
-          setHasDisabledWorkers(false);
-        }
+  //       if (!expired) {
+  //         sessionStorage.removeItem('expiry_popup_shown');
+  //         setHasDisabledWorkers(false);
+  //       }
         
-        setLastChecked(new Date()); // ✅ OLD से
+  //       setLastChecked(new Date()); // ✅ OLD से
         
-        console.log('✅ [LOAD] Loaded:', {
-          id: sub.id,
-          plan: planData?.plan_name,
-          expired,
-          count: sub.current_scan_count
+  //       console.log('✅ [LOAD] Loaded:', {
+  //         id: sub.id,
+  //         plan: planData?.plan_name,
+  //         expired,
+  //         count: sub.current_scan_count
+  //       });
+  //     } else {
+  //       console.log('ℹ️ [LOAD] No subscription');
+  //       setSubscription(null);
+  //       setPlan(null);
+  //       setIsExpired(false);
+  //       setScanStats(null);
+  //       lastSubscriptionIdRef.current = null;
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ [LOAD] Error:', error);
+  //     showNotification('error', 'Failed to load subscription');
+  //   } finally {
+  //     setLoading(false);
+  //     isLoadingRef.current = false;
+  //   }
+  // }, [sellerId]);
+
+const loadSubscription = useCallback(async (forceServerFetch: boolean = false) => {
+  if (isLoadingRef.current) {
+    console.log('⏭️ [LOAD] Already loading');
+    return;
+  }
+
+  try {
+    isLoadingRef.current = true;
+    setLoading(true);
+    
+    console.log('🔍 [LOAD] Fetching (force:', forceServerFetch, ')');
+    const sub = await getSellerSubscription(sellerId, forceServerFetch);
+    
+    if (sub) {
+      const changed = lastSubscriptionIdRef.current !== sub.id;
+      
+      if (changed) {
+        console.log('🔄 [LOAD] Subscription changed:', {
+          old: lastSubscriptionIdRef.current,
+          new: sub.id
         });
-      } else {
-        console.log('ℹ️ [LOAD] No subscription');
-        setSubscription(null);
-        setPlan(null);
-        setIsExpired(false);
-        setScanStats(null);
-        lastSubscriptionIdRef.current = null;
+        lastSubscriptionIdRef.current = sub.id;
+        setHasDisabledWorkers(false);
+        sessionStorage.removeItem('expiry_popup_shown');
       }
-    } catch (error) {
-      console.error('❌ [LOAD] Error:', error);
-      showNotification('error', 'Failed to load subscription');
-    } finally {
-      setLoading(false);
-      isLoadingRef.current = false;
+
+      setSubscription(sub);
+      await loadScanStats(sellerId);
+      
+      const planData = await getPlanById(sub.plan_id);
+      setPlan(planData);
+      
+      // ✅ FIX: Check BOTH time AND status
+      const timeExpired = isSubscriptionExpired(sub);
+      const statusCompleted = sub.status === 'completed';
+      const expired = timeExpired || statusCompleted;
+      
+      setIsExpired(expired);
+      
+      if (!expired) {
+        sessionStorage.removeItem('expiry_popup_shown');
+        setHasDisabledWorkers(false);
+      }
+      
+      setLastChecked(new Date());
+      
+      console.log('✅ [LOAD] Loaded:', {
+        id: sub.id,
+        plan: planData?.plan_name,
+        expired,
+        timeExpired,
+        statusCompleted,
+        reason: expired ? (timeExpired ? 'TIME' : 'SCAN_LIMIT') : 'ACTIVE',
+        count: sub.current_scan_count
+      });
+    } else {
+      console.log('ℹ️ [LOAD] No subscription');
+      setSubscription(null);
+      setPlan(null);
+      setIsExpired(false);
+      setScanStats(null);
+      lastSubscriptionIdRef.current = null;
     }
-  }, [sellerId]);
+  } catch (error) {
+    console.error('❌ [LOAD] Error:', error);
+    showNotification('error', 'Failed to load subscription');
+  } finally {
+    setLoading(false);
+    isLoadingRef.current = false;
+  }
+}, [sellerId]);
+
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });

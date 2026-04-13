@@ -321,123 +321,15 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
         placeholder="-1 for unlimited scans"
         min="-1"
       />
-      <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded text-xs">
-        <p className="font-semibold text-orange-800 mb-2">⚠️ How Scan Limits Work:</p>
-        <ul className="space-y-1 text-orange-700">
-          <li>• <strong>-1</strong> = Unlimited scans (no restriction)</li>
-          <li>• <strong>10</strong> = Seller can scan only 10 tiles total</li>
-          <li>• <strong>50</strong> = Seller + Worker combined can scan 50 tiles</li>
-          <li>• <strong>When limit reached</strong> = Subscription auto-expires ⚠️</li>
-          <li>• <strong>Reset</strong> = Only when new plan purchased</li>
-        </ul>
-      </div>
+
     </div>
 
-    {/* Other Limits */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Max Tiles
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.max_tiles}
-        onChange={(e) => handleLimitChange('max_tiles', parseInt(e.target.value) || -1)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="-1 unlimited"
-        min="-1"
-      />
-    </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Max Workers
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.max_workers}
-        onChange={(e) => handleLimitChange('max_workers', parseInt(e.target.value) || 1)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="Default: 1"
-        min="0"
-      />
-    </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Max Collections
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.max_collections}
-        onChange={(e) => handleLimitChange('max_collections', parseInt(e.target.value) || -1)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="-1 unlimited"
-        min="-1"
-      />
-    </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Max QR Codes
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.max_qr_codes}
-        onChange={(e) => handleLimitChange('max_qr_codes', parseInt(e.target.value) || -1)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="-1 unlimited"
-        min="-1"
-      />
-    </div>
-
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Max Storage (MB)
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.max_storage_mb}
-        onChange={(e) => handleLimitChange('max_storage_mb', parseInt(e.target.value) || 1000)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="1000"
-        min="0"
-      />
-    </div>
-
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Analytics Retention (days)
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.analytics_retention_days}
-        onChange={(e) => handleLimitChange('analytics_retention_days', parseInt(e.target.value) || 365)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="365"
-        min="0"
-      />
-    </div>
-
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Customer Inquiries Limit
-      </label>
-      <input
-        type="number"
-        value={formData.limits?.customer_inquiries_limit}
-        onChange={(e) => handleLimitChange('customer_inquiries_limit', parseInt(e.target.value) || -1)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        placeholder="-1 unlimited"
-        min="-1"
-      />
-    </div>
   </div>
 
-  <div className="mt-4 p-3 bg-white rounded-lg border border-orange-200">
-    <p className="text-xs text-gray-600">
-      💡 <strong>Tip:</strong> Use -1 for unlimited. Use 0 to completely block a feature.
-    </p>
-  </div>
+ 
 </div>
               {/* ═══════════════════════════════════════════════════════════ */}
               {/* PLAN VALIDITY DURATION */}
@@ -512,53 +404,8 @@ export const CreatePlanModal: React.FC<CreatePlanModalProps> = ({
                        formData.validity_unit === 'months' ? '📆' : '🗓️'}
                     </div>
                   </div>
-                  
-                  {/* Quick Examples */}
-                  <div className="mt-3 pt-3 border-t border-blue-100">
-                    <p className="text-xs text-gray-500 mb-2">💡 Quick Examples:</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleInputChange('validity_duration', 5);
-                          handleInputChange('validity_unit', 'minutes');
-                        }}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                      >
-                        ⏱️ 5 minutes
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleInputChange('validity_duration', 1);
-                          handleInputChange('validity_unit', 'hours');
-                        }}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                      >
-                        🕐 1 hour
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleInputChange('validity_duration', 30);
-                          handleInputChange('validity_unit', 'days');
-                        }}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                      >
-                        📅 30 days
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleInputChange('validity_duration', 1);
-                          handleInputChange('validity_unit', 'years');
-                        }}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                      >
-                        🗓️ 1 year
-                      </button>
-                    </div>
-                  </div>
+           
+                 
                 </div>
               </div>
 
