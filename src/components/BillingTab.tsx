@@ -596,7 +596,6 @@ import { db } from '../lib/firebase';
 
 interface BillingTabProps {
   sellerId: string;
-  sellerBusiness?: string;
   sellerEmail: string;
 }
 
@@ -607,7 +606,6 @@ interface PaymentWithPlan extends Payment {
 
 export const BillingTab: React.FC<BillingTabProps> = ({
   sellerId,
-  sellerBusiness = 'Your Business',
   sellerEmail
 }) => {
   const [payments, setPayments] = useState<PaymentWithPlan[]>([]);
@@ -871,10 +869,6 @@ export const BillingTab: React.FC<BillingTabProps> = ({
         {
           label: 'Customer Name:',
           value: sellerName || 'Customer'
-        },
-        {
-          label: 'Business Name:',
-          value: sellerBusiness || 'N/A'
         },
         {
           label: 'Email:',
