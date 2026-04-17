@@ -287,11 +287,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
               /{plan.billing_cycle === 'monthly' ? 'month' : 'year'}
             </span>
           </div>
-          {plan.billing_cycle === 'yearly' && plan.price > 0 && (
-            <p className="text-sm text-green-600 font-medium mt-1">
-              💰 Save ₹{Math.round((plan.price / 12) * 2).toLocaleString('en-IN')} per year
-            </p>
-          )}
+         
         </div>
 
         {/* ═══════════════════════════════════════════════════════════ */}
