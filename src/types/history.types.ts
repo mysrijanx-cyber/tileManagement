@@ -53,4 +53,5 @@ export interface HistoryStats {
   expired_plans: number;
   average_plan_duration: number;
   most_purchased_plan: string;
-}
+} 
+

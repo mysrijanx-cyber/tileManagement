@@ -388,5 +388,3 @@ export default {
   getSellerSubscriptionHistory,
   getSellerHistoryStats
 };
-
-console.log('✅ History Service loaded - Production v1.1 (FIXED)');

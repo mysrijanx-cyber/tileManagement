@@ -6759,6 +6759,8 @@ import {
   updateTileQRCode,
   getTileById,
 } from "../lib/firebaseutils";
+import { BillingTab } from './BillingTab'
+import { ToggleLeft, ToggleRight,CreditCard } from 'lucide-react';
 
 import { uploadToCloudinary } from "../utils/cloudinaryUtils";
 import { db } from '../lib/firebase';
@@ -6804,6 +6806,7 @@ export const SellerDashboard: React.FC = () => {
     | "stock-analytics"
     | "customer-inquiries"
     | "history"
+    |"billing"
   >("tiles");
 
   // Tile Management
@@ -7873,7 +7876,20 @@ export const SellerDashboard: React.FC = () => {
 >
   <Clock className="w-4 h-4" />
   History
-</button>
+</button> 
+
+<button
+        onClick={() => setActiveTab("billing")}
+        className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-xs sm:text-sm whitespace-nowrap ${
+          activeTab === "billing"
+            ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+        }`}
+      >
+        <CreditCard className="w-4 h-4" />
+        <span>Billing</span>
+      </button>
+
           <button
             onClick={() => isWorkerAllowed ? handleTabChange("worker") : setShowPlansModal(true)}
             disabled={!isWorkerAllowed}
@@ -9114,7 +9130,15 @@ export const SellerDashboard: React.FC = () => {
           <QRCodeManager tiles={tiles} sellerId={currentUser?.user_id} onQRCodeGenerated={loadData} />
         )}
         {activeTab === "history" && <HistoryTab />}
+        
         {activeTab === "analytics" && <AnalyticsDashboard sellerId={currentUser?.user_id} />}
+        {activeTab === "billing" && (
+    <BillingTab
+      sellerId={currentUser?.user_id || ''}
+      // sellerBusiness={sellerData?.business_name || 'Your Business'}
+      sellerEmail={currentUser?.email || ''}
+    />
+  )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
