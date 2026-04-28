@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PlansManagement } from './Admin/PlansManagement';
 import { useAppStore } from '../stores/appStore';
+import { BillingHistory } from './BillingHistory';
 import { 
   getAllAnalytics, 
   getAdminDashboardStats,
@@ -158,7 +159,7 @@ export const AdminDashboard: React.FC = () => {
   const { currentUser: _currentUser } = useAppStore();
   
   // ✅ TAB & DATA MANAGEMENT STATES
-  const [activeTab, setActiveTab] = useState<'overview' | 'sellers' | 'analytics' | 'create-seller' |'plans-management' |'email-config' | 'account-access' | 'logs' | 'seller-analytics' | 'pending-requests' | 'rejected-requests' | 'tiles-analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'sellers' | 'analytics' | 'create-seller' |'plans-management'| 'billing-history' |'email-config' | 'account-access' | 'logs' | 'seller-analytics' | 'pending-requests' | 'rejected-requests' | 'tiles-analytics'>('overview');
   const [sellers, setSellers] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1811,6 +1812,20 @@ setErrors({
 
 
         </button>
+<button
+  onClick={() => setActiveTab('billing-history')}
+  className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
+    activeTab === 'billing-history' 
+      ? 'bg-purple-600 text-white' 
+      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+  }`}
+>
+ 
+  <span className="hidden lg:inline">Billing History</span>
+  <span className="lg:hidden">Billing</span>
+</button>
+
+
         <button
           onClick={() => setActiveTab('sellers')}
           className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-colors text-sm lg:text-base ${
@@ -2108,6 +2123,7 @@ setErrors({
 {activeTab === 'plans-management' && (
   <PlansManagement />
 )}
+{activeTab === 'billing-history' && <BillingHistory />}
 
 {activeTab === 'pending-requests' && (
   <div className="space-y-4">
