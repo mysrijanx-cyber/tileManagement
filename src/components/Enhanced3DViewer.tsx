@@ -75,12 +75,13 @@ interface SceneProps {
     y: number;
     z: number;
   };
-   wallTileHeight?: number;
+ highlightTileBorders?: boolean;
+  wallTileHeight?: number;
 }
+    
 
 // ✅ NEW: Proper interface for currentUser 
 
-// ✅ NEW: Floor tile data structure (same as wall tiles)
 interface FloorTileData {
   index: number;
   row: number;
@@ -2046,11 +2047,522 @@ const TiledWall: React.FC<{
 //   );
 // };
 
+// const IndividualTile: React.FC<{
+//   tileData: TileData;
+//   baseTexture: THREE.Texture | null;
+//   customTileData: CustomTileData | null;  // ✅ CHANGED from customTexture
+//   baseTileSize: { width: number; height: number };  // ✅ NEW: Base wall tile size
+//   isSelected: boolean;
+//   isGridMode: boolean;
+//   onTileClick: (index: number) => void;
+//   highlightBorders?: boolean;
+// }> = ({ 
+//   tileData, 
+//   baseTexture, 
+//   customTileData,  // ✅ CHANGED
+//   baseTileSize,    // ✅ NEW
+//   isSelected, 
+//   isGridMode, 
+//   onTileClick, 
+//   highlightBorders = false 
+// }) => {
+//   const meshRef = useRef<THREE.Mesh>(null);
+
+//   // ✅ UPDATED: Get texture from customTileData
+//   const material = useMemo(() => {
+//     const textureToUse = customTileData?.texture || baseTexture;
+    
+//     if (!textureToUse) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: '#f5f5f5',
+//         side: THREE.DoubleSide,
+//         toneMapped: false
+//       });
+//     }
+
+//     return new THREE.MeshBasicMaterial({ 
+//       map: textureToUse,
+//       side: THREE.DoubleSide,
+//       toneMapped: false
+//     });
+//   }, [baseTexture, customTileData]);
+
+//   useEffect(() => {
+//     return () => {
+//       material.dispose();
+//     };
+//   }, [material]);
+
+//   // ✅ CRITICAL: Use base tile size for mesh (unchanged)
+//   const tileSizeM = {
+//     width: baseTileSize.width / 100,
+//     height: baseTileSize.height / 100
+//   };
+
+//   return (
+//     <group position={tileData.position}>
+//       {/* ✅ Tile Mesh (uses base wall tile size) */}
+//       <mesh 
+//         ref={meshRef}
+//         userData={{ tileIndex: tileData.index }}
+//         onClick={(e) => {
+//           e.stopPropagation();
+//           if (isGridMode) {
+//             onTileClick(tileData.index);
+//           }
+//         }}
+//       >
+//         <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+//         <primitive object={material} attach="material" />
+//       </mesh>
+
+//       {/* ✅ Grid Mode Border (gray/green for selection) */}
+//       {isGridMode && (
+//         <lineSegments position={[0, 0, 0.001]}>
+//           <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
+//           <lineBasicMaterial 
+//             color={isSelected ? "#10b981" : "#666666"} 
+//             opacity={1} 
+//             transparent={false} 
+//           />
+//         </lineSegments>
+//       )}
+
+//       {/* ✅ NEW: GREEN BORDER for highlighter tiles (when not in grid mode) */}
+//       {/* ✅ BLACK BORDER for highlighter tiles */}
+//       {/* ✅ BLACK BORDER for highlighter tiles */}
+//       {highlightBorders && !isGridMode && customTileData && (
+//         <>
+//           {/* Top Border */}
+//           <mesh position={[0, customTileData.size.height / 200, 0.005]}>
+//             <boxGeometry args={[customTileData.size.width / 100, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Bottom Border */}
+//           <mesh position={[0, -customTileData.size.height / 200, 0.005]}>
+//             <boxGeometry args={[customTileData.size.width / 100, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Left Border */}
+//           <mesh position={[-customTileData.size.width / 200, 0, 0.005]}>
+//             <boxGeometry args={[0.005, customTileData.size.height / 100, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Right Border */}
+//           <mesh position={[customTileData.size.width / 200, 0, 0.005]}>
+//             <boxGeometry args={[0.005, customTileData.size.height / 100, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//         </>
+//       )}
+//       {/* ✅ Grid Mode Number (unchanged) */}
+//       {isGridMode && (
+//         <Text
+//           position={[0, 0, 0.002]}
+//           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
+//           color="#000000"
+//           anchorX="center"
+//           anchorY="middle"
+//           outlineWidth={0.005}
+//           outlineColor="#ffffff"
+//         >
+//           {tileData.index}
+//         </Text>
+//       )}
+
+//       {/* ✅ Selection Indicators (unchanged) */}
+//       {isSelected && (
+//         <>
+//           <lineSegments position={[0, 0, 0.003]}>
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
+//             <lineBasicMaterial color="#10b981" linewidth={4} opacity={1} transparent={false} />
+//           </lineSegments>
+          
+//           <lineSegments position={[0, 0, 0.004]}>
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
+//             <lineBasicMaterial color="#22c55e" linewidth={3} opacity={1} transparent={false} />
+//           </lineSegments>
+
+//           {/* Corner dots */}
+//           <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//         </>
+//       )}
+//     </group>
+//   );
+// }; 
+// const IndividualTile: React.FC<{
+//   tileData: TileData;
+//   baseTexture: THREE.Texture | null;
+//   customTileData: CustomTileData | null;
+//   baseTileSize: { width: number; height: number };
+//   isSelected: boolean;
+//   isGridMode: boolean;
+//   onTileClick: (index: number) => void;
+//   highlightBorders?: boolean;
+// }> = ({ 
+//   tileData, 
+//   baseTexture, 
+//   customTileData,
+//   baseTileSize,
+//   isSelected, 
+//   isGridMode, 
+//   onTileClick, 
+//   highlightBorders = false 
+// }) => {
+//   const meshRef = useRef<THREE.Mesh>(null);
+
+//   const material = useMemo(() => {
+//     const textureToUse = customTileData?.texture || baseTexture;
+    
+//     if (!textureToUse) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: '#f5f5f5',
+//         side: THREE.DoubleSide,
+//         toneMapped: false
+//       });
+//     }
+
+//     return new THREE.MeshBasicMaterial({ 
+//       map: textureToUse,
+//       side: THREE.DoubleSide,
+//       toneMapped: false
+//     });
+//   }, [baseTexture, customTileData]);
+
+//   useEffect(() => {
+//     return () => {
+//       material.dispose();
+//     };
+//   }, [material]);
+
+//   // ✅ FIX: Use actual tile size (highlighter or base)
+//   const tileSizeM = useMemo(() => {
+//     if (customTileData) {
+//       // ✅ Highlighter tile: Use its actual size
+//       return {
+//         width: customTileData.size.width / 100,
+//         height: customTileData.size.height / 100
+//       };
+//     } else {
+//       // ✅ Base tile: Use wall tile size
+//       return {
+//         width: baseTileSize.width / 100,
+//         height: baseTileSize.height / 100
+//       };
+//     }
+//   }, [customTileData, baseTileSize]);
+
+//   return (
+//     <group position={tileData.position}>
+//       {/* ✅ Tile Mesh - Correct actual size */}
+//       <mesh 
+//         ref={meshRef}
+//         userData={{ tileIndex: tileData.index }}
+//         onClick={(e) => {
+//           e.stopPropagation();
+//           if (isGridMode) {
+//             onTileClick(tileData.index);
+//           }
+//         }}
+//       >
+//         <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+//         <primitive object={material} attach="material" />
+//       </mesh>
+
+//       {/* ✅ Grid Mode Border - Correct size */}
+//       {isGridMode && (
+//         <lineSegments position={[0, 0, 0.001]}>
+//           <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
+//           <lineBasicMaterial 
+//             color={isSelected ? "#10b981" : "#666666"} 
+//             opacity={1} 
+//             transparent={false} 
+//           />
+//         </lineSegments>
+//       )}
+
+//       {/* ✅ BLACK BORDER for highlighter tiles (WORKING VERSION) */}
+//       {highlightBorders && !isGridMode && customTileData && (
+//         <>
+//           {/* Top Border */}
+//           <mesh position={[0, tileSizeM.height / 2, 0.005]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Bottom Border */}
+//           <mesh position={[0, -tileSizeM.height / 2, 0.005]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Left Border */}
+//           <mesh position={[-tileSizeM.width / 2, 0, 0.005]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Right Border */}
+//           <mesh position={[tileSizeM.width / 2, 0, 0.005]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//         </>
+//       )}
+
+//       {/* ✅ Grid Mode Number - Correct size */}
+//       {isGridMode && (
+//         <Text
+//           position={[0, 0, 0.002]}
+//           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
+//           color="#000000"
+//           anchorX="center"
+//           anchorY="middle"
+//           outlineWidth={0.005}
+//           outlineColor="#ffffff"
+//         >
+//           {tileData.index}
+//         </Text>
+//       )}
+
+//       {/* ✅ Selection Indicators - Correct size */}
+//       {isSelected && (
+//         <>
+//           <lineSegments position={[0, 0, 0.003]}>
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
+//             <lineBasicMaterial color="#10b981" linewidth={4} opacity={1} transparent={false} />
+//           </lineSegments>
+          
+//           <lineSegments position={[0, 0, 0.004]}>
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
+//             <lineBasicMaterial color="#22c55e" linewidth={3} opacity={1} transparent={false} />
+//           </lineSegments>
+
+//           {/* Corner dots */}
+//           <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//         </>
+//       )}
+//     </group>
+//   );
+// }; 
+// const IndividualTile: React.FC<{
+//   tileData: TileData;
+//   baseTexture: THREE.Texture | null;
+//   customTileData: CustomTileData | null;
+//   baseTileSize: { width: number; height: number };
+//   isSelected: boolean;
+//   isGridMode: boolean;
+//   onTileClick: (index: number) => void;
+//   highlightBorders?: boolean;
+// }> = ({ 
+//   tileData, 
+//   baseTexture, 
+//   customTileData,
+//   baseTileSize,
+//   isSelected, 
+//   isGridMode, 
+//   onTileClick, 
+//   highlightBorders = false 
+// }) => {
+//   const meshRef = useRef<THREE.Mesh>(null);
+
+//   // ✅ CRITICAL FIX: Separate materials for wall vs highlighter
+//   const material = useMemo(() => {
+//     const textureToUse = customTileData?.texture || baseTexture;
+    
+//     if (!textureToUse) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: '#f5f5f5',
+//         side: THREE.DoubleSide,
+//         toneMapped: false
+//       });
+//     }
+
+//     // ✅ FIX: Add depth properties to prevent z-fighting
+//     return new THREE.MeshBasicMaterial({ 
+//       map: textureToUse,
+//       side: THREE.DoubleSide,
+//       toneMapped: false,
+//       depthWrite: true,        // ✅ Write to depth buffer
+//       depthTest: true,         // ✅ Test depth
+//       transparent: false,      // ✅ No transparency issues
+//       polygonOffset: customTileData ? true : false,  // ✅ Only for highlighter
+//       polygonOffsetFactor: customTileData ? -1 : 0,  // ✅ Push forward
+//       polygonOffsetUnits: customTileData ? -1 : 0
+//     });
+//   }, [baseTexture, customTileData]);
+
+//   useEffect(() => {
+//     return () => {
+//       material.dispose();
+//     };
+//   }, [material]);
+
+//   const tileSizeM = useMemo(() => {
+//     if (customTileData?.size) {
+//       return {
+//         width: customTileData.size.width / 100,
+//         height: customTileData.size.height / 100
+//       };
+//     }
+    
+//     return {
+//       width: baseTileSize.width / 100,
+//       height: baseTileSize.height / 100
+//     };
+//   }, [customTileData, baseTileSize]);
+
+//   // ✅ CRITICAL FIX: Different Z-position for highlighter vs wall
+//   const zPosition = customTileData ? 0.001 : 0;  // ✅ Highlighter in front
+
+//   return (
+//     <group position={tileData.position}>
+//       {/* ✅ Main tile mesh with Z-offset */}
+//       <mesh 
+//         ref={meshRef}
+//         position={[0, 0, zPosition]}  // ✅ LAYERING FIX
+//         userData={{ tileIndex: tileData.index }}
+//         onClick={(e) => {
+//           e.stopPropagation();
+//           if (isGridMode) {
+//             onTileClick(tileData.index);
+//           }
+//         }}
+//       >
+//         <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+//         <primitive object={material} attach="material" />
+//       </mesh>
+
+//       {/* Grid Mode Border */}
+//       {isGridMode && (
+//         <lineSegments position={[0, 0, 0.002]}>  {/* ✅ Above tile */}
+//           <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
+//           <lineBasicMaterial 
+//             color={isSelected ? "#10b981" : "#666666"} 
+//             opacity={1} 
+//             transparent={false} 
+//           />
+//         </lineSegments>
+//       )}
+
+//       {/* ✅ FIXED: Highlighter border with proper Z */}
+//       {highlightBorders && !isGridMode && customTileData && (
+//         <>
+//           {/* Top Border */}
+//           <mesh position={[0, tileSizeM.height / 2, 0.005]}>  {/* ✅ Above highlighter */}
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Bottom Border */}
+//           <mesh position={[0, -tileSizeM.height / 2, 0.005]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Left Border */}
+//           <mesh position={[-tileSizeM.width / 2, 0, 0.005]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           {/* Right Border */}
+//           <mesh position={[tileSizeM.width / 2, 0, 0.005]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//         </>
+//       )}
+
+//       {/* Grid Mode Number */}
+//       {isGridMode && (
+//         <Text
+//           position={[0, 0, 0.003]} 
+//           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
+//           color="#000000"
+//           anchorX="center"
+//           anchorY="middle"
+//           outlineWidth={0.005}
+//           outlineColor="#ffffff"
+//         >
+//           {tileData.index}
+//         </Text>
+//       )}
+
+//       {/* Selection Indicators */}
+//       {isSelected && (
+//         <>
+//           <lineSegments position={[0, 0, 0.004]}>  {/* ✅ Above number */}
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
+//             <lineBasicMaterial color="#10b981" linewidth={4} opacity={1} transparent={false} />
+//           </lineSegments>
+          
+//           <lineSegments position={[0, 0, 0.005]}>  {/* ✅ Top layer */}
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
+//             <lineBasicMaterial color="#22c55e" linewidth={3} opacity={1} transparent={false} />
+//           </lineSegments>
+
+//           {/* Corner dots */}
+//           <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//         </>
+//       )}
+//     </group>
+//   );
+// };
+// Around line 2200-2400
 const IndividualTile: React.FC<{
   tileData: TileData;
   baseTexture: THREE.Texture | null;
-  customTileData: CustomTileData | null;  // ✅ CHANGED from customTexture
-  baseTileSize: { width: number; height: number };  // ✅ NEW: Base wall tile size
+  customTileData: CustomTileData | null;
+  baseTileSize: { width: number; height: number };
   isSelected: boolean;
   isGridMode: boolean;
   onTileClick: (index: number) => void;
@@ -2058,8 +2570,8 @@ const IndividualTile: React.FC<{
 }> = ({ 
   tileData, 
   baseTexture, 
-  customTileData,  // ✅ CHANGED
-  baseTileSize,    // ✅ NEW
+  customTileData,
+  baseTileSize,
   isSelected, 
   isGridMode, 
   onTileClick, 
@@ -2067,7 +2579,6 @@ const IndividualTile: React.FC<{
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // ✅ UPDATED: Get texture from customTileData
   const material = useMemo(() => {
     const textureToUse = customTileData?.texture || baseTexture;
     
@@ -2082,7 +2593,13 @@ const IndividualTile: React.FC<{
     return new THREE.MeshBasicMaterial({ 
       map: textureToUse,
       side: THREE.DoubleSide,
-      toneMapped: false
+      toneMapped: false,
+      depthWrite: true,
+      depthTest: true,
+      transparent: false,
+      polygonOffset: customTileData ? true : false,
+      polygonOffsetFactor: customTileData ? -1 : 0,
+      polygonOffsetUnits: customTileData ? -1 : 0
     });
   }, [baseTexture, customTileData]);
 
@@ -2092,17 +2609,21 @@ const IndividualTile: React.FC<{
     };
   }, [material]);
 
-  // ✅ CRITICAL: Use base tile size for mesh (unchanged)
-  const tileSizeM = {
-    width: baseTileSize.width / 100,
-    height: baseTileSize.height / 100
-  };
+  // ✅ FIXED: ALWAYS use wall tile grid size (baseTileSize)
+  const tileSizeM = useMemo(() => {
+    return {
+      width: baseTileSize.width / 100,   // ✅ WALL TILE GRID SIZE (FIXED)
+      height: baseTileSize.height / 100
+    };
+  }, [baseTileSize]);  // ✅ Only wall tile dependency
+
+  const zPosition = customTileData ? 0.001 : 0;
 
   return (
     <group position={tileData.position}>
-      {/* ✅ Tile Mesh (uses base wall tile size) */}
       <mesh 
         ref={meshRef}
+        position={[0, 0, zPosition]}
         userData={{ tileIndex: tileData.index }}
         onClick={(e) => {
           e.stopPropagation();
@@ -2111,13 +2632,14 @@ const IndividualTile: React.FC<{
           }
         }}
       >
+        {/* ✅ FIXED: Always use wall tile grid cell size */}
         <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
         <primitive object={material} attach="material" />
       </mesh>
 
-      {/* ✅ Grid Mode Border (gray/green for selection) */}
+      {/* Grid Mode Border */}
       {isGridMode && (
-        <lineSegments position={[0, 0, 0.001]}>
+        <lineSegments position={[0, 0, 0.002]}>
           <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
           <lineBasicMaterial 
             color={isSelected ? "#10b981" : "#666666"} 
@@ -2127,28 +2649,39 @@ const IndividualTile: React.FC<{
         </lineSegments>
       )}
 
-      {/* ✅ NEW: GREEN BORDER for highlighter tiles (when not in grid mode) */}
+      {/* ✅ FIXED: Highlighter border - always use wall tile grid size */}
       {highlightBorders && !isGridMode && customTileData && (
-        <lineSegments position={[0, 0, 0.003]}>  {/* ✅ Higher z-position */}
-          <edgesGeometry args={[
-            new THREE.PlaneGeometry(
-              customTileData.size.width / 100,   // ✅ Use ACTUAL highlighter size
-              customTileData.size.height / 100
-            )
-          ]} />
-          <lineBasicMaterial 
-            color="#00ff00"      // ✅ GREEN for highlighter tiles
-            linewidth={3}        // ✅ Slightly thicker
-            opacity={1} 
-            transparent={false} 
-          />
-        </lineSegments>
+        <>
+          {/* Top Border */}
+          <mesh position={[0, tileSizeM.height / 2, 0.005]}>
+            <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+            <meshBasicMaterial color="#000000" />
+          </mesh>
+          
+          {/* Bottom Border */}
+          <mesh position={[0, -tileSizeM.height / 2, 0.005]}>
+            <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+            <meshBasicMaterial color="#000000" />
+          </mesh>
+          
+          {/* Left Border */}
+          <mesh position={[-tileSizeM.width / 2, 0, 0.005]}>
+            <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+            <meshBasicMaterial color="#000000" />
+          </mesh>
+          
+          {/* Right Border */}
+          <mesh position={[tileSizeM.width / 2, 0, 0.005]}>
+            <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+            <meshBasicMaterial color="#000000" />
+          </mesh>
+        </>
       )}
 
-      {/* ✅ Grid Mode Number (unchanged) */}
+      {/* Grid Mode Number */}
       {isGridMode && (
         <Text
-          position={[0, 0, 0.002]}
+          position={[0, 0, 0.003]} 
           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
           color="#000000"
           anchorX="center"
@@ -2160,33 +2693,33 @@ const IndividualTile: React.FC<{
         </Text>
       )}
 
-      {/* ✅ Selection Indicators (unchanged) */}
+      {/* Selection Indicators */}
       {isSelected && (
         <>
-          <lineSegments position={[0, 0, 0.003]}>
+          <lineSegments position={[0, 0, 0.004]}>
             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
             <lineBasicMaterial color="#10b981" linewidth={4} opacity={1} transparent={false} />
           </lineSegments>
           
-          <lineSegments position={[0, 0, 0.004]}>
+          <lineSegments position={[0, 0, 0.005]}>
             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
             <lineBasicMaterial color="#22c55e" linewidth={3} opacity={1} transparent={false} />
           </lineSegments>
 
           {/* Corner dots */}
-          <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+          <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
             <circleGeometry args={[0.03, 16]} />
             <meshBasicMaterial color="#10b981" />
           </mesh>
-          <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.003]}>
+          <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
             <circleGeometry args={[0.03, 16]} />
             <meshBasicMaterial color="#10b981" />
           </mesh>
-          <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+          <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
             <circleGeometry args={[0.03, 16]} />
             <meshBasicMaterial color="#10b981" />
           </mesh>
-          <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.003]}>
+          <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
             <circleGeometry args={[0.03, 16]} />
             <meshBasicMaterial color="#10b981" />
           </mesh>
@@ -2195,6 +2728,10 @@ const IndividualTile: React.FC<{
     </group>
   );
 };
+
+
+
+
 
 // const GridWall: React.FC<{
 //   baseTexture: THREE.Texture | null;
@@ -3043,6 +3580,534 @@ const IndividualTile: React.FC<{
 //     </group>
 //   );
 // }; 
+// const GridWall: React.FC<{
+//   baseTexture: THREE.Texture | null;
+//   tileSize: { width: number; height: number };
+//   width: number;
+//   height: number;
+//   position: [number, number, number];
+//   rotation?: [number, number, number];
+//   isGridMode: boolean;
+//   selectedTiles: number[];
+//   onTileClick: (index: number) => void;
+//   customTilesMap: Map<number, CustomTileData>;  // ✅ CHANGED type
+//   highlightBorders?: boolean;
+//   expectedTileSize?: { width: number; height: number } | null;
+
+// }> = ({ 
+//   baseTexture, 
+//   tileSize, 
+//   width, 
+//   height, 
+//   position, 
+//   rotation = [0, 0, 0],
+//   isGridMode,
+//   selectedTiles,
+//   onTileClick,
+//   customTilesMap,
+//   highlightBorders = false
+// }) => {
+  
+//   // const tilesData = useMemo(() => {
+//   //   const tileSizeM = {
+//   //     width: tileSize.width / 100,
+//   //     height: tileSize.height / 100
+//   //   };
+    
+//   //   const cols = Math.ceil(width / tileSizeM.width);
+//   //   const rows = Math.ceil(height / tileSizeM.height);
+    
+//   //   const tiles: TileData[] = [];
+    
+//   //   for (let row = 0; row < rows; row++) {
+//   //     for (let col = 0; col < cols; col++) {
+//   //       const x = (col - cols / 2 + 0.5) * tileSizeM.width;
+//   //       const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+//   //       const index = (row * cols) + col + 1;
+        
+//   //       tiles.push({
+//   //         index,
+//   //         row,
+//   //         col,
+//   //         position: [x, y, 0],
+//   //         texture: null,
+//   //         isCustom: customTilesMap.has(index)
+//   //       });
+//   //     }
+//   //   }
+    
+//   //   return tiles;
+//   // }, [width, height, tileSize, customTilesMap]);
+
+//   const tilesData = useMemo(() => {
+//   const hasHighlighter = customTilesMap.size > 0;
+//   let effectiveTileSize = tileSize;
+  
+//   if (hasHighlighter) {
+//     const first = Array.from(customTilesMap.values())[0];
+//     if (first?.size) {
+//       effectiveTileSize = first.size;
+//       console.log(`🎯 Using highlighter: ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+//     }
+//   } else {
+//     console.log(`📋 Using wall tile: ${tileSize.width}×${tileSize.height}cm`);
+//   }
+  
+//   const tileSizeM = {
+//     width: effectiveTileSize.width / 100,
+//     height: effectiveTileSize.height / 100
+//   };
+  
+//   const cols = Math.ceil(width / tileSizeM.width);
+//   const rows = Math.ceil(height / tileSizeM.height);
+  
+//   console.log(`🔧 Grid: ${cols}×${rows} @ ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+  
+//   const tiles: TileData[] = [];
+  
+//   for (let row = 0; row < rows; row++) {
+//     for (let col = 0; col < cols; col++) {
+//       const x = (col - cols / 2 + 0.5) * tileSizeM.width;
+//       const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+//       const index = (row * cols) + col + 1;
+      
+//       tiles.push({
+//         index,
+//         row,
+//         col,
+//         position: [x, y, 0],
+//         texture: null,
+//         isCustom: customTilesMap.has(index)
+//       });
+//     }
+//   }
+  
+//   return tiles;
+// }, [width, height, tileSize, customTilesMap]);
+//   // ✅ BASE WALL GRID (BLACK) - Always visible
+//   // const baseGridLines = useMemo(() => {
+//   //   if (!highlightBorders) return null;
+    
+//   //   const tileSizeM = {
+//   //     width: tileSize.width / 100,
+//   //     height: tileSize.height / 100
+//   //   };
+    
+//   //   const cols = Math.ceil(width / tileSizeM.width);
+//   //   const rows = Math.ceil(height / tileSizeM.height);
+    
+//   //   const points: THREE.Vector3[] = [];
+    
+//   //   for (let i = 0; i <= cols; i++) {
+//   //     const x = -width/2 + i * tileSizeM.width;
+//   //     points.push(new THREE.Vector3(x, -height/2, 0.001));
+//   //     points.push(new THREE.Vector3(x, height/2, 0.001));
+//   //   }
+    
+//   //   for (let i = 0; i <= rows; i++) {
+//   //     const y = -height/2 + i * tileSizeM.height;
+//   //     points.push(new THREE.Vector3(-width/2, y, 0.001));
+//   //     points.push(new THREE.Vector3(width/2, y, 0.001));
+//   //   }
+    
+//   //   const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    
+//   //   console.log(`⬛ BASE GRID: ${cols}×${rows} (${tileSize.width}×${tileSize.height}cm)`);
+    
+//   //   return geometry;
+//   // }, [highlightBorders, width, height, tileSize]);
+// const baseGridLines = useMemo(() => {
+//   if (!highlightBorders) return null;
+  
+//   const hasHighlighter = customTilesMap.size > 0;
+//   let effectiveTileSize = tileSize;
+  
+//   if (hasHighlighter) {
+//     const first = Array.from(customTilesMap.values())[0];
+//     if (first?.size) {
+//       effectiveTileSize = first.size;
+//     }
+//   }
+  
+//   const tileSizeM = {
+//     width: effectiveTileSize.width / 100,
+//     height: effectiveTileSize.height / 100
+//   };
+  
+//   const cols = Math.ceil(width / tileSizeM.width);
+//   const rows = Math.ceil(height / tileSizeM.height);
+  
+//   const points: THREE.Vector3[] = [];
+  
+//   for (let i = 0; i <= cols; i++) {
+//     const x = -width/2 + i * tileSizeM.width;
+//     points.push(new THREE.Vector3(x, -height/2, 0.001));
+//     points.push(new THREE.Vector3(x, height/2, 0.001));
+//   }
+  
+//   for (let i = 0; i <= rows; i++) {
+//     const y = -height/2 + i * tileSizeM.height;
+//     points.push(new THREE.Vector3(-width/2, y, 0.001));
+//     points.push(new THREE.Vector3(width/2, y, 0.001));
+//   }
+  
+//   console.log(`⬛ Grid lines: ${cols}×${rows} @ ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+  
+//   return new THREE.BufferGeometry().setFromPoints(points);
+// }, [highlightBorders, width, height, tileSize, customTilesMap]);
+
+//   return (
+//     <group position={position} rotation={rotation as any}>
+//       {/* ✅ Individual Tiles (with green borders for highlighter tiles) */}
+//       {tilesData.map((tile) => {
+//         const customTileData = customTilesMap.get(tile.index) || null;  // ✅ CHANGED
+        
+//         return (
+//           <IndividualTile
+//             key={tile.index}
+//             tileData={tile}
+//             baseTexture={baseTexture}
+//             customTileData={customTileData}  // ✅ CHANGED
+//             baseTileSize={tileSize}          // ✅ NEW
+//             isSelected={selectedTiles.includes(tile.index)}
+//             isGridMode={isGridMode}
+//             onTileClick={onTileClick}
+//             highlightBorders={highlightBorders}  // ✅ NEW
+//           />
+//         );
+//       })}
+
+//       {/* ✅ BASE WALL GRID (BLACK) - Always visible when borders ON */}
+//       {highlightBorders && baseGridLines && (
+//         <lineSegments position={[0, 0, 0]}>
+//           <primitive object={baseGridLines} attach="geometry" />
+//           <lineBasicMaterial 
+//             color="#000000"     // ✅ BLACK for base wall grid
+//             linewidth={2} 
+//             opacity={0.6}       // ✅ Slightly transparent so green borders stand out
+//             transparent={true} 
+//           />
+//         </lineSegments>
+//       )}
+//     </group>
+//   );
+// }; 
+
+// const GridWall: React.FC<{
+//   baseTexture: THREE.Texture | null;
+//   tileSize: { width: number; height: number };
+//   width: number;
+//   height: number;
+//   position: [number, number, number];
+//   rotation?: [number, number, number];
+//   isGridMode: boolean;
+//   selectedTiles: number[];
+//   onTileClick: (index: number) => void;
+//   customTilesMap: Map<number, CustomTileData>;
+//   highlightBorders?: boolean;
+//   expectedTileSize?: { width: number; height: number } | null;  // ✅ NEW PROP
+// }> = ({ 
+//   baseTexture, 
+//   tileSize, 
+//   width, 
+//   height, 
+//   position, 
+//   rotation = [0, 0, 0],
+//   isGridMode,
+//   selectedTiles,
+//   onTileClick,
+//   customTilesMap,
+//   highlightBorders = false,
+//   expectedTileSize = null  // ✅ DESTRUCTURE NEW PROP
+// }) => {
+  
+//   // ✅ TILES DATA - With Expected Size Priority
+//   const tilesData = useMemo(() => {
+//     // ✅ CRITICAL FIX: 3-tier priority system
+//     let effectiveTileSize = tileSize;  // Default: wall tile
+    
+//     if (expectedTileSize) {
+//       // ✅ PRIORITY 1: Use expected size from pattern apply (HIGHEST)
+//       effectiveTileSize = expectedTileSize;
+//       console.log(`🎯 Using EXPECTED tile size: ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+//     } else if (customTilesMap.size > 0) {
+//       // ✅ PRIORITY 2: Extract from existing tiles (MEDIUM)
+//       const first = Array.from(customTilesMap.values())[0];
+//       if (first?.size) {
+//         effectiveTileSize = first.size;
+//         console.log(`🎯 Using EXTRACTED highlighter: ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+//       }
+//     } else {
+//       // ✅ PRIORITY 3: Use wall tile size (LOWEST)
+//       console.log(`📋 Using WALL tile: ${tileSize.width}×${tileSize.height}cm`);
+//     }
+    
+//     const tileSizeM = {
+//       width: effectiveTileSize.width / 100,
+//       height: effectiveTileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     console.log(`🔧 Grid: ${cols}×${rows} @ ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+    
+//     const tiles: TileData[] = [];
+    
+//     for (let row = 0; row < rows; row++) {
+//       for (let col = 0; col < cols; col++) {
+//         const x = (col - cols / 2 + 0.5) * tileSizeM.width;
+//         const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+//         const index = (row * cols) + col + 1;
+        
+//         tiles.push({
+//           index,
+//           row,
+//           col,
+//           position: [x, y, 0],
+//           texture: null,
+//           isCustom: customTilesMap.has(index)
+//         });
+//       }
+//     }
+    
+//     return tiles;
+//   }, [width, height, tileSize, customTilesMap, expectedTileSize]);  // ✅ Added expectedTileSize
+  
+//   // ✅ BASE GRID LINES - With Expected Size Priority
+//   const baseGridLines = useMemo(() => {
+//     if (!highlightBorders) return null;
+    
+//     // ✅ CRITICAL FIX: Same 3-tier priority as tilesData
+//     let effectiveTileSize = tileSize;
+    
+//     if (expectedTileSize) {
+//       effectiveTileSize = expectedTileSize;
+//     } else if (customTilesMap.size > 0) {
+//       const first = Array.from(customTilesMap.values())[0];
+//       if (first?.size) {
+//         effectiveTileSize = first.size;
+//       }
+//     }
+    
+//     const tileSizeM = {
+//       width: effectiveTileSize.width / 100,
+//       height: effectiveTileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     const points: THREE.Vector3[] = [];
+    
+//     for (let i = 0; i <= cols; i++) {
+//       const x = -width/2 + i * tileSizeM.width;
+//       points.push(new THREE.Vector3(x, -height/2, 0.001));
+//       points.push(new THREE.Vector3(x, height/2, 0.001));
+//     }
+    
+//     for (let i = 0; i <= rows; i++) {
+//       const y = -height/2 + i * tileSizeM.height;
+//       points.push(new THREE.Vector3(-width/2, y, 0.001));
+//       points.push(new THREE.Vector3(width/2, y, 0.001));
+//     }
+    
+//     console.log(`⬛ Grid lines: ${cols}×${rows} @ ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+    
+//     return new THREE.BufferGeometry().setFromPoints(points);
+//   }, [highlightBorders, width, height, tileSize, customTilesMap, expectedTileSize]);  // ✅ Added expectedTileSize
+
+//   return (
+//     <group position={position} rotation={rotation as any}>
+//       {/* ✅ Individual Tiles */}
+//       {tilesData.map((tile) => {
+//         const customTileData = customTilesMap.get(tile.index) || null;
+        
+//         return (
+//           <IndividualTile
+//             key={tile.index}
+//             tileData={tile}
+//             baseTexture={baseTexture}
+//             customTileData={customTileData}
+//             baseTileSize={tileSize}
+//             isSelected={selectedTiles.includes(tile.index)}
+//             isGridMode={isGridMode}
+//             onTileClick={onTileClick}
+//             highlightBorders={highlightBorders}
+//           />
+//         );
+//       })}
+
+//       {/* ✅ BASE WALL GRID (BLACK) */}
+//       {highlightBorders && baseGridLines && (
+//         <lineSegments position={[0, 0, 0]}>
+//           <primitive object={baseGridLines} attach="geometry" />
+//           <lineBasicMaterial 
+//             color="#000000"
+//             linewidth={2} 
+//             opacity={0.6}
+//             transparent={true} 
+//           />
+//         </lineSegments>
+//       )}
+//     </group>
+//   );
+// }; 
+// const GridWall: React.FC<{
+//   baseTexture: THREE.Texture | null;
+//   tileSize: { width: number; height: number };
+//   width: number;
+//   height: number;
+//   position: [number, number, number];
+//   rotation?: [number, number, number];
+//   isGridMode: boolean;
+//   selectedTiles: number[];
+//   onTileClick: (index: number) => void;
+//   customTilesMap: Map<number, CustomTileData>;
+//   highlightBorders?: boolean;
+//   expectedTileSize?: { width: number; height: number } | null;
+
+// }> = ({ 
+//   baseTexture, 
+//   tileSize, 
+//   width, 
+//   height, 
+//   position, 
+//   rotation = [0, 0, 0],
+//   isGridMode,
+//   selectedTiles,
+//   onTileClick,
+//   customTilesMap,
+//   highlightBorders = false,
+//   expectedTileSize = null  // ✅ ADDED: Destructure the prop
+// }) => {
+  
+//   // ✅ tilesData with priority logic
+//   const tilesData = useMemo(() => {
+//     let effectiveTileSize = tileSize;
+    
+//     if (expectedTileSize) {
+//       effectiveTileSize = expectedTileSize;
+//       console.log(`🎯 Using EXPECTED tile size: ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+//     } else if (customTilesMap.size > 0) {
+//       const first = Array.from(customTilesMap.values())[0];
+//       if (first?.size) {
+//         effectiveTileSize = first.size;
+//         console.log(`🎯 Using EXTRACTED highlighter: ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+//       }
+//     } else {
+//       console.log(`📋 Using WALL tile: ${tileSize.width}×${tileSize.height}cm`);
+//     }
+    
+//     const tileSizeM = {
+//       width: effectiveTileSize.width / 100,
+//       height: effectiveTileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     console.log(`🔧 Grid: ${cols}×${rows} @ ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+    
+//     const tiles: TileData[] = [];
+    
+//     for (let row = 0; row < rows; row++) {
+//       for (let col = 0; col < cols; col++) {
+//         const x = (col - cols / 2 + 0.5) * tileSizeM.width;
+//         const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+//         const index = (row * cols) + col + 1;
+        
+//         tiles.push({
+//           index,
+//           row,
+//           col,
+//           position: [x, y, 0],
+//           texture: null,
+//           isCustom: customTilesMap.has(index)
+//         });
+//       }
+//     }
+    
+//     return tiles;
+//   }, [width, height, tileSize, customTilesMap, expectedTileSize]);
+  
+//   // ✅ baseGridLines with priority logic
+//   const baseGridLines = useMemo(() => {
+//     if (!highlightBorders) return null;
+    
+//     let effectiveTileSize = tileSize;
+    
+//     if (expectedTileSize) {
+//       effectiveTileSize = expectedTileSize;
+//     } else if (customTilesMap.size > 0) {
+//       const first = Array.from(customTilesMap.values())[0];
+//       if (first?.size) {
+//         effectiveTileSize = first.size;
+//       }
+//     }
+    
+//     const tileSizeM = {
+//       width: effectiveTileSize.width / 100,
+//       height: effectiveTileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     const points: THREE.Vector3[] = [];
+    
+//     for (let i = 0; i <= cols; i++) {
+//       const x = -width/2 + i * tileSizeM.width;
+//       points.push(new THREE.Vector3(x, -height/2, 0.001));
+//       points.push(new THREE.Vector3(x, height/2, 0.001));
+//     }
+    
+//     for (let i = 0; i <= rows; i++) {
+//       const y = -height/2 + i * tileSizeM.height;
+//       points.push(new THREE.Vector3(-width/2, y, 0.001));
+//       points.push(new THREE.Vector3(width/2, y, 0.001));
+//     }
+    
+//     console.log(`⬛ Grid lines: ${cols}×${rows} @ ${effectiveTileSize.width}×${effectiveTileSize.height}cm`);
+    
+//     return new THREE.BufferGeometry().setFromPoints(points);
+//   }, [highlightBorders, width, height, tileSize, customTilesMap, expectedTileSize]);
+
+//   return (
+//     <group position={position} rotation={rotation as any}>
+//       {tilesData.map((tile) => {
+//         const customTileData = customTilesMap.get(tile.index) || null;
+        
+//         return (
+//           <IndividualTile
+//             key={tile.index}
+//             tileData={tile}
+//             baseTexture={baseTexture}
+//             customTileData={customTileData}
+//             baseTileSize={tileSize}
+//             isSelected={selectedTiles.includes(tile.index)}
+//             isGridMode={isGridMode}
+//             onTileClick={onTileClick}
+//             highlightBorders={highlightBorders}
+//           />
+//         );
+//       })}
+
+//       {highlightBorders && baseGridLines && (
+//         <lineSegments position={[0, 0, 0]}>
+//           <primitive object={baseGridLines} attach="geometry" />
+//           <lineBasicMaterial 
+//             color="#000000"
+//             linewidth={2} 
+//             opacity={0.6}
+//             transparent={true} 
+//           />
+//         </lineSegments>
+//       )}
+//     </group>
+//   );
+// };
+// Around line 3800-3900
 const GridWall: React.FC<{
   baseTexture: THREE.Texture | null;
   tileSize: { width: number; height: number };
@@ -3053,8 +4118,9 @@ const GridWall: React.FC<{
   isGridMode: boolean;
   selectedTiles: number[];
   onTileClick: (index: number) => void;
-  customTilesMap: Map<number, CustomTileData>;  // ✅ CHANGED type
+  customTilesMap: Map<number, CustomTileData>;
   highlightBorders?: boolean;
+  // ✅ REMOVED expectedTileSize prop completely
 }> = ({ 
   baseTexture, 
   tileSize, 
@@ -3070,42 +4136,48 @@ const GridWall: React.FC<{
 }) => {
   
   const tilesData = useMemo(() => {
+    // ✅ FIXED: Grid ALWAYS based on wall tile size (baseTileSize prop)
     const tileSizeM = {
-      width: tileSize.width / 100,
+      width: tileSize.width / 100,   // WALL TILE ONLY
       height: tileSize.height / 100
     };
     
     const cols = Math.ceil(width / tileSizeM.width);
     const rows = Math.ceil(height / tileSizeM.height);
     
-    const tiles: TileData[] = [];
+    console.log(`🔧 Grid FIXED (WALL TILE): ${cols}×${rows} @ ${tileSize.width}×${tileSize.height}cm`);
     
+    const tiles: TileData[] = [];
+    let index = 1;
+
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const x = (col - cols / 2 + 0.5) * tileSizeM.width;
         const y = (rows / 2 - row - 0.5) * tileSizeM.height;
-        const index = (row * cols) + col + 1;
         
         tiles.push({
           index,
           row,
           col,
-          position: [x, y, 0],
+          position: [x, y, 0],  // ✅ Wall tile grid position
           texture: null,
           isCustom: customTilesMap.has(index)
         });
+        
+        index++;
       }
     }
-    
-    return tiles;
-  }, [width, height, tileSize, customTilesMap]);
 
-  // ✅ BASE WALL GRID (BLACK) - Always visible
+    console.log(`✅ Grid tiles generated: ${tiles.length} tiles (${cols}×${rows})`);
+    return tiles;
+  }, [width, height, tileSize, customTilesMap]);  // ✅ NO expectedTileSize dependency
+  
+  // ✅ FIXED: Base grid lines always use wall tile size
   const baseGridLines = useMemo(() => {
     if (!highlightBorders) return null;
     
     const tileSizeM = {
-      width: tileSize.width / 100,
+      width: tileSize.width / 100,   // WALL TILE ONLY
       height: tileSize.height / 100
     };
     
@@ -3126,42 +4198,38 @@ const GridWall: React.FC<{
       points.push(new THREE.Vector3(width/2, y, 0.001));
     }
     
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    console.log(`⬛ Grid lines: ${cols}×${rows} @ ${tileSize.width}×${tileSize.height}cm (WALL TILE)`);
     
-    console.log(`⬛ BASE GRID: ${cols}×${rows} (${tileSize.width}×${tileSize.height}cm)`);
-    
-    return geometry;
-  }, [highlightBorders, width, height, tileSize]);
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [highlightBorders, width, height, tileSize]);  // ✅ Only wall tile dependency
 
   return (
     <group position={position} rotation={rotation as any}>
-      {/* ✅ Individual Tiles (with green borders for highlighter tiles) */}
       {tilesData.map((tile) => {
-        const customTileData = customTilesMap.get(tile.index) || null;  // ✅ CHANGED
+        const customTileData = customTilesMap.get(tile.index) || null;
         
         return (
           <IndividualTile
             key={tile.index}
             tileData={tile}
             baseTexture={baseTexture}
-            customTileData={customTileData}  // ✅ CHANGED
-            baseTileSize={tileSize}          // ✅ NEW
+            customTileData={customTileData}
+            baseTileSize={tileSize}  // ✅ Wall tile size for grid
             isSelected={selectedTiles.includes(tile.index)}
             isGridMode={isGridMode}
             onTileClick={onTileClick}
-            highlightBorders={highlightBorders}  // ✅ NEW
+            highlightBorders={highlightBorders}
           />
         );
       })}
 
-      {/* ✅ BASE WALL GRID (BLACK) - Always visible when borders ON */}
       {highlightBorders && baseGridLines && (
         <lineSegments position={[0, 0, 0]}>
           <primitive object={baseGridLines} attach="geometry" />
           <lineBasicMaterial 
-            color="#000000"     // ✅ BLACK for base wall grid
+            color="#000000"
             linewidth={2} 
-            opacity={0.6}       // ✅ Slightly transparent so green borders stand out
+            opacity={0.6}
             transparent={true} 
           />
         </lineSegments>
@@ -3169,6 +4237,8 @@ const GridWall: React.FC<{
     </group>
   );
 };
+
+
 const Ceiling: React.FC<{
   width: number;
   depth: number;
@@ -3198,6 +4268,7 @@ const BrightHotelKitchenScene: React.FC<{
   furnitureScale?: { x: number; y: number; z: number };
   wallTileHeight?: number; 
   highlightTileBorders?: boolean;
+  expectedTileSize?: { width: number; height: number } | null;
 }> = ({ 
   floorTexture, 
   floorTileSize, 
@@ -3213,7 +4284,8 @@ const BrightHotelKitchenScene: React.FC<{
   roomDimensions,
   furnitureScale = { x: 1, y: 1, z: 1 },
   wallTileHeight = 11,
-  highlightTileBorders = false
+  highlightTileBorders = false,
+  expectedTileSize = null
 }) => {
   const { width: W, depth: D, height: H } = roomDimensions || ROOM_CONFIGS.kitchen;
   const { x: scaleX, y: scaleY, z: scaleZ } = furnitureScale;
@@ -3262,6 +4334,8 @@ const BrightHotelKitchenScene: React.FC<{
           selectedTiles={activeWall === 'back' ? selectedTiles : []}
           onTileClick={onTileClick}
           customTilesMap={customTiles.back}
+          highlightBorders={highlightTileBorders}
+          expectedTileSize={expectedTileSize} 
         />
       ) : showWallTiles ? (
         <TiledWall
@@ -3750,6 +4824,7 @@ const PremiumBathroomScene: React.FC<{
   furnitureScale?: { x: number; y: number; z: number };
   wallTileHeight?: number;
   highlightTileBorders?: boolean;
+   expectedTileSize?: { width: number; height: number } | null; 
 }> = ({ 
   floorTexture, 
   floorTileSize, 
@@ -3765,7 +4840,8 @@ const PremiumBathroomScene: React.FC<{
   roomDimensions,
   furnitureScale = { x: 1, y: 1, z: 1 },
   wallTileHeight = 11,
-  highlightTileBorders = false
+  highlightTileBorders = false,
+  expectedTileSize = null
 }) => {
   
   // ✅ FIX 1: Define REFERENCE room (what furniture was designed for)
@@ -3862,6 +4938,7 @@ const PremiumBathroomScene: React.FC<{
             onTileClick={onTileClick}
             customTilesMap={customTiles[wall]}
              highlightBorders={highlightTileBorders}
+            expectedTileSize={expectedTileSize} 
           />
         ) : showWallTiles ? (
           <TiledWall
@@ -4916,86 +5993,265 @@ const [showTileBorders, setShowTileBorders] = useState(false);
     }
   };
 
-  const handleQRScanSuccess = async (qrData: any) => {
-    console.log('🎯 QR Scanned for wall pattern:', qrData);
+  // const handleQRScanSuccess = async (qrData: any) => {
+  //   console.log('🎯 QR Scanned for wall pattern:', qrData);
     
-    setIsProcessing(true);
-    setScanError('');
+  //   setIsProcessing(true);
+  //   setScanError('');
 
-    try {
-      let tileData: any = null;
+  //   try {
+  //     let tileData: any = null;
       
-      if (qrData.tileId) {
-        tileData = await getTileById(qrData.tileId.trim());
+  //     if (qrData.tileId) {
+  //       tileData = await getTileById(qrData.tileId.trim());
         
-        if (!tileData) {
-          const result = await getTileByCode(qrData.tileId.trim());
-          if (result.success && result.tile) {
-            tileData = result.tile;
-          }
+  //       if (!tileData) {
+  //         const result = await getTileByCode(qrData.tileId.trim());
+  //         if (result.success && result.tile) {
+  //           tileData = result.tile;
+  //         }
+  //       }
+  //     }
+      
+  //     if (tileData && (tileData.imageUrl || tileData.image_url)) {
+  //       const userForVerification = currentUser || (auth.currentUser ? {
+  //         uid: auth.currentUser.uid,
+  //         user_id: auth.currentUser.uid,
+  //         email: auth.currentUser.email,
+  //         role: 'worker'
+  //       } : null);
+        
+  //       if (!verifyTileSeller(tileData, userForVerification)) {
+  //         const tileSellerId = (tileData as any)?.seller_id || 
+  //                              (tileData as any)?.sellerId || 
+  //                              'unknown';
+          
+  //         console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
+  //           method: 'PATTERN_QR',
+  //           tileId: tileData.id || 'unknown',
+  //           tileName: tileData.name || 'unknown',
+  //           tileSeller: tileSellerId,
+  //           currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
+  //           blocked: true,
+  //           timestamp: new Date().toISOString()
+  //         });
+          
+  //         setScanError(
+  //           `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
+  //           `You can only scan QR codes of your own seller's tiles for wall patterns.`
+  //         );
+  //         setIsProcessing(false);
+  //         return;
+  //       }
+        
+  //       const imageUrl = tileData.imageUrl || tileData.image_url;
+        
+  //       const qrResult: QRScanResult = {
+  //         tileId: tileData.id,
+  //         tileName: tileData.name,
+  //         imageUrl: imageUrl,
+  //         size: { 
+  //           width: tileData.size_width || 30, 
+  //           height: tileData.size_height || 45 
+  //         }
+  //       };
+
+  //       onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
+  //       setUploadMode('select');
+  //       setIsAutoShuffling(false);
+  //       onClose();
+        
+  //       console.log('✅ Wall pattern applied from QR scan (seller verified):', tileData.name);
+  //     } else {
+  //       setScanError('Tile not found or no image available');
+  //     }
+      
+  //   } catch (err) {
+  //     console.error('❌ QR scan error:', err);
+  //     setScanError('Failed to load tile from QR code');
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // }; 
+
+  const handleQRScanSuccess = async (qrData: any) => {
+  console.log('🎯 QR Scanned for wall pattern:', qrData);
+  
+  setIsProcessing(true);
+  setScanError('');
+
+  try {
+    let tileData: any = null;
+    
+    if (qrData.tileId) {
+      tileData = await getTileById(qrData.tileId.trim());
+      
+      if (!tileData) {
+        const result = await getTileByCode(qrData.tileId.trim());
+        if (result.success && result.tile) {
+          tileData = result.tile;
+        }
+      }
+    }
+    
+    console.log('🔍 FIRESTORE TILE DATA:', {
+      id: tileData?.id,
+      name: tileData?.name,
+      allFields: tileData ? Object.keys(tileData) : [],
+      size_width: tileData?.size_width,
+      size_height: tileData?.size_height,
+      width: tileData?.width,
+      height: tileData?.height,
+      size: tileData?.size,  // ✅ CHECK THIS
+      sizeString: qrData?.size  // ✅ CHECK QR DATA
+    });
+    
+    if (tileData && (tileData.imageUrl || tileData.image_url)) {
+      // ✅ EXISTING: Seller verification
+      const userForVerification = currentUser || (auth.currentUser ? {
+        uid: auth.currentUser.uid,
+        user_id: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        role: 'worker'
+      } : null);
+      
+      if (!verifyTileSeller(tileData, userForVerification)) {
+        const tileSellerId = (tileData as any)?.seller_id || 
+                             (tileData as any)?.sellerId || 
+                             'unknown';
+        
+        console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
+          method: 'PATTERN_QR',
+          tileId: tileData.id || 'unknown',
+          tileName: tileData.name || 'unknown',
+          tileSeller: tileSellerId,
+          currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
+          blocked: true,
+          timestamp: new Date().toISOString()
+        });
+        
+        setScanError(
+          `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
+          `You can only scan QR codes of your own seller's tiles for wall patterns.`
+        );
+        setIsProcessing(false);
+        return;
+      }
+      
+      // ✅ NEW: Parse size from QR data first
+      let extractedWidth: number | undefined;
+      let extractedHeight: number | undefined;
+      
+      // ✅ PRIORITY 1: Try to parse from QR data size string (e.g., "61x122 cm")
+      if (qrData?.size) {
+        const sizeString = qrData.size.toString().toLowerCase();
+        const match = sizeString.match(/(\d+)\s*[x×]\s*(\d+)/);
+        
+        if (match) {
+          extractedWidth = parseInt(match[1]);
+          extractedHeight = parseInt(match[2]);
+          
+          console.log('✅ SIZE PARSED FROM QR:', {
+            original: qrData.size,
+            parsed: `${extractedWidth}×${extractedHeight}cm`,
+            method: 'QR_STRING'
+          });
         }
       }
       
-      if (tileData && (tileData.imageUrl || tileData.image_url)) {
-        const userForVerification = currentUser || (auth.currentUser ? {
-          uid: auth.currentUser.uid,
-          user_id: auth.currentUser.uid,
-          email: auth.currentUser.email,
-          role: 'worker'
-        } : null);
+      // ✅ PRIORITY 2: Try Firestore document fields (if QR parsing failed)
+      if (!extractedWidth || !extractedHeight) {
+        extractedWidth = tileData.size_width || 
+                         tileData.sizeWidth || 
+                         tileData.width || 
+                         tileData.tile_width || 
+                         tileData.dimensions?.width;
+                         
+        extractedHeight = tileData.size_height || 
+                          tileData.sizeHeight || 
+                          tileData.height || 
+                          tileData.tile_height || 
+                          tileData.dimensions?.height;
         
-        if (!verifyTileSeller(tileData, userForVerification)) {
-          const tileSellerId = (tileData as any)?.seller_id || 
-                               (tileData as any)?.sellerId || 
-                               'unknown';
-          
-          console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
-            method: 'PATTERN_QR',
-            tileId: tileData.id || 'unknown',
-            tileName: tileData.name || 'unknown',
-            tileSeller: tileSellerId,
-            currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
-            blocked: true,
-            timestamp: new Date().toISOString()
+        if (extractedWidth && extractedHeight) {
+          console.log('✅ SIZE FOUND IN FIRESTORE:', {
+            width: extractedWidth,
+            height: extractedHeight,
+            method: 'FIRESTORE_FIELDS'
           });
-          
-          setScanError(
-            `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
-            `You can only scan QR codes of your own seller's tiles for wall patterns.`
-          );
-          setIsProcessing(false);
-          return;
         }
-        
-        const imageUrl = tileData.imageUrl || tileData.image_url;
-        
-        const qrResult: QRScanResult = {
+      }
+      
+      // ✅ CRITICAL DEBUG
+      console.log('📏 FINAL SIZE EXTRACTION:', {
+        extractedWidth,
+        extractedHeight,
+        source: (extractedWidth && extractedHeight) 
+          ? (qrData?.size ? 'QR_STRING' : 'FIRESTORE') 
+          : 'FALLBACK',
+        isUndefined: (!extractedWidth || !extractedHeight),
+        willUseFallback: (!extractedWidth || !extractedHeight)
+      });
+      
+      // ✅ WARNING if using fallback
+      if (!extractedWidth || !extractedHeight) {
+        console.warn('⚠️ SIZE NOT FOUND - Using fallback 30×45cm', {
           tileId: tileData.id,
           tileName: tileData.name,
-          imageUrl: imageUrl,
-          size: { 
-            width: tileData.size_width || 30, 
-            height: tileData.size_height || 45 
-          }
-        };
-
-        onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
-        setUploadMode('select');
-        setIsAutoShuffling(false);
-        onClose();
-        
-        console.log('✅ Wall pattern applied from QR scan (seller verified):', tileData.name);
-      } else {
-        setScanError('Tile not found or no image available');
+          qrDataSize: qrData?.size,
+          firestoreFields: Object.keys(tileData),
+          recommendation: 'Add width/height fields to Firestore or ensure QR has parseable size'
+        });
       }
       
-    } catch (err) {
-      console.error('❌ QR scan error:', err);
-      setScanError('Failed to load tile from QR code');
-    } finally {
-      setIsProcessing(false);
+      const imageUrl = tileData.imageUrl || tileData.image_url;
+      
+      const qrResult: QRScanResult = {
+        tileId: tileData.id,
+        tileName: tileData.name,
+        imageUrl: imageUrl,
+        size: { 
+          width: extractedWidth || 30, 
+          height: extractedHeight || 45 
+        }
+      };
+      
+      console.log('✅ FINAL QR RESULT FOR PATTERN:', {
+        tileId: qrResult.tileId,
+        tileName: qrResult.tileName,
+        size: qrResult.size,
+        sizeString: `${qrResult.size.width}×${qrResult.size.height}cm`,
+        hasImage: !!qrResult.imageUrl,
+        isDefaultSize: (qrResult.size.width === 30 && qrResult.size.height === 45),
+        patternType: selectedPattern,
+        patternVariant: patternVariant
+      });
+
+      onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
+      setUploadMode('select');
+      setIsAutoShuffling(false);
+      onClose();
+      
+      console.log('✅ Wall pattern applied from QR scan (seller verified):', 
+                  tileData.name, 
+                  'Size:', qrResult.size);
+      
+    } else {
+      console.error('❌ Tile data incomplete:', {
+        hasTileData: !!tileData,
+        hasImageUrl: !!(tileData?.imageUrl || tileData?.image_url),
+        tileId: tileData?.id
+      });
+      setScanError('Tile not found or no image available');
     }
-  };
+    
+  } catch (err) {
+    console.error('❌ QR scan error:', err);
+    setScanError('Failed to load tile from QR code');
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -6046,7 +7302,7 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   activeSurface,
    currentUser, 
    wallTileHeight = 11,
-   highlightTileBorders = false,
+   highlightTileBorders = true,
    onHighlighterUpdate,
    calculationDimensions,
    // 🆕 DESTRUCTURE TRIGGER PROPS
@@ -6058,6 +7314,28 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
 // ═══════════════════════════════════════════════════════════════
 // 🆕 SIDEBAR TRIGGER HANDLERS
 // ═══════════════════════════════════════════════════════════════
+
+// ✅ CRITICAL: Cleanup cloned textures on unmount
+useEffect(() => {
+  return () => {
+    // Dispose all custom tile textures
+    const walls: WallType[] = ['back', 'front', 'left', 'right'];
+    walls.forEach(wall => {
+      customTiles[wall].forEach((tileData) => {
+        if (tileData.texture) {
+          tileData.texture.dispose();
+        }
+      });
+    });
+    
+    // Dispose master texture
+    if (lastAppliedTexture) {
+      lastAppliedTexture.dispose();
+    }
+    
+    console.log('🧹 Textures cleaned up');
+  };
+}, []);  // Run only on unmount
 
 // Trigger Add Highlighter from sidebar
 useEffect(() => {
@@ -6087,7 +7365,7 @@ useEffect(() => {
   // ═══════════════════════════════════════════════════════════
   const [searchParams] = useSearchParams();
   const viewMode = (searchParams.get('mode') as 'view' | 'highlighter') || 'view';
-
+const autoEnableBorders = viewMode === 'highlighter';
   console.log('🎯 Enhanced3DViewer - Current Mode:', {
     mode: viewMode,
     isViewMode: viewMode === 'view',
@@ -6120,7 +7398,10 @@ const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showFloorUploadModal, setShowFloorUploadModal] = useState(false);
   const [customFloorTexture, setCustomFloorTexture] = useState<string | undefined>(floorTile?.texture);
   const [customFloorSize, setCustomFloorSize] = useState(floorTile?.size || { width: 60, height: 60 });
-  
+  // ✅ NEW: Track expected tile size for patterns
+// const [expectedPatternTileSize, setExpectedPatternTileSize] = useState<{ width: number; height: number } | null>(null);
+
+
   const [showWallSelector, setShowWallSelector] = useState(false);
   const [isGridMode, setIsGridMode] = useState(false);
   const [activeWall, setActiveWall] = useState<WallType | null>(null);
@@ -6671,34 +7952,151 @@ const getNextPatternType = useCallback((): PatternType => {
   //   });
   // };
 
-  const handleTileSelected = (tileData: TileUploadData) => {
+//   const handleTileSelected = (tileData: TileUploadData) => {
+//   if (!activeWall) return;
+
+//   console.log('🎨 Applying highlighter tile:', activeWall, 'Count:', selectedTiles.length);
+
+// const loader = new THREE.TextureLoader();
+// loader.load(tileData.imageUrl, (texture) => {
+//   texture.colorSpace = THREE.SRGBColorSpace;
+//   texture.wrapS = THREE.RepeatWrapping;
+//   texture.wrapT = THREE.RepeatWrapping;
+//   texture.minFilter = THREE.LinearMipMapLinearFilter;
+//   texture.magFilter = THREE.LinearFilter;
+//   texture.anisotropy = 16;
+//   texture.generateMipmaps = true;
+//   texture.premultiplyAlpha = false;
+//   texture.needsUpdate = true;
+
+//   // ✅ CRITICAL: Store master texture
+//   setLastAppliedTexture(texture);
+//   setCurrentPatternType('vertical');
+
+//   setCustomTiles(prev => {
+//     const newCustomTiles = { ...prev };
+//     const wallMap = new Map(prev[activeWall]);
+    
+//     selectedTiles.forEach(index => {
+//       wallMap.set(index, {
+//         texture: texture,  // ✅ Use same reference
+//         size: tileData.size
+//       });
+//     });
+    
+//     newCustomTiles[activeWall] = wallMap;
+//     return newCustomTiles;
+//   });
+  
+//   console.log('✅ Highlighter tiles stored with master texture reference');
+//     setAllCustomTileIndices(prev => {
+//       const current = new Set([...prev[activeWall], ...selectedTiles]);
+//       const updated = {
+//         ...prev,
+//         [activeWall]: Array.from(current).sort((a, b) => a - b)
+//       };
+      
+//       if (onHighlighterUpdate) {
+//         onHighlighterUpdate(activeWall, updated[activeWall]);
+//         console.log('📤 Sent highlighter update:', activeWall, updated[activeWall].length);
+//       }
+      
+//       return updated;
+//     });
+
+//     setSelectedTiles([]);
+//     setIsGridMode(false);
+//     setActiveWall(null);
+    
+//     setSuccess(
+//       `✅ ${selectedTiles.length} highlighter tiles applied!\n` +
+//       `Size: ${tileData.size.width}×${tileData.size.height}cm\n` +  // ✅ Show size
+//       `Check calculator for breakdown.`
+//     );
+//     console.log('✅ Highlighter tiles tracked:', selectedTiles.length);
+//   }, undefined, (error) => {
+//     console.error('❌ Failed to load tile texture:', error);
+//   });
+// }; 
+
+const handleTileSelected = (tileData: TileUploadData) => {
   if (!activeWall) return;
 
   console.log('🎨 Applying highlighter tile:', activeWall, 'Count:', selectedTiles.length);
 
+  // const loader = new THREE.TextureLoader();
+  // loader.load(tileData.imageUrl, (texture) => {
+  //   texture.colorSpace = THREE.SRGBColorSpace;
+  //   texture.wrapS = THREE.RepeatWrapping;
+  //   texture.wrapT = THREE.RepeatWrapping;
+  //   texture.minFilter = THREE.LinearMipMapLinearFilter;
+  //   texture.magFilter = THREE.LinearFilter;
+  //   texture.anisotropy = 16;
+  //   texture.generateMipmaps = true;
+  //   texture.premultiplyAlpha = false;
+  //   texture.needsUpdate = true;
+
+  //   setLastAppliedTexture(texture);
+  //   setCurrentPatternType('vertical');
+
+  //   setCustomTiles(prev => {
+  //     const newCustomTiles = { ...prev };
+  //     const wallMap = new Map(prev[activeWall]);
+      
+  //     selectedTiles.forEach(index => {
+  //       // ✅ CRITICAL FIX: Clone texture for each tile
+  //       const clonedTexture = texture.clone();
+  //       clonedTexture.needsUpdate = true;
+        
+  //       wallMap.set(index, {
+  //         texture: clonedTexture,  // ✅ UNIQUE instance per tile
+  //         size: tileData.size
+  //       });
+  //     });
+      
+  //     newCustomTiles[activeWall] = wallMap;
+  //     return newCustomTiles;
+  //   });
 const loader = new THREE.TextureLoader();
 loader.load(tileData.imageUrl, (texture) => {
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
+  // ✅ FIX: ClampToEdge for individual tiles
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.minFilter = THREE.LinearMipMapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.anisotropy = 16;
   texture.generateMipmaps = true;
   texture.premultiplyAlpha = false;
+  // ✅ FIX: Single tile display
+  texture.repeat.set(1, 1);
+  texture.offset.set(0, 0);
   texture.needsUpdate = true;
 
-  // ✅ CRITICAL: Store master texture
   setLastAppliedTexture(texture);
   setCurrentPatternType('vertical');
+  
+  // ✅ CRITICAL FIX: Set expected size for grid mode too
+  setExpectedPatternTileSize({
+    width: tileData.size.width,
+    height: tileData.size.height
+  });
 
   setCustomTiles(prev => {
     const newCustomTiles = { ...prev };
     const wallMap = new Map(prev[activeWall]);
     
     selectedTiles.forEach(index => {
+      const clonedTexture = texture.clone();
+      // ✅ CRITICAL FIX: Configure cloned texture
+      clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+      clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+      clonedTexture.repeat.set(1, 1);
+      clonedTexture.offset.set(0, 0);
+      clonedTexture.needsUpdate = true;
+      
       wallMap.set(index, {
-        texture: texture,  // ✅ Use same reference
+        texture: clonedTexture,
         size: tileData.size
       });
     });
@@ -6706,8 +8104,8 @@ loader.load(tileData.imageUrl, (texture) => {
     newCustomTiles[activeWall] = wallMap;
     return newCustomTiles;
   });
-  
-  console.log('✅ Highlighter tiles stored with master texture reference');
+
+
     setAllCustomTileIndices(prev => {
       const current = new Set([...prev[activeWall], ...selectedTiles]);
       const updated = {
@@ -6728,8 +8126,8 @@ loader.load(tileData.imageUrl, (texture) => {
     setActiveWall(null);
     
     setSuccess(
-      `✅ ${selectedTiles.length} highlighter tiles applied!\n` +
-      `Size: ${tileData.size.width}×${tileData.size.height}cm\n` +  // ✅ Show size
+      `✅ ${selectedTiles.length} highlighter tiles applied (cloned)!\n` +
+      `Size: ${tileData.size.width}×${tileData.size.height}cm\n` +
       `Check calculator for breakdown.`
     );
     console.log('✅ Highlighter tiles tracked:', selectedTiles.length);
@@ -7624,6 +9022,322 @@ loader.load(tileData.imageUrl, (texture) => {
 //   }
 // }; 
 
+// const handleApplyRandomPattern = async (
+//   qrData: QRScanResult, 
+//   patternConfig: { type: PatternType; variant: number }
+// ) => {
+//   console.log('🎨 APPLYING PATTERN:', {
+//     type: patternConfig.type,
+//     variant: patternConfig.variant,
+//     tileSize: qrData.size,  // ✅ Log actual size
+//     roomType
+//   });
+
+//   const loader = new THREE.TextureLoader();
+  
+//   try {
+//     const texture = await new Promise<THREE.Texture>((resolve, reject) => {
+//       loader.load(qrData.imageUrl, (tex) => {
+//         tex.colorSpace = THREE.SRGBColorSpace;
+//         tex.wrapS = THREE.RepeatWrapping;
+//         tex.wrapT = THREE.RepeatWrapping;
+//         tex.minFilter = THREE.LinearMipMapLinearFilter;
+//         tex.magFilter = THREE.LinearFilter;
+//         tex.anisotropy = 16;
+//         tex.needsUpdate = true;
+//         resolve(tex);
+//       }, undefined, reject);
+//     });
+
+//     setLastAppliedTexture(texture);
+//     setCurrentPatternType(patternConfig.type);
+
+//     const wallsToApply: WallType[] = roomType === 'kitchen' 
+//       ? ['back'] 
+//       : ['back', 'front', 'left', 'right'];
+
+//     let totalHighlighterTiles = 0;
+//     const newIndices: { [key: string]: number[] } = {
+//       back: [],
+//       front: [],
+//       left: [],
+//       right: []
+//     };
+    
+//     // console.log('📊 Generating patterns for walls:', wallsToApply);
+
+//     // wallsToApply.forEach(wall => {
+//     //   const dims = getVisualWallDimensions(wall);
+      
+//     //   const pattern = generatePattern(
+//     //     patternConfig.type, 
+//     //     dims.cols, 
+//     //     dims.rows, 
+//     //     patternConfig.variant
+//     //   );
+      
+//     //   newIndices[wall] = pattern;
+//     //   totalHighlighterTiles += pattern.length;
+      
+//     //   console.log(`   ${wall}: ${pattern.length}/${dims.cols * dims.rows} tiles`);
+//     // });
+// console.log('📊 Using EXACT highlighter size:', qrData.size);
+
+// wallsToApply.forEach(wall => {
+//   const dims = getVisualWallDimensions(wall, qrData.size);
+  
+//   const pattern = generatePattern(
+//     patternConfig.type, 
+//     dims.cols, 
+//     dims.rows, 
+//     patternConfig.variant
+//   );
+  
+//   newIndices[wall] = pattern;
+//   totalHighlighterTiles += pattern.length;
+  
+//   console.log(`   ${wall}: ${pattern.length}/${dims.cols * dims.rows} tiles (${qrData.size.width}×${qrData.size.height}cm)`);
+// });
+
+
+//     console.log(`📊 TOTAL: ${totalHighlighterTiles} highlighter tiles`);
+
+//     // ✅ UPDATED: Store texture + size for each tile
+//     // setCustomTiles(prev => {
+//     //   const newCustomTiles = { ...prev };
+      
+//     //   wallsToApply.forEach(wall => {
+//     //     const pattern = newIndices[wall];
+//     //     const newMap = new Map<number, CustomTileData>();  // ✅ CHANGED type
+        
+//     //     pattern.forEach(tileIndex => {
+//     //       newMap.set(tileIndex, {
+//     //         texture: texture.clone(),
+//     //         size: qrData.size  // ✅ Store actual scanned size (e.g., 40×80)
+//     //       });
+//     //     });
+        
+//     //     newCustomTiles[wall] = newMap;
+//     //     console.log(`   ✅ Applied ${newMap.size} textures to ${wall} (${qrData.size.width}×${qrData.size.height}cm)`);
+//     //   });
+      
+//     //   return newCustomTiles;
+//     // });
+
+//     setCustomTiles(prev => {
+//   const newCustomTiles = { ...prev };
+  
+//   wallsToApply.forEach(wall => {
+//     const pattern = newIndices[wall];
+//     const newMap = new Map<number, CustomTileData>();
+    
+//     pattern.forEach(tileIndex => {
+//       // ✅ CRITICAL FIX: Clone texture for each tile
+//       const clonedTexture = texture.clone();
+//       clonedTexture.needsUpdate = true;
+      
+//       newMap.set(tileIndex, {
+//         texture: clonedTexture,  // ✅ UNIQUE instance per tile
+//         size: { 
+//           width: qrData.size.width,
+//           height: qrData.size.height
+//         }
+//       });
+//     });
+    
+//     newCustomTiles[wall] = newMap;
+//     console.log(`   ✅ ${wall}: ${newMap.size} tiles @ ${qrData.size.width}×${qrData.size.height}cm (cloned)`);
+//   });
+  
+//   return newCustomTiles;
+// }); 
+//     setAllCustomTileIndices(prev => {
+//       const updated = { ...prev };
+      
+//       wallsToApply.forEach(wall => {
+//         updated[wall] = newIndices[wall];
+        
+//         if (onHighlighterUpdate) {
+//           onHighlighterUpdate(wall, newIndices[wall]);
+//         }
+//       });
+      
+//       return updated;
+//     });
+
+//     setShowRandomPattern(false);
+    
+//     if (totalHighlighterTiles > 0) {
+//       const calcDims = getCalculationDimensions(roomType);
+      
+//       setSuccess(
+//         `✅ Pattern Applied!\n` +
+//         `${totalHighlighterTiles} tiles (${qrData.size.width}×${qrData.size.height}cm)\n` +  // ✅ Show size
+//         `${PATTERN_CONFIGS.find(p => p.type === patternConfig.type)?.name} pattern\n` +
+//         `Room: ${calcDims.width}×${calcDims.depth} ft`
+//       );
+//     }
+    
+//   } catch (error) {
+//     console.error('❌ Pattern application failed:', error);
+//     setError('Failed to apply pattern. Please try again.');
+//   }
+// };
+// const handleApplyRandomPattern = async (
+//   qrData: QRScanResult, 
+//   patternConfig: { type: PatternType; variant: number }
+// ) => {
+//   console.log('🎨 APPLYING PATTERN:', {
+//     type: patternConfig.type,
+//     variant: patternConfig.variant,
+//     highlighterTileSize: qrData.size,
+//     roomType
+//   });
+
+//   if (!qrData.size || !qrData.size.width || !qrData.size.height) {
+//     console.error('❌ Invalid tile size from scan:', qrData.size);
+//     setError('❌ Invalid tile size. Please scan again.');
+//     return;
+//   }
+
+//   // ✅ CRITICAL FIX: Set expected tile size BEFORE applying pattern
+//   setExpectedPatternTileSize({
+//     width: qrData.size.width,
+//     height: qrData.size.height
+//   });
+//   console.log('🎯 Expected pattern tile size set:', qrData.size);
+
+//   const loader = new THREE.TextureLoader();
+  
+//   try {
+//     const texture = await new Promise<THREE.Texture>((resolve, reject) => {
+//       loader.load(qrData.imageUrl, (tex) => {
+//         tex.colorSpace = THREE.SRGBColorSpace;
+//         // ✅ FIX: ClampToEdge for single tile, not Repeat
+//         tex.wrapS = THREE.ClampToEdgeWrapping;
+//         tex.wrapT = THREE.ClampToEdgeWrapping;
+//         tex.minFilter = THREE.LinearMipMapLinearFilter;
+//         tex.magFilter = THREE.LinearFilter;
+//         tex.anisotropy = 16;
+//         // ✅ FIX: Single tile, show once
+//         tex.repeat.set(1, 1);
+//         tex.offset.set(0, 0);
+//         tex.needsUpdate = true;
+//         resolve(tex);
+//       }, undefined, reject);
+//     });
+
+//     setLastAppliedTexture(texture);
+//     setCurrentPatternType(patternConfig.type);
+
+//     const wallsToApply: WallType[] = roomType === 'kitchen' 
+//       ? ['back'] 
+//       : ['back', 'front', 'left', 'right'];
+
+//     let totalHighlighterTiles = 0;
+//     const newIndices: { [key: string]: number[] } = {
+//       back: [],
+//       front: [],
+//       left: [],
+//       right: []
+//     };
+    
+//     console.log('📊 Using EXACT highlighter size:', qrData.size);
+
+//     wallsToApply.forEach(wall => {
+//       const dims = getVisualWallDimensions(wall, qrData.size);
+      
+//       const pattern = generatePattern(
+//         patternConfig.type, 
+//         dims.cols, 
+//         dims.rows, 
+//         patternConfig.variant
+//       );
+      
+//       newIndices[wall] = pattern;
+//       totalHighlighterTiles += pattern.length;
+      
+//       console.log(`   ${wall}: ${pattern.length}/${dims.cols * dims.rows} tiles (${qrData.size.width}×${qrData.size.height}cm)`);
+//     });
+
+//     console.log(`📊 TOTAL: ${totalHighlighterTiles} highlighter tiles`);
+
+//     setCustomTiles(prev => {
+//       const newCustomTiles = { ...prev };
+      
+//       wallsToApply.forEach(wall => {
+//         const pattern = newIndices[wall];
+//         const newMap = new Map<number, CustomTileData>();
+        
+//         pattern.forEach(tileIndex => {
+//           const clonedTexture = texture.clone();
+//           // ✅ CRITICAL FIX: Configure cloned texture properly
+//           clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+//           clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+//           clonedTexture.repeat.set(1, 1);
+//           clonedTexture.offset.set(0, 0);
+//           clonedTexture.needsUpdate = true;
+          
+//           newMap.set(tileIndex, {
+//             texture: clonedTexture,
+//             size: { 
+//               width: qrData.size.width,
+//               height: qrData.size.height
+//             }
+//           });
+//         });
+        
+//         newCustomTiles[wall] = newMap;
+//         console.log(`   ✅ ${wall}: ${newMap.size} tiles @ ${qrData.size.width}×${qrData.size.height}cm (cloned+configured)`);
+//       });
+      
+//       return newCustomTiles;
+//     });
+
+//     setAllCustomTileIndices(prev => {
+//       const updated = { ...prev };
+      
+//       wallsToApply.forEach(wall => {
+//         updated[wall] = newIndices[wall];
+        
+//         if (onHighlighterUpdate) {
+//           onHighlighterUpdate(wall, newIndices[wall]);
+//           console.log(`   📤 Sent update for ${wall}: ${newIndices[wall].length} indices`);
+//         }
+//       });
+      
+//       return updated;
+//     });
+
+//     setShowRandomPattern(false);
+    
+//     if (totalHighlighterTiles > 0) {
+//       const calcDims = getCalculationDimensions(roomType);
+      
+//       setSuccess(
+//         `✅ Pattern Applied!\n` +
+//         `${totalHighlighterTiles} tiles (${qrData.size.width}×${qrData.size.height}cm)\n` +
+//         `${PATTERN_CONFIGS.find(p => p.type === patternConfig.type)?.name} pattern\n` +
+//         `Room: ${calcDims.width}×${calcDims.depth} ft`
+//       );
+      
+//       console.log('✅ PATTERN APPLICATION COMPLETE:', {
+//         pattern: patternConfig.type,
+//         totalTiles: totalHighlighterTiles,
+//         tileSize: `${qrData.size.width}×${qrData.size.height}cm`,
+//         expectedSizeSet: !!expectedPatternTileSize
+//       });
+//     } else {
+//       setError(`⚠️ No tiles applied!\nCheck room dimensions`);
+//     }
+    
+//   } catch (error) {
+//     console.error('❌ Pattern application failed:', error);
+//     setError('Failed to apply pattern. Please try again.');
+//   }
+// };
+
+// Around line 8880-9050
 const handleApplyRandomPattern = async (
   qrData: QRScanResult, 
   patternConfig: { type: PatternType; variant: number }
@@ -7631,9 +9345,18 @@ const handleApplyRandomPattern = async (
   console.log('🎨 APPLYING PATTERN:', {
     type: patternConfig.type,
     variant: patternConfig.variant,
-    tileSize: qrData.size,  // ✅ Log actual size
+    highlighterTileSize: qrData.size,
+    wallTileSize: wallTile?.size,
     roomType
   });
+
+  if (!qrData.size || !qrData.size.width || !qrData.size.height) {
+    console.error('❌ Invalid tile size from scan:', qrData.size);
+    setError('❌ Invalid tile size. Please scan again.');
+    return;
+  }
+
+  // ✅ REMOVED: No expectedPatternTileSize setting
 
   const loader = new THREE.TextureLoader();
   
@@ -7641,11 +9364,13 @@ const handleApplyRandomPattern = async (
     const texture = await new Promise<THREE.Texture>((resolve, reject) => {
       loader.load(qrData.imageUrl, (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
+        tex.wrapS = THREE.ClampToEdgeWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
         tex.minFilter = THREE.LinearMipMapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.anisotropy = 16;
+        tex.repeat.set(1, 1);
+        tex.offset.set(0, 0);
         tex.needsUpdate = true;
         resolve(tex);
       }, undefined, reject);
@@ -7666,43 +9391,53 @@ const handleApplyRandomPattern = async (
       right: []
     };
     
-    console.log('📊 Generating patterns for walls:', wallsToApply);
+    console.log('📊 Pattern based on WALL TILE grid, using highlighter texture:', qrData.size);
 
+    // ✅ FIXED: Always use wall tile grid for pattern calculation
     wallsToApply.forEach(wall => {
-      const dims = getVisualWallDimensions(wall);
+      const dims = getVisualWallDimensions(wall);  // ✅ NO custom size parameter
       
       const pattern = generatePattern(
         patternConfig.type, 
-        dims.cols, 
-        dims.rows, 
+        dims.cols,   // ✅ Wall tile grid columns
+        dims.rows,   // ✅ Wall tile grid rows
         patternConfig.variant
       );
       
       newIndices[wall] = pattern;
       totalHighlighterTiles += pattern.length;
       
-      console.log(`   ${wall}: ${pattern.length}/${dims.cols * dims.rows} tiles`);
+      console.log(`   ${wall}: ${pattern.length}/${dims.cols * dims.rows} tiles on WALL TILE grid`);
     });
 
-    console.log(`📊 TOTAL: ${totalHighlighterTiles} highlighter tiles`);
+    console.log(`📊 TOTAL: ${totalHighlighterTiles} highlighter tiles on wall tile grid`);
 
-    // ✅ UPDATED: Store texture + size for each tile
     setCustomTiles(prev => {
       const newCustomTiles = { ...prev };
       
       wallsToApply.forEach(wall => {
         const pattern = newIndices[wall];
-        const newMap = new Map<number, CustomTileData>();  // ✅ CHANGED type
+        const newMap = new Map<number, CustomTileData>();
         
-        pattern.forEach(tileIndex => {
-          newMap.set(tileIndex, {
-            texture: texture.clone(),
-            size: qrData.size  // ✅ Store actual scanned size (e.g., 40×80)
+        pattern.forEach(index => {
+          const clonedTexture = texture.clone();
+          clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+          clonedTexture.repeat.set(1, 1);
+          clonedTexture.offset.set(0, 0);
+          clonedTexture.needsUpdate = true;
+          
+          newMap.set(index, {
+            texture: clonedTexture,
+            size: { 
+              width: qrData.size.width,   // ✅ Store highlighter size for reference
+              height: qrData.size.height
+            }
           });
         });
         
         newCustomTiles[wall] = newMap;
-        console.log(`   ✅ Applied ${newMap.size} textures to ${wall} (${qrData.size.width}×${qrData.size.height}cm)`);
+        console.log(`   ✅ ${wall}: ${newMap.size} highlighter tiles applied to wall grid cells`);
       });
       
       return newCustomTiles;
@@ -7716,6 +9451,7 @@ const handleApplyRandomPattern = async (
         
         if (onHighlighterUpdate) {
           onHighlighterUpdate(wall, newIndices[wall]);
+          console.log(`   📤 Sent update for ${wall}: ${newIndices[wall].length} indices`);
         }
       });
       
@@ -7729,10 +9465,20 @@ const handleApplyRandomPattern = async (
       
       setSuccess(
         `✅ Pattern Applied!\n` +
-        `${totalHighlighterTiles} tiles (${qrData.size.width}×${qrData.size.height}cm)\n` +  // ✅ Show size
+        `${totalHighlighterTiles} highlighter tiles (${qrData.size.width}×${qrData.size.height}cm)\n` +
+        `On wall grid: ${wallTile?.size.width || 30}×${wallTile?.size.height || 45}cm cells\n` +
         `${PATTERN_CONFIGS.find(p => p.type === patternConfig.type)?.name} pattern\n` +
         `Room: ${calcDims.width}×${calcDims.depth} ft`
       );
+      
+      console.log('✅ PATTERN APPLICATION COMPLETE:', {
+        pattern: patternConfig.type,
+        totalTiles: totalHighlighterTiles,
+        highlighterSize: `${qrData.size.width}×${qrData.size.height}cm`,
+        wallGridSize: `${wallTile?.size.width || 30}×${wallTile?.size.height || 45}cm`
+      });
+    } else {
+      setError(`⚠️ No tiles applied!\nCheck room dimensions`);
     }
     
   } catch (error) {
@@ -7740,6 +9486,8 @@ const handleApplyRandomPattern = async (
     setError('Failed to apply pattern. Please try again.');
   }
 };
+
+
 
 
 
@@ -7976,11 +9724,61 @@ const handleApplyRandomPattern = async (
 //   wallTileHeight
 // ]); 
 
+// const getVisualWallDimensions = useCallback((wall: WallType) => {
+//   const { width: W, depth: D, height: H } = scaledRoomConfig;
+//   const actualWallHeight = (wallTileHeight / 11) * H;
+  
+//   const wallTileSize = wallTile?.size || { width: 30, height: 45 };
+//   const tileSizeM = {
+//     width: wallTileSize.width / 100,
+//     height: wallTileSize.height / 100
+//   };
+  
+//   const wallWidth = (wall === 'back' || wall === 'front') ? W : D;
+  
+//   const cols = Math.ceil(wallWidth / tileSizeM.width);
+//   const rows = Math.ceil(actualWallHeight / tileSizeM.height);
+  
+//   return { cols, rows };
+// }, [scaledRoomConfig, wallTileHeight, wallTile?.size]);
+
+// const getVisualWallDimensions = useCallback((
+//   wall: WallType, 
+//   customTileSize?: { width: number; height: number }
+// ) => {
+//   const { width: W, depth: D, height: H } = scaledRoomConfig;
+//   const actualWallHeight = (wallTileHeight / 11) * H;
+  
+//   const tileSize = customTileSize || wallTile?.size;
+  
+//   if (!tileSize) {
+//     console.error('❌ No tile size available');
+//     return { cols: 1, rows: 1 };
+//   }
+  
+//   const tileSizeM = {
+//     width: tileSize.width / 100,
+//     height: tileSize.height / 100
+//   };
+  
+//   const wallWidth = (wall === 'back' || wall === 'front') ? W : D;
+  
+//   const cols = Math.ceil(wallWidth / tileSizeM.width);
+//   const rows = Math.ceil(actualWallHeight / tileSizeM.height);
+  
+//   console.log(`📐 ${wall}: ${tileSize.width}×${tileSize.height}cm → ${cols}×${rows}`);
+  
+//   return { cols, rows };
+// }, [scaledRoomConfig, wallTileHeight, wallTile?.size]);
+
+// Around line 9300-9350
 const getVisualWallDimensions = useCallback((wall: WallType) => {
   const { width: W, depth: D, height: H } = scaledRoomConfig;
   const actualWallHeight = (wallTileHeight / 11) * H;
   
+  // ✅ FIXED: Always use WALL TILE size (no custom size parameter)
   const wallTileSize = wallTile?.size || { width: 30, height: 45 };
+  
   const tileSizeM = {
     width: wallTileSize.width / 100,
     height: wallTileSize.height / 100
@@ -7988,12 +9786,14 @@ const getVisualWallDimensions = useCallback((wall: WallType) => {
   
   const wallWidth = (wall === 'back' || wall === 'front') ? W : D;
   
+  // ✅ Grid ALWAYS calculated from wall tile size
   const cols = Math.ceil(wallWidth / tileSizeM.width);
   const rows = Math.ceil(actualWallHeight / tileSizeM.height);
   
+  console.log(`📐 ${wall} GRID (WALL TILE): ${wallTileSize.width}×${wallTileSize.height}cm → ${cols}×${rows}`);
+  
   return { cols, rows };
 }, [scaledRoomConfig, wallTileHeight, wallTile?.size]);
-
 // 📍 Location: Around line 1750 (handleApplyRandomPattern)
 
 // const handleApplyRandomPattern = async (
@@ -8647,6 +10447,361 @@ const getVisualWallDimensions = useCallback((wall: WallType) => {
 //   onHighlighterUpdate,
 //   wallTileHeight
 // ]); 
+// const handleShuffleExistingPattern = useCallback(() => {
+//   console.log('🔄 SHUFFLE INITIATED');
+  
+//   const totalTiles = getTotalCustomTiles();
+//   if (totalTiles === 0) {
+//     setError('⚠️ No tiles to shuffle!\nApply a pattern first.');
+//     return;
+//   }
+  
+//   setIsPatternShuffling(true);
+  
+//   // ✅ CRITICAL FIX: Get master texture from lastAppliedTexture (safer than extracting from Map)
+//   if (!lastAppliedTexture) {
+//     console.error('❌ No master texture found in lastAppliedTexture');
+//     setError('❌ No texture found to shuffle\nPlease apply a pattern first.');
+//     setIsPatternShuffling(false);
+//     return;
+//   }
+  
+//   // ✅ Validate master texture
+//   if (!lastAppliedTexture.image || !lastAppliedTexture.image.complete) {
+//     console.error('❌ Master texture image not loaded:', {
+//       hasImage: !!lastAppliedTexture.image,
+//       isComplete: lastAppliedTexture.image?.complete
+//     });
+//     setError('❌ Texture not ready\nPlease wait for texture to load.');
+//     setIsPatternShuffling(false);
+//     return;
+//   }
+  
+//   // ✅ Get tile size from first custom tile
+//   // let tileSize = { width: 30, height: 30 }; // Default fallback
+  
+//   // const walls: WallType[] = ['back', 'front', 'left', 'right'];
+//   // for (const wall of walls) {
+//   //   const wallMap = customTiles[wall];
+//   //   if (wallMap && wallMap.size > 0) {
+//   //     const firstEntry = Array.from(wallMap.values())[0];
+//   //     if (firstEntry && firstEntry.size) {
+//   //       tileSize = { ...firstEntry.size };
+//   //       console.log('✅ Tile size extracted:', tileSize);
+//   //       break;
+//   //     }
+//   //   }
+//   // }
+  
+//   // const nextPattern = getNextPatternType();
+//   // console.log(`🔄 SHUFFLING: ${currentPatternType} → ${nextPattern}`, {
+//   //   masterTexture: !!lastAppliedTexture,
+//   //   textureLoaded: lastAppliedTexture.image?.complete,
+//   //   tileSize
+//   // });
+  
+//   // setTimeout(() => {
+//   //   const wallsToShuffle: WallType[] = roomType === 'kitchen' 
+//   //     ? ['back'] 
+//   //     : (['back', 'front', 'left', 'right'] as WallType[]).filter(wall => {
+//   //         const wallMap = customTiles[wall];
+//   //         return wallMap && wallMap.size > 0;
+//   //       });
+    
+//   //   if (wallsToShuffle.length === 0) {
+//   //     setError('❌ No walls with custom tiles found');
+//   //     setIsPatternShuffling(false);
+//   //     return;
+//   //   }
+    
+//   //   let totalHighlighterTiles = 0;
+//   //   const newIndices: { [key: string]: number[] } = {
+//   //     back: [],
+//   //     front: [],
+//   //     left: [],
+//   //     right: []
+//   //   };
+    
+//   //   console.log('🎨 Generating new pattern for walls:', wallsToShuffle);
+    
+//   //   // ✅ Generate new pattern indices
+//   //   wallsToShuffle.forEach(wall => {
+//   //     const dims = getVisualWallDimensions(wall);
+      
+//   //     const newPatternIndices = generatePattern(
+//   //       nextPattern, 
+//   //       dims.cols, 
+//   //       dims.rows, 
+//   //       Math.floor(Math.random() * 10)
+//   //     );
+      
+//   //     newIndices[wall] = newPatternIndices;
+//   //     totalHighlighterTiles += newPatternIndices.length;
+      
+//   //     console.log(`   ${wall}: ${newPatternIndices.length} tiles (${dims.cols}×${dims.rows})`);
+//   //   });
+    
+//   //   console.log(`📊 Total tiles after shuffle: ${totalHighlighterTiles}`);
+    
+//   //   // ✅ CRITICAL FIX: Use master texture reference (no cloning needed)
+//   //   setCustomTiles(prev => {
+//   //     const newCustomTiles = { ...prev };
+      
+//   //     wallsToShuffle.forEach(wall => {
+//   //       const pattern = newIndices[wall];
+//   //       const newMap = new Map<number, CustomTileData>();
+        
+//   //       pattern.forEach(index => {
+//   //         // ✅ CRITICAL: Use SAME master texture reference
+//   //         newMap.set(index, {
+//   //           texture: lastAppliedTexture,  // ✅ No clone() - just reference
+//   //           size: { ...tileSize }  // Deep copy size only
+//   //         });
+//   //       });
+        
+//   //       newCustomTiles[wall] = newMap;
+//   //       console.log(`   ✅ ${wall}: Applied ${newMap.size} texture references`);
+//   //     });
+      
+//   //     return newCustomTiles;
+//   //   });
+    
+//   //   // ✅ Update tracking indices
+//   //   setAllCustomTileIndices(prev => {
+//   //     const updated = { ...prev };
+      
+//   //     wallsToShuffle.forEach(wall => {
+//   //       updated[wall] = newIndices[wall];
+        
+//   //       if (onHighlighterUpdate) {
+//   //         onHighlighterUpdate(wall, newIndices[wall]);
+//   //         console.log(`   📤 Update sent for ${wall}: ${newIndices[wall].length} indices`);
+//   //       }
+//   //     });
+      
+//   //     return updated;
+//   //   });
+    
+//   //   setCurrentPatternType(nextPattern);
+//   //   setIsPatternShuffling(false);
+    
+//   //   setSuccess(
+//   //     `🔄 Pattern Shuffled Successfully!\n` +
+//   //     `${PATTERN_CONFIGS.find(p => p.type === nextPattern)?.name}\n` +
+//   //     `${totalHighlighterTiles} tiles (${tileSize.width}×${tileSize.height}cm)`
+//   //   );
+    
+//   //   console.log('✅ SHUFFLE COMPLETE:', {
+//   //     pattern: nextPattern,
+//   //     totalTiles: totalHighlighterTiles,
+//   //     walls: wallsToShuffle,
+//   //     tileSize,
+//   //     masterTextureReused: true
+//   //   });
+    
+//   // }, 400);
+
+// let highlighterSize: { width: number; height: number } | null = null;
+// const walls: WallType[] = ['back', 'front', 'left', 'right'];
+// for (const wall of walls) {
+//   const wallMap = customTiles[wall];
+//   if (wallMap && wallMap.size > 0) {
+//     const firstEntry = Array.from(wallMap.values())[0];
+//     if (firstEntry && firstEntry.size) {
+//       highlighterSize = { 
+//         width: firstEntry.size.width, 
+//         height: firstEntry.size.height 
+//       };
+//       console.log('✅ Extracted size:', highlighterSize);
+//       break;
+//     }
+//   }
+// }
+
+// if (!highlighterSize) {
+//   setError('❌ Tile size not found');
+//   setIsPatternShuffling(false);
+//   return;
+// }
+
+// const nextPattern = getNextPatternType();
+// console.log(`🔄 ${currentPatternType} → ${nextPattern} @ ${highlighterSize.width}×${highlighterSize.height}cm`);
+
+// // setTimeout(() => {
+// //   const wallsToShuffle: WallType[] = roomType === 'kitchen' 
+// //     ? ['back'] 
+// //     : (['back', 'front', 'left', 'right'] as WallType[]).filter(wall => {
+// //         const wallMap = customTiles[wall];
+// //         return wallMap && wallMap.size > 0;
+// //       }); 
+
+// setTimeout(() => {
+//   const wallsToShuffle: WallType[] = roomType === 'kitchen' 
+//     ? ['back'] 
+//     : (['back', 'front', 'left', 'right'] as WallType[]).filter(wall => {
+//         const wallMap = customTiles[wall];
+//         return wallMap && wallMap.size > 0;
+//       });
+  
+//   if (wallsToShuffle.length === 0) {
+//     setError('❌ No walls found');
+//     setIsPatternShuffling(false);
+//     return;
+//   }
+  
+//   let totalHighlighterTiles = 0;
+//   const newIndices: { [key: string]: number[] } = {
+//     back: [],
+//     front: [],
+//     left: [],
+//     right: []
+//   };
+  
+//   wallsToShuffle.forEach(wall => {
+//     const dims = getVisualWallDimensions(wall, highlighterSize!);
+    
+//     const newPatternIndices = generatePattern(
+//       nextPattern, 
+//       dims.cols, 
+//       dims.rows, 
+//       Math.floor(Math.random() * 10)
+//     );
+    
+//     newIndices[wall] = newPatternIndices;
+//     totalHighlighterTiles += newPatternIndices.length;
+    
+//     console.log(`   ${wall}: ${newPatternIndices.length} tiles @ ${highlighterSize!.width}×${highlighterSize!.height}cm`);
+//   });
+  
+//   // setCustomTiles(prev => {
+//   //   const newCustomTiles = { ...prev };
+    
+//   //   wallsToShuffle.forEach(wall => {
+//   //     const pattern = newIndices[wall];
+//   //     const newMap = new Map<number, CustomTileData>();
+      
+//   //     pattern.forEach(index => {
+//   //       newMap.set(index, {
+//   //         texture: lastAppliedTexture,
+//   //         size: { 
+//   //           width: highlighterSize!.width,
+//   //           height: highlighterSize!.height
+//   //         }
+//   //       });
+//   //     });
+      
+//   //     newCustomTiles[wall] = newMap;
+//   //   });
+    
+//   //   return newCustomTiles;
+//   // }); 
+// // setCustomTiles(prev => {
+// //   const newCustomTiles = { ...prev };
+  
+// //   wallsToShuffle.forEach(wall => {
+// //     const pattern = newIndices[wall];
+// //     const newMap = new Map<number, CustomTileData>();
+    
+// //     pattern.forEach(index => {
+// //       // ✅ CRITICAL FIX: Clone texture for each tile
+// //       const clonedTexture = lastAppliedTexture.clone();
+// //       clonedTexture.needsUpdate = true;
+      
+// //       newMap.set(index, {
+// //         texture: clonedTexture,  // ✅ UNIQUE instance per tile
+// //         size: { 
+// //           width: highlighterSize!.width,
+// //           height: highlighterSize!.height
+// //         }
+// //       });
+// //     });
+    
+// //     newCustomTiles[wall] = newMap;
+// //     console.log(`   ✅ ${wall}: ${newMap.size} tiles cloned`);
+// //   });
+  
+// //   return newCustomTiles;
+// // }); 
+
+//   if (highlighterSize) {
+//     setExpectedPatternTileSize({
+//       width: highlighterSize.width,
+//       height: highlighterSize.height
+//     });
+//     console.log('🎯 Expected tile size updated for shuffle:', highlighterSize);
+//   }
+  
+//   setCustomTiles(prev => {
+//     const newCustomTiles = { ...prev };
+    
+//     wallsToShuffle.forEach(wall => {
+//       const pattern = newIndices[wall];
+//       const newMap = new Map<number, CustomTileData>();
+      
+//       pattern.forEach(index => {
+//         const clonedTexture = lastAppliedTexture.clone();
+//         // ✅ CRITICAL FIX: Configure cloned texture
+//         clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+//         clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+//         clonedTexture.repeat.set(1, 1);
+//         clonedTexture.offset.set(0, 0);
+//         clonedTexture.needsUpdate = true;
+        
+//         newMap.set(index, {
+//           texture: clonedTexture,
+//           size: { 
+//             width: highlighterSize!.width,
+//             height: highlighterSize!.height
+//           }
+//         });
+//       });
+      
+//       newCustomTiles[wall] = newMap;
+//       console.log(`   ✅ ${wall}: ${newMap.size} tiles cloned+configured`);
+//     });
+    
+//     return newCustomTiles;
+//   });
+
+  
+//   setAllCustomTileIndices(prev => {
+//     const updated = { ...prev };
+    
+//     wallsToShuffle.forEach(wall => {
+//       updated[wall] = newIndices[wall];
+      
+//       if (onHighlighterUpdate) {
+//         onHighlighterUpdate(wall, newIndices[wall]);
+//       }
+//     });
+    
+//     return updated;
+//   });
+  
+//   setCurrentPatternType(nextPattern);
+//   setIsPatternShuffling(false);
+  
+//   setSuccess(
+//     `🔄 Pattern Shuffled!\n` +
+//     `${PATTERN_CONFIGS.find(p => p.type === nextPattern)?.name}\n` +
+//     `${totalHighlighterTiles} tiles (${highlighterSize!.width}×${highlighterSize!.height}cm)`
+//   );
+  
+// }, 400);
+
+  
+// }, [
+//   customTiles, 
+//   currentPatternType, 
+//   roomType, 
+//   lastAppliedTexture,  // ✅ CRITICAL: Added dependency
+//   getNextPatternType, 
+//   getVisualWallDimensions,
+//   getTotalCustomTiles,
+//   onHighlighterUpdate,
+//   wallTileHeight
+// ]);
+// Around line 9950-10300
 const handleShuffleExistingPattern = useCallback(() => {
   console.log('🔄 SHUFFLE INITIATED');
   
@@ -8658,7 +10813,6 @@ const handleShuffleExistingPattern = useCallback(() => {
   
   setIsPatternShuffling(true);
   
-  // ✅ CRITICAL FIX: Get master texture from lastAppliedTexture (safer than extracting from Map)
   if (!lastAppliedTexture) {
     console.error('❌ No master texture found in lastAppliedTexture');
     setError('❌ No texture found to shuffle\nPlease apply a pattern first.');
@@ -8666,40 +10820,42 @@ const handleShuffleExistingPattern = useCallback(() => {
     return;
   }
   
-  // ✅ Validate master texture
   if (!lastAppliedTexture.image || !lastAppliedTexture.image.complete) {
-    console.error('❌ Master texture image not loaded:', {
-      hasImage: !!lastAppliedTexture.image,
-      isComplete: lastAppliedTexture.image?.complete
-    });
+    console.error('❌ Master texture image not loaded');
     setError('❌ Texture not ready\nPlease wait for texture to load.');
     setIsPatternShuffling(false);
     return;
   }
   
-  // ✅ Get tile size from first custom tile
-  let tileSize = { width: 30, height: 30 }; // Default fallback
-  
+  // ✅ CHANGED: Extract highlighter size for REFERENCE only (not for grid)
+  let highlighterSize: { width: number; height: number } | null = null;
   const walls: WallType[] = ['back', 'front', 'left', 'right'];
   for (const wall of walls) {
     const wallMap = customTiles[wall];
     if (wallMap && wallMap.size > 0) {
       const firstEntry = Array.from(wallMap.values())[0];
       if (firstEntry && firstEntry.size) {
-        tileSize = { ...firstEntry.size };
-        console.log('✅ Tile size extracted:', tileSize);
+        highlighterSize = { 
+          width: firstEntry.size.width, 
+          height: firstEntry.size.height 
+        };
+        console.log('✅ Extracted highlighter size (for reference):', highlighterSize);
         break;
       }
     }
   }
-  
+
+  if (!highlighterSize) {
+    setError('❌ Highlighter tile size not found');
+    setIsPatternShuffling(false);
+    return;
+  }
+
   const nextPattern = getNextPatternType();
-  console.log(`🔄 SHUFFLING: ${currentPatternType} → ${nextPattern}`, {
-    masterTexture: !!lastAppliedTexture,
-    textureLoaded: lastAppliedTexture.image?.complete,
-    tileSize
-  });
-  
+  console.log(`🔄 SHUFFLE: ${currentPatternType} → ${nextPattern}`);
+  console.log(`   Highlighter: ${highlighterSize.width}×${highlighterSize.height}cm`);
+  console.log(`   Wall Grid: ${wallTile?.size.width || 30}×${wallTile?.size.height || 45}cm (FIXED)`);
+
   setTimeout(() => {
     const wallsToShuffle: WallType[] = roomType === 'kitchen' 
       ? ['back'] 
@@ -8722,28 +10878,27 @@ const handleShuffleExistingPattern = useCallback(() => {
       right: []
     };
     
-    console.log('🎨 Generating new pattern for walls:', wallsToShuffle);
+    console.log('🎨 Shuffling on WALL TILE grid:', wallsToShuffle);
     
-    // ✅ Generate new pattern indices
+    // ✅ FIXED: Always use wall tile grid for shuffle
     wallsToShuffle.forEach(wall => {
-      const dims = getVisualWallDimensions(wall);
+      const dims = getVisualWallDimensions(wall);  // ✅ NO custom size parameter
       
       const newPatternIndices = generatePattern(
         nextPattern, 
-        dims.cols, 
-        dims.rows, 
+        dims.cols,   // ✅ Wall tile grid columns
+        dims.rows,   // ✅ Wall tile grid rows
         Math.floor(Math.random() * 10)
       );
       
       newIndices[wall] = newPatternIndices;
       totalHighlighterTiles += newPatternIndices.length;
       
-      console.log(`   ${wall}: ${newPatternIndices.length} tiles (${dims.cols}×${dims.rows})`);
+      console.log(`   ${wall}: ${newPatternIndices.length} tiles on WALL TILE grid (${dims.cols}×${dims.rows})`);
     });
     
-    console.log(`📊 Total tiles after shuffle: ${totalHighlighterTiles}`);
+    // ✅ REMOVED: No expectedPatternTileSize setting
     
-    // ✅ CRITICAL FIX: Use master texture reference (no cloning needed)
     setCustomTiles(prev => {
       const newCustomTiles = { ...prev };
       
@@ -8752,21 +10907,29 @@ const handleShuffleExistingPattern = useCallback(() => {
         const newMap = new Map<number, CustomTileData>();
         
         pattern.forEach(index => {
-          // ✅ CRITICAL: Use SAME master texture reference
+          const clonedTexture = lastAppliedTexture.clone();
+          clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+          clonedTexture.repeat.set(1, 1);
+          clonedTexture.offset.set(0, 0);
+          clonedTexture.needsUpdate = true;
+          
           newMap.set(index, {
-            texture: lastAppliedTexture,  // ✅ No clone() - just reference
-            size: { ...tileSize }  // Deep copy size only
+            texture: clonedTexture,
+            size: { 
+              width: highlighterSize!.width,   // ✅ Store highlighter size for reference
+              height: highlighterSize!.height
+            }
           });
         });
         
         newCustomTiles[wall] = newMap;
-        console.log(`   ✅ ${wall}: Applied ${newMap.size} texture references`);
+        console.log(`   ✅ ${wall}: ${newMap.size} highlighter tiles shuffled on wall grid`);
       });
       
       return newCustomTiles;
     });
-    
-    // ✅ Update tracking indices
+  
     setAllCustomTileIndices(prev => {
       const updated = { ...prev };
       
@@ -8775,7 +10938,6 @@ const handleShuffleExistingPattern = useCallback(() => {
         
         if (onHighlighterUpdate) {
           onHighlighterUpdate(wall, newIndices[wall]);
-          console.log(`   📤 Update sent for ${wall}: ${newIndices[wall].length} indices`);
         }
       });
       
@@ -8786,17 +10948,17 @@ const handleShuffleExistingPattern = useCallback(() => {
     setIsPatternShuffling(false);
     
     setSuccess(
-      `🔄 Pattern Shuffled Successfully!\n` +
+      `🔄 Pattern Shuffled!\n` +
       `${PATTERN_CONFIGS.find(p => p.type === nextPattern)?.name}\n` +
-      `${totalHighlighterTiles} tiles (${tileSize.width}×${tileSize.height}cm)`
+      `${totalHighlighterTiles} highlighter tiles (${highlighterSize!.width}×${highlighterSize!.height}cm)\n` +
+      `On wall grid: ${wallTile?.size.width || 30}×${wallTile?.size.height || 45}cm cells`
     );
     
     console.log('✅ SHUFFLE COMPLETE:', {
       pattern: nextPattern,
       totalTiles: totalHighlighterTiles,
-      walls: wallsToShuffle,
-      tileSize,
-      masterTextureReused: true
+      highlighterSize: `${highlighterSize!.width}×${highlighterSize!.height}cm`,
+      wallGridSize: `${wallTile?.size.width || 30}×${wallTile?.size.height || 45}cm`
     });
     
   }, 400);
@@ -8805,12 +10967,13 @@ const handleShuffleExistingPattern = useCallback(() => {
   customTiles, 
   currentPatternType, 
   roomType, 
-  lastAppliedTexture,  // ✅ CRITICAL: Added dependency
+  lastAppliedTexture,
   getNextPatternType, 
   getVisualWallDimensions,
   getTotalCustomTiles,
   onHighlighterUpdate,
-  wallTileHeight
+  wallTileHeight,
+  wallTile?.size  // ✅ Added wall tile size dependency
 ]);
 
   const handleShufflePattern = useCallback(() => {
@@ -8963,7 +11126,8 @@ const renderScene = () => {
           roomDimensions={scaledRoomConfig}
           furnitureScale={furnitureScale}
            wallTileHeight={wallTileHeight} 
-           highlightTileBorders={highlightTileBorders} 
+
+           highlightTileBorders={autoEnableBorders || highlightTileBorders} 
         />
       );
     case 'bathroom':
@@ -8983,7 +11147,7 @@ const renderScene = () => {
           roomDimensions={scaledRoomConfig}
           furnitureScale={furnitureScale}
            wallTileHeight={wallTileHeight} 
-           highlightTileBorders={highlightTileBorders} 
+           highlightTileBorders={autoEnableBorders || highlightTileBorders} 
         />
       );
   }
