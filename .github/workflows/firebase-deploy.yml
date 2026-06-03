@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     branches:
-      - main  # Agar tumhari branch "master" hai to main ki jagah master likh do
+      - main
 
 jobs:
   build_and_deploy:
@@ -27,6 +27,10 @@ jobs:
       
       - name: Create .env file
         run: |
+          echo "VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }}" >> .env
+          echo "VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}" >> .env
+          echo "VITE_JWT_SECRET=${{ secrets.VITE_JWT_SECRET }}" >> .env
+          echo "VITE_APP_ENV=production" >> .env
           echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
           echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
           echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}" >> .env
@@ -40,6 +44,8 @@ jobs:
           echo "VITE_CLOUDINARY_API_KEY=${{ secrets.VITE_CLOUDINARY_API_KEY }}" >> .env
           echo "VITE_CLOUDINARY_API_SECRET=${{ secrets.VITE_CLOUDINARY_API_SECRET }}" >> .env
           echo "VITE_CLOUDINARY_UPLOAD_PRESET=${{ secrets.VITE_CLOUDINARY_UPLOAD_PRESET }}" >> .env
+          echo "VITE_SKETCHFAB_API_KEY=${{ secrets.VITE_SKETCHFAB_API_KEY }}" >> .env
+          echo "VITE_SKETCHFAB_ENABLED=true" >> .env
       
       - name: Build Project
         run: npm run build
