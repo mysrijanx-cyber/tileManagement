@@ -7366,12 +7366,13 @@ useEffect(() => {
   const [searchParams] = useSearchParams();
   const viewMode = (searchParams.get('mode') as 'view' | 'highlighter') || 'view';
 const autoEnableBorders = viewMode === 'highlighter';
-  console.log('🎯 Enhanced3DViewer - Current Mode:', {
-    mode: viewMode,
-    isViewMode: viewMode === 'view',
-    isHighlighterMode: viewMode === 'highlighter',
-    roomType
-  });
+ // ✅ NEW: Debug viewMode
+console.log('🔍 DEBUG viewMode:', {
+  rawParam: searchParams.get('mode'),
+  viewMode: viewMode,
+  isView: viewMode === 'view',
+
+});
 
   // ═══════════════════════════════════════════════════════════
   // STATE MANAGEMENT (Same as before)
@@ -7394,7 +7395,7 @@ const [showMobileMenu, setShowMobileMenu] = useState(false);
     left: [],
     right: []
   });
-  
+  const [showTileBorders, setShowTileBorders] = useState(true);
   const [showFloorUploadModal, setShowFloorUploadModal] = useState(false);
   const [customFloorTexture, setCustomFloorTexture] = useState<string | undefined>(floorTile?.texture);
   const [customFloorSize, setCustomFloorSize] = useState(floorTile?.size || { width: 60, height: 60 });
@@ -11126,8 +11127,8 @@ const renderScene = () => {
           roomDimensions={scaledRoomConfig}
           furnitureScale={furnitureScale}
            wallTileHeight={wallTileHeight} 
-
-           highlightTileBorders={autoEnableBorders || highlightTileBorders} 
+   highlightTileBorders={viewMode === 'highlighter' && showTileBorders}
+          //  highlightTileBorders={autoEnableBorders || highlightTileBorders} 
         />
       );
     case 'bathroom':
@@ -11147,7 +11148,8 @@ const renderScene = () => {
           roomDimensions={scaledRoomConfig}
           furnitureScale={furnitureScale}
            wallTileHeight={wallTileHeight} 
-           highlightTileBorders={autoEnableBorders || highlightTileBorders} 
+          //  highlightTileBorders={autoEnableBorders || highlightTileBorders} 
+            highlightTileBorders={viewMode === 'highlighter' && showTileBorders}
         />
       );
   }
@@ -11437,14 +11439,50 @@ const renderScene = () => {
   </div>
 )}
 
-{/* ONLY Bottom-Right Utility Buttons Remain */}
+{/* ✅ FIXED: Bottom-Right Utility Buttons */}
 <div className="absolute bottom-2 right-2 flex gap-1.5 sm:gap-2 z-10">
+  {/* ✅ Border Toggle Button - ALWAYS in Highlighter Mode */}
+  {(() => {
+    const shouldShowButton = viewMode === 'highlighter';  // ✅ FIXED - no tile requirement
+    console.log('🎨 Border Button Logic:', {
+      viewMode,
+      totalCustomTiles,
+      shouldShowButton,
+      currentBorderState: showTileBorders
+    });
+    
+    if (!shouldShowButton) return null;
+    
+    return (
+      <button
+        onClick={() => {
+          console.log('🔄 Border Toggle Clicked - BEFORE:', showTileBorders);
+          setShowTileBorders(!showTileBorders);
+          console.log('🔄 Border Toggle Clicked - AFTER:', !showTileBorders);
+        }}
+        className={`${
+          showTileBorders 
+            ? 'bg-green-600/90 hover:bg-green-700' 
+            : 'bg-red-600/90 hover:bg-red-700'
+        } text-white p-2 sm:p-2.5 rounded-lg transition-all backdrop-blur-sm shadow-xl border-2 ${
+          showTileBorders ? 'border-green-400' : 'border-red-400'
+        } hover:scale-110 active:scale-95`}
+        title={showTileBorders ? 'Hide Tile Borders' : 'Show Tile Borders'}
+      >
+        {showTileBorders ? (
+          <Eye className="w-4 h-4" />
+        ) : (
+          <X className="w-4 h-4" />
+        )}
+      </button>
+    );
+  })()}
+
   {/* Info Button */}
   <button
     onClick={() => setShowControls(!showControls)}
     className="bg-black/80 text-white p-2 sm:p-2.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10 hover:scale-110 active:scale-95"
     title="Toggle Info"
-    aria-label="Toggle info"
   >
     <Info className="w-4 h-4" />
   </button>
@@ -11454,7 +11492,6 @@ const renderScene = () => {
     onClick={toggleFullscreen}
     className="bg-black/80 text-white p-2 sm:p-2.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10 hover:scale-110 active:scale-95"
     title="Toggle Fullscreen"
-    aria-label="Toggle fullscreen"
   >
     {isFullscreen ? (
       <Minimize2 className="w-4 h-4" />
@@ -11465,7 +11502,7 @@ const renderScene = () => {
 </div>
 
 {/* MODE INDICATOR BADGE (Keep at top-right) */}
-<div className="absolute top-2 right-2 z-10">
+{/* <div className="absolute top-2 right-2 z-10">
   <div className={`${
     viewMode === 'view' 
       ? 'bg-blue-600/90' 
@@ -11483,8 +11520,27 @@ const renderScene = () => {
       </>
     )}
   </div>
+</div> */}
+{/* MODE INDICATOR BADGE */}
+<div className="absolute top-2 right-2 z-10">
+  <div className={`${
+    viewMode === 'view' 
+      ? 'bg-blue-600/90'     // ✅ BLUE for View Mode
+      : 'bg-purple-600/90'   // ✅ PURPLE for Highlighter Mode
+  } backdrop-blur-sm text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2`}>
+    {viewMode === 'view' ? (
+      <>
+        <Eye className="w-3.5 h-3.5" />
+        <span className="text-xs font-semibold">View Mode</span>
+      </>
+    ) : (
+      <>
+        <Highlighter className="w-3.5 h-3.5" />
+        <span className="text-xs font-semibold">Highlighter Mode</span>
+      </>
+    )}
+  </div>
 </div>
-
 {/* CURRENT PATTERN INDICATOR (Keep if needed) */}
 {totalCustomTiles > 0 && !isPatternShuffling && !isGridMode && (
   <div className="absolute bottom-16 left-2 bg-black/90 text-white px-3 py-2 rounded-lg backdrop-blur-sm shadow-xl border border-white/10">

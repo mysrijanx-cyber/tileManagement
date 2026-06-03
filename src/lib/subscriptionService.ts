@@ -73,6 +73,32 @@ const calculateEndDate = (
   return endDate;
 };
 
+const ensureSubscriptionScanLimit = async (subscription: Subscription): Promise<Subscription> => {
+  if (subscription.scan_limit !== undefined || !subscription.plan_id) {
+    return subscription;
+  }
+
+  const plan = await getPlanById(subscription.plan_id);
+  if (!plan?.limits || plan.limits.max_scans === undefined) {
+    return subscription;
+  }
+
+  const scanLimit = plan.limits.max_scans;
+  subscription.scan_limit = scanLimit;
+
+  try {
+    await updateDoc(doc(db, 'subscriptions', subscription.id), {
+      scan_limit: scanLimit,
+      updated_at: new Date().toISOString()
+    });
+    console.log('✅ Hydrated missing scan_limit for subscription:', subscription.id);
+  } catch (error) {
+    console.warn('⚠️ Could not persist missing scan_limit for subscription:', subscription.id, error);
+  }
+
+  return subscription;
+};
+
 // ═══════════════════════════════════════════════════════════════
 // ✅ CREATE SUBSCRIPTION (WITH SCAN COUNT INIT)
 // ═══════════════════════════════════════════════════════════════
@@ -324,8 +350,10 @@ export const createSubscription = async (
       auto_renew: true,
       
       current_scan_count: 0,  // ✅ Initialize scan count
+      scan_limit: plan.limits?.max_scans ?? -1,
       
-      created_at: Timestamp.now().toDate().toISOString()
+      created_at: Timestamp.now().toDate().toISOString(),
+      updated_at: Timestamp.now().toDate().toISOString()
     };
     
     console.log('💾 Saving subscription to Firestore...');
@@ -456,6 +484,100 @@ export const createSubscription = async (
 // ✅ GET SELLER SUBSCRIPTION (WITH CACHE)
 // ═══════════════════════════════════════════════════════════════
 
+// export const getSellerSubscription = async (
+//   sellerId: string,
+//   forceRefresh: boolean = false
+// ): Promise<Subscription | null> => {
+//   try {
+//     console.log('🔍 Fetching subscription for seller:', sellerId, '(Force:', forceRefresh, ')');
+    
+//     // Check cache
+//     if (!forceRefresh) {
+//       const cached = subscriptionCache.get(sellerId);
+//       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+//         console.log('📦 Returning cached subscription:', cached.data.id);
+//         return cached.data;
+//       }
+//     }
+    
+//     if (!sellerId || sellerId.trim() === '') {
+//       console.warn('⚠️ Invalid seller ID');
+//       return null;
+//     }
+    
+//     // Try composite query first
+//     try {
+//       const q = query(
+//         collection(db, 'subscriptions'),
+//         where('seller_id', '==', sellerId),
+//         where('status', '==', 'active'),
+//         orderBy('created_at', 'desc'),
+//         limit(1)
+//       );
+      
+//       const snapshot = await getDocs(q);
+      
+//       if (!snapshot.empty) {
+//         const data = snapshot.docs[0].data();
+//         const subscription: Subscription = {
+//           id: snapshot.docs[0].id,
+//           ...data
+//         } as Subscription;
+        
+//         // Store in cache
+//         subscriptionCache.set(sellerId, {
+//           data: subscription,
+//           timestamp: Date.now()
+//         });
+        
+//         console.log('✅ Subscription found (composite query):', subscription.id);
+//         return subscription;
+//       }
+//     } catch (indexError) {
+//       console.warn('⚠️ Composite query failed, trying fallback...', indexError);
+      
+//       // Fallback: Simple query
+//       const simpleQuery = query(
+//         collection(db, 'subscriptions'),
+//         where('seller_id', '==', sellerId),
+//         where('status', '==', 'active')
+//       );
+      
+//       const simpleSnapshot = await getDocs(simpleQuery);
+      
+//       if (!simpleSnapshot.empty) {
+//         const subscriptions = simpleSnapshot.docs.map(doc => ({
+//           id: doc.id,
+//           ...doc.data()
+//         } as Subscription));
+        
+//         subscriptions.sort((a, b) => {
+//           const dateA = new Date(a.created_at).getTime();
+//           const dateB = new Date(b.created_at).getTime();
+//           return dateB - dateA;
+//         });
+        
+//         const subscription = subscriptions[0];
+        
+//         // Store in cache
+//         subscriptionCache.set(sellerId, {
+//           data: subscription,
+//           timestamp: Date.now()
+//         });
+        
+//         console.log('✅ Subscription found (fallback query):', subscription.id);
+//         return subscription;
+//       }
+//     }
+    
+//     console.log('ℹ️ No active subscription found');
+//     return null;
+    
+//   } catch (error: any) {
+//     console.error('❌ Error fetching subscription:', error);
+//     return null;
+//   }
+// };  
 export const getSellerSubscription = async (
   sellerId: string,
   forceRefresh: boolean = false
@@ -477,12 +599,12 @@ export const getSellerSubscription = async (
       return null;
     }
     
-    // Try composite query first
+    // ✅ FIX: Get ACTIVE subscription first (exclude "replaced")
     try {
       const q = query(
         collection(db, 'subscriptions'),
         where('seller_id', '==', sellerId),
-        where('status', '==', 'active'),
+        where('status', 'in', ['active', 'pending']),  // ✅ GET ACTIVE ONLY
         orderBy('created_at', 'desc'),
         limit(1)
       );
@@ -495,24 +617,23 @@ export const getSellerSubscription = async (
           id: snapshot.docs[0].id,
           ...data
         } as Subscription;
+        const hydratedSubscription = await ensureSubscriptionScanLimit(subscription);
         
-        // Store in cache
         subscriptionCache.set(sellerId, {
-          data: subscription,
+          data: hydratedSubscription,
           timestamp: Date.now()
         });
         
-        console.log('✅ Subscription found (composite query):', subscription.id);
-        return subscription;
+        console.log('✅ Subscription found:', hydratedSubscription.id, '- Status:', hydratedSubscription.status);
+        return hydratedSubscription;
       }
     } catch (indexError) {
-      console.warn('⚠️ Composite query failed, trying fallback...', indexError);
+      console.warn('⚠️ Query with status filter failed, trying simple query...', indexError);
       
-      // Fallback: Simple query
+      // ✅ FIX: Fallback - get all and filter in code
       const simpleQuery = query(
         collection(db, 'subscriptions'),
-        where('seller_id', '==', sellerId),
-        where('status', '==', 'active')
+        where('seller_id', '==', sellerId)
       );
       
       const simpleSnapshot = await getDocs(simpleQuery);
@@ -523,26 +644,52 @@ export const getSellerSubscription = async (
           ...doc.data()
         } as Subscription));
         
+        // ✅ Filter out "replaced" subscriptions - get active/pending
+        const activeSubscriptions = subscriptions.filter(sub => 
+          sub.status === 'active' || sub.status === 'pending'
+        );
+        
+        if (activeSubscriptions.length > 0) {
+          activeSubscriptions.sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return dateB - dateA;
+          });
+          
+          let subscription = activeSubscriptions[0];
+          subscription = await ensureSubscriptionScanLimit(subscription);
+          subscription = await ensureSubscriptionScanLimit(subscription);
+          
+          subscriptionCache.set(sellerId, {
+            data: subscription,
+            timestamp: Date.now()
+          });
+          
+          console.log('✅ Subscription found (filtered):', subscription.id, '- Status:', subscription.status);
+          return subscription;
+        }
+        
+        // ✅ If no active found, get latest regardless
         subscriptions.sort((a, b) => {
           const dateA = new Date(a.created_at).getTime();
           const dateB = new Date(b.created_at).getTime();
           return dateB - dateA;
         });
         
-        const subscription = subscriptions[0];
+        let subscription = subscriptions[0];
+        subscription = await ensureSubscriptionScanLimit(subscription);
         
-        // Store in cache
         subscriptionCache.set(sellerId, {
           data: subscription,
           timestamp: Date.now()
         });
         
-        console.log('✅ Subscription found (fallback query):', subscription.id);
+        console.log('✅ Subscription found (latest):', subscription.id, '- Status:', subscription.status);
         return subscription;
       }
     }
     
-    console.log('ℹ️ No active subscription found');
+    console.log('ℹ️ No subscription found');
     return null;
     
   } catch (error: any) {
@@ -551,30 +698,88 @@ export const getSellerSubscription = async (
   }
 };
 
+
+
 // ═══════════════════════════════════════════════════════════════
 // ✅ CHECK IF EXPIRED
 // ═══════════════════════════════════════════════════════════════
 
-export const isSubscriptionExpired = (subscription: Subscription): boolean => {
-  if (!subscription.end_date) {
-    console.warn('⚠️ No end_date in subscription');
+// export const isSubscriptionExpired = (subscription: Subscription): boolean => {
+//   if (!subscription.end_date) {
+//     console.warn('⚠️ No end_date in subscription');
+//     return true;
+//   }
+  
+//   const endDate = new Date(subscription.end_date);
+//   const now = new Date();
+  
+//   const isExpired = now > endDate;
+  
+//   console.log('🔍 Expiry check:', {
+//     endDate: endDate.toISOString(),
+//     now: now.toISOString(),
+//     isExpired
+//   });
+  
+//   return isExpired;
+// }; 
+
+/**
+ * ✅ COMPLETE EXPIRY CHECK - v13.0 PRODUCTION
+ * Checks: Status + Time + Scan Limit
+ */
+export const isSubscriptionExpired = (subscription: Subscription | null | undefined): boolean => {
+  if (!subscription) {
+    console.log('⚠️ [EXPIRY CHECK] No subscription provided - treating as expired');
     return true;
   }
-  
-  const endDate = new Date(subscription.end_date);
-  const now = new Date();
-  
-  const isExpired = now > endDate;
-  
-  console.log('🔍 Expiry check:', {
-    endDate: endDate.toISOString(),
-    now: now.toISOString(),
-    isExpired
-  });
-  
-  return isExpired;
-};
 
+  // ✅ FIX: Check status with proper type handling
+  const completedStatuses: string[] = ['completed', 'cancelled', 'replaced', 'expired'];
+  if (completedStatuses.includes(subscription.status)) {
+    console.log('✅ [EXPIRY CHECK] Status-based expiry:', subscription.status);
+    return true;
+  }
+
+  // Check time-based expiry
+  if (subscription.end_date) {
+    const now = new Date();
+    const endDate = new Date(subscription.end_date);
+    
+    if (now > endDate) {
+      console.log('✅ [EXPIRY CHECK] Time expired:', {
+        endDate: endDate.toISOString(),
+        now: now.toISOString()
+      });
+      return true;
+    }
+  }
+
+  // Check scan limit expiry
+  const scanLimit = subscription.scan_limit;
+  const currentCount = subscription.current_scan_count || 0;
+  
+  const hasLimit = typeof scanLimit === 'number' && scanLimit > 0;
+  const limitReached = typeof scanLimit === 'number' && scanLimit > 0 && currentCount >= scanLimit;
+
+  if (hasLimit && limitReached) {
+    console.log('✅ [EXPIRY CHECK] Scan limit reached:', {
+      used: currentCount,
+      limit: scanLimit
+    });
+    return true;
+  }
+
+  console.log('✅ [EXPIRY CHECK] Subscription is ACTIVE:', {
+    status: subscription.status,
+    scans: `${currentCount}/${scanLimit || '∞'}`,
+    timeLeft: subscription.end_date ? 
+      `${Math.ceil((new Date(subscription.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days` : 
+      'N/A'
+  });
+
+  return false;
+};
 // ═══════════════════════════════════════════════════════════════
 // ✅ GET DAYS UNTIL EXPIRY
 // ═══════════════════════════════════════════════════════════════
@@ -667,41 +872,28 @@ export const incrementScanCount = async (
       // Prepare update data
       const updateData: any = {
         current_scan_count: newCount,
+        scan_limit: maxScans,
         last_scan_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
       
-      // ✅ CRITICAL FIX: If limit reached exactly, mark as completed
-      if (maxScans !== -1 && newCount === maxScans) {
-        updateData.status = 'completed';
-        updateData.completed_at = new Date().toISOString();
-        updateData.completion_reason = 'scan_limit_reached';
-        
-        console.log('🔒 [LIMIT REACHED] Marking subscription as COMPLETED');
-        console.log(`   This was scan #${newCount} of ${maxScans}`);
-        console.log('   Status: active → completed');
-      }
-      
+      // Persist count (do NOT mark completed at equality - allow exactly maxScans)
       await updateDoc(subsRef, updateData);
-      
+
       console.log('✅ Count saved:', currentCount, '→', newCount);
-      
-      if (maxScans !== -1 && newCount === maxScans) {
-        console.log('⚠️ [SUBSCRIPTION EXPIRED] Scan limit reached');
-        console.log('   Next scan will be BLOCKED');
-        console.log('   Banner will show "Plan Expired"');
-      } else if (maxScans !== -1) {
-        console.log('📊 Remaining:', (maxScans - newCount), 'scans');
+
+      if (maxScans !== -1) {
+        console.log('📊 Remaining:', Math.max(0, maxScans - newCount), 'scans');
       }
-      
+
       clearSubscriptionCache(sellerId);
       console.log('═══════════════════════════════════════════════════════');
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         newCount,
-        limitReached: newCount === maxScans,
-        subscriptionExpired: newCount === maxScans
+        limitReached: false,
+        subscriptionExpired: false
       };
     }
     
@@ -733,8 +925,8 @@ export const getRemainingScanCount = async (
         remaining: 0, 
         total: 0, 
         used: 0, 
-        unlimited: true,
-        limitReached: false
+        unlimited: false,
+        limitReached: true
       };
     }
     
@@ -744,9 +936,9 @@ export const getRemainingScanCount = async (
       return { 
         remaining: 0, 
         total: 0, 
-        used: 0, 
-        unlimited: true,
-        limitReached: false
+        used: subscription.current_scan_count || 0, 
+        unlimited: false,
+        limitReached: true
       };
     }
     

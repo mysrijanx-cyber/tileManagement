@@ -2,7 +2,7 @@
 // console.log('✅ BillingTab Component loaded - PRODUCTION v6.0 - FIXED FONTS & AMOUNT'); 
 import React, { useState, useEffect } from 'react';
 import { Download, CreditCard, Calendar, CheckCircle, Loader, Receipt, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getSellerPayments, clearPaymentCache } from '../lib/paymentService';
+// import { getSellerPayments, clearPaymentCache } from '../lib/paymentService';
 import { getPlanById } from '../lib/planService';
 import type { Payment } from '../types/payment.types';
 import { jsPDF } from 'jspdf';

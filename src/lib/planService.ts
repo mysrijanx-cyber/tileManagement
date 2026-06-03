@@ -493,7 +493,7 @@ const updatePlan = async (
 // ✅ HARD DELETE ONLY (Production Ready)
 // ═══════════════════════════════════════════════════════════════
 
-const deletePlan = async (planId: string): Promise<ServiceResponse> => {
+const deletePlan = async (planId: string): Promise<ServiceResponse<string>> => {
   try {
     console.log('🗑️ Deleting plan:', planId);
     
