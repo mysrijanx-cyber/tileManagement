@@ -1331,6 +1331,182 @@ const TiledWall: React.FC<{
 //     </group>
 //   );
 // }; 
+// const IndividualTile: React.FC<{
+//   tileData: TileData;
+//   baseTexture: THREE.Texture | null;
+//   customTileData: CustomTileData | null;
+//   baseTileSize: { width: number; height: number };
+//   isSelected: boolean;
+//   isGridMode: boolean;
+//   onTileClick: (index: number) => void;
+//   highlightBorders?: boolean;
+// }> = ({ 
+//   tileData, 
+//   baseTexture, 
+//   customTileData,
+//   baseTileSize,
+//   isSelected, 
+//   isGridMode, 
+//   onTileClick, 
+//   highlightBorders = false 
+// }) => {
+//   const meshRef = useRef<THREE.Mesh>(null);
+
+//   // ✅ PERFECTED MATERIAL LOGIC
+//   const material = useMemo(() => {
+//     // 1. Khali Grid Box (No custom tile applied yet)
+//     if (!customTileData) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: isSelected ? '#10b981' : '#ffffff',
+//         side: THREE.DoubleSide,
+//         transparent: true,      // ✅ Transparent rahega
+//         opacity: isSelected ? 0.4 : 0.0, // ✅ Sirf select hone par green dikhega, warna bilkul invisible (0.0)
+//         depthWrite: false,      // ✅ Piche ki blue/base wall ko clearly dikhne dega
+//         toneMapped: false
+//       });
+//     }
+
+//     // 2. Custom Highlighter Tile (Texture ke saath)
+//     return new THREE.MeshBasicMaterial({ 
+//       map: customTileData.texture, // ✅ Yahan actual image lagegi
+//       side: THREE.DoubleSide,
+//       toneMapped: false,
+//       depthWrite: true,
+//       depthTest: true,
+//       transparent: false, // ✅ Highlighter solid hona chahiye
+//       // ✅ Overlap Z-fighting (flicker) rokne ke liye
+//       polygonOffset: true,
+//       polygonOffsetFactor: -2,
+//       polygonOffsetUnits: -2
+//     });
+//   }, [customTileData, isSelected]);
+
+//   // Memory Clean up
+//   useEffect(() => {
+//     return () => {
+//       material.dispose();
+//     };
+//   }, [material]);
+
+//   // ✅ DYNAMIC SIZE CALCULATION
+//   const tileSizeM = useMemo(() => {
+//     const activeWidth = customTileData?.size?.width || baseTileSize.width;
+//     const activeHeight = customTileData?.size?.height || baseTileSize.height;
+
+//     return {
+//       width: activeWidth / 100,
+//       height: activeHeight / 100
+//     };
+//   }, [baseTileSize, customTileData]);
+
+//   // ✅ Z-OFFSET FIX
+//   const zPosition = customTileData ? 0.005 : 0;
+
+//   return (
+//     <group position={tileData.position}>
+//       {/* MAIN TILE MESH */}
+//       <mesh 
+//         ref={meshRef}
+//         position={[0, 0, zPosition]}
+//         userData={{ tileIndex: tileData.index }}
+//         onClick={(e) => {
+//           e.stopPropagation();
+//           if (isGridMode) {
+//             onTileClick(tileData.index);
+//           }
+//         }}
+//       >
+//         <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+//         <primitive object={material} attach="material" />
+//       </mesh>
+
+//       {/* GRID MODE SELECTION BORDER */}
+//       {isGridMode && (
+//         <lineSegments position={[0, 0, 0.002]}>
+//           <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
+//           <lineBasicMaterial 
+//             color={isSelected ? "#10b981" : "#666666"} 
+//             opacity={1} 
+//             transparent={false} 
+//           />
+//         </lineSegments>
+//       )}
+
+//       {/* HIGHLIGHTER CUSTOM BLACK BORDERS */}
+//       {highlightBorders && !isGridMode && customTileData && (
+//         <>
+//           <mesh position={[0, tileSizeM.height / 2, zPosition + 0.001]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           <mesh position={[0, -tileSizeM.height / 2, zPosition + 0.001]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           <mesh position={[-tileSizeM.width / 2, 0, zPosition + 0.001]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+          
+//           <mesh position={[tileSizeM.width / 2, 0, zPosition + 0.001]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//         </>
+//       )}
+
+//       {/* GRID MODE NUMBER */}
+//       {isGridMode && (
+//         <Text
+//           position={[0, 0, 0.003]} 
+//           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
+//           color="#000000"
+//           anchorX="center"
+//           anchorY="middle"
+//           outlineWidth={0.005}
+//           outlineColor="#ffffff"
+//         >
+//           {tileData.index}
+//         </Text>
+//       )}
+
+//       {/* SELECTION INDICATORS */}
+//       {isSelected && (
+//         <>
+//           <lineSegments position={[0, 0, 0.004]}>
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
+//             <lineBasicMaterial color="#10b981" linewidth={4} opacity={1} transparent={false} />
+//           </lineSegments>
+          
+//           <lineSegments position={[0, 0, 0.005]}>
+//             <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
+//             <lineBasicMaterial color="#22c55e" linewidth={3} opacity={1} transparent={false} />
+//           </lineSegments>
+
+//           <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
+//             <circleGeometry args={[0.03, 16]} />
+//             <meshBasicMaterial color="#10b981" />
+//           </mesh>
+//         </>
+//       )}
+//     </group>
+//   );
+// }; 
+
 const IndividualTile: React.FC<{
   tileData: TileData;
   baseTexture: THREE.Texture | null;
@@ -1354,41 +1530,37 @@ const IndividualTile: React.FC<{
 
   // ✅ PERFECTED MATERIAL LOGIC
   const material = useMemo(() => {
-    // 1. Khali Grid Box (No custom tile applied yet)
     if (!customTileData) {
       return new THREE.MeshBasicMaterial({ 
-        color: isSelected ? '#10b981' : '#ffffff',
+        color: '#ffffff',
         side: THREE.DoubleSide,
-        transparent: true,      // ✅ Transparent rahega
-        opacity: isSelected ? 0.4 : 0.0, // ✅ Sirf select hone par green dikhega, warna bilkul invisible (0.0)
-        depthWrite: false,      // ✅ Piche ki blue/base wall ko clearly dikhne dega
+        transparent: true,      
+        opacity: 0.0, // Invisible base
+        depthWrite: false,      
         toneMapped: false
       });
     }
 
-    // 2. Custom Highlighter Tile (Texture ke saath)
     return new THREE.MeshBasicMaterial({ 
-      map: customTileData.texture, // ✅ Yahan actual image lagegi
+      map: customTileData.texture, 
       side: THREE.DoubleSide,
       toneMapped: false,
       depthWrite: true,
       depthTest: true,
-      transparent: false, // ✅ Highlighter solid hona chahiye
-      // ✅ Overlap Z-fighting (flicker) rokne ke liye
+      transparent: false, 
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2
     });
-  }, [customTileData, isSelected]);
+  }, [customTileData]);
 
-  // Memory Clean up
   useEffect(() => {
     return () => {
       material.dispose();
     };
   }, [material]);
 
-  // ✅ DYNAMIC SIZE CALCULATION
+  // ✅ DYNAMIC TILE SIZE CALCULATION
   const tileSizeM = useMemo(() => {
     const activeWidth = customTileData?.size?.width || baseTileSize.width;
     const activeHeight = customTileData?.size?.height || baseTileSize.height;
@@ -1399,7 +1571,6 @@ const IndividualTile: React.FC<{
     };
   }, [baseTileSize, customTileData]);
 
-  // ✅ Z-OFFSET FIX
   const zPosition = customTileData ? 0.005 : 0;
 
   return (
@@ -1420,36 +1591,21 @@ const IndividualTile: React.FC<{
         <primitive object={material} attach="material" />
       </mesh>
 
-      {/* GRID MODE SELECTION BORDER */}
-      {isGridMode && (
-        <lineSegments position={[0, 0, 0.002]}>
-          <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width, tileSizeM.height)]} />
-          <lineBasicMaterial 
-            color={isSelected ? "#10b981" : "#666666"} 
-            opacity={1} 
-            transparent={false} 
-          />
-        </lineSegments>
-      )}
-
-      {/* HIGHLIGHTER CUSTOM BLACK BORDERS */}
+      {/* HIGHLIGHTER CUSTOM BLACK BORDERS (Only shows in view mode) */}
       {highlightBorders && !isGridMode && customTileData && (
         <>
           <mesh position={[0, tileSizeM.height / 2, zPosition + 0.001]}>
             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
             <meshBasicMaterial color="#000000" />
           </mesh>
-          
           <mesh position={[0, -tileSizeM.height / 2, zPosition + 0.001]}>
             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
             <meshBasicMaterial color="#000000" />
           </mesh>
-          
           <mesh position={[-tileSizeM.width / 2, 0, zPosition + 0.001]}>
             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
             <meshBasicMaterial color="#000000" />
           </mesh>
-          
           <mesh position={[tileSizeM.width / 2, 0, zPosition + 0.001]}>
             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
             <meshBasicMaterial color="#000000" />
@@ -1457,51 +1613,25 @@ const IndividualTile: React.FC<{
         </>
       )}
 
-      {/* GRID MODE NUMBER */}
+      {/* ✅ THE ULTIMATE CLEAN UI: Just Text changing color */}
       {isGridMode && (
         <Text
-          position={[0, 0, 0.003]} 
-          fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.22}
-          color="#000000"
+          // X: 0, Y: 0 rakha hai taaki hamesha tile ke beecho-beech rahe
+          position={[0, 0, zPosition + 0.005]} 
+          fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.28}
+          
+          // UI Colors: Unselected = Soft Black (#333333), Selected = Modern Green (#10b981)
+          color={isSelected ? "#10b981" : "#333333"} 
+          
           anchorX="center"
           anchorY="middle"
-          outlineWidth={0.005}
+          
+          // White outline di hai taaki dark diwar par bhi number clearly padhne mein aaye
+          outlineWidth={0.015} 
           outlineColor="#ffffff"
         >
           {tileData.index}
         </Text>
-      )}
-
-      {/* SELECTION INDICATORS */}
-      {isSelected && (
-        <>
-          <lineSegments position={[0, 0, 0.004]}>
-            <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.08, tileSizeM.height * 1.08)]} />
-            <lineBasicMaterial color="#10b981" linewidth={4} opacity={1} transparent={false} />
-          </lineSegments>
-          
-          <lineSegments position={[0, 0, 0.005]}>
-            <edgesGeometry args={[new THREE.PlaneGeometry(tileSizeM.width * 1.05, tileSizeM.height * 1.05)]} />
-            <lineBasicMaterial color="#22c55e" linewidth={3} opacity={1} transparent={false} />
-          </lineSegments>
-
-          <mesh position={[tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
-            <circleGeometry args={[0.03, 16]} />
-            <meshBasicMaterial color="#10b981" />
-          </mesh>
-          <mesh position={[-tileSizeM.width * 0.4, tileSizeM.height * 0.4, 0.006]}>
-            <circleGeometry args={[0.03, 16]} />
-            <meshBasicMaterial color="#10b981" />
-          </mesh>
-          <mesh position={[tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
-            <circleGeometry args={[0.03, 16]} />
-            <meshBasicMaterial color="#10b981" />
-          </mesh>
-          <mesh position={[-tileSizeM.width * 0.4, -tileSizeM.height * 0.4, 0.006]}>
-            <circleGeometry args={[0.03, 16]} />
-            <meshBasicMaterial color="#10b981" />
-          </mesh>
-        </>
       )}
     </group>
   );
@@ -4193,88 +4323,656 @@ const [showTileBorders, setShowTileBorders] = useState(false);
   );
 };
 
+// const TileUploadOptionsModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onTileSelected: (tileData: TileUploadData) => void;
+//    currentUser?: any;
+// }> = ({ isOpen, onClose, onTileSelected ,currentUser}) => {
+  
+//   const [mode, setMode] = useState<UploadMode>('select');
+//   const [manualCode, setManualCode] = useState('');
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+//   const [isMobile, setIsMobile] = useState(false);
+
+//   useEffect(() => {
+//     setIsMobile(/mobile|android|iphone|ipad/i.test(navigator.userAgent));
+//   }, []);
+
+//   if (!isOpen) return null;
+
+
+// if (mode === 'qr') {
+//   return (
+//     <QRScanner
+//       currentUser={currentUser}
+//       onScanSuccess={async (qrData) => {
+//         console.log('🎯 QR Scanned for wall tile:', qrData);
+        
+//         try {
+//           setIsLoading(true);
+//           setError(null);
+          
+//           let tileData: any = null;
+          
+//           if (qrData.tileId) {
+//             const tileId = qrData.tileId.trim();
+//             tileData = await getTileById(tileId);
+            
+//             if (!tileData) {
+//               const result = await getTileByCode(tileId);
+//               if (result.success && result.tile) {
+//                 tileData = result.tile;
+//               }
+//             }
+//           }
+          
+//           if (tileData && (tileData.imageUrl || tileData.image_url)) {
+//             // ✅ FIXED: Better user fallback
+//             const userForVerification = currentUser || (auth.currentUser ? {
+//               uid: auth.currentUser.uid,
+//               user_id: auth.currentUser.uid,  // ✅ ADD THIS
+//               email: auth.currentUser.email,
+//               role: 'worker'
+//             } : null);
+            
+//             // 🔒 PRODUCTION SECURITY: Verify seller ownership
+//             if (!verifyTileSeller(tileData, userForVerification)) {
+//               const tileSellerId = (tileData as any)?.seller_id || 
+//                                    (tileData as any)?.sellerId || 
+//                                    'unknown';
+              
+//               console.error('❌ BLOCKED: Wall tile QR scan - unauthorized seller', {
+//                 method: 'QR_SCAN',
+//                 tileId: tileData.id || 'unknown',
+//                 tileName: tileData.name || 'unknown',
+//                 tileSeller: tileSellerId,
+//                 workerSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
+//                 blocked: true,
+//                 timestamp: new Date().toISOString()
+//               });
+              
+//               setError(
+//                 `⛔ BLOCKED: This tile belongs to another seller.\n\n` +
+//                 `You can only scan QR codes of your own seller's tiles for walls.`
+//               );
+//               setIsLoading(false);
+//               return;
+//             }
+            
+//             // ✅ Seller verified - proceed
+//             const imageUrl = tileData.imageUrl || tileData.image_url;
+            
+//             onTileSelected({
+//               imageUrl: imageUrl,
+//               tileId: tileData.id,
+//               tileName: tileData.name,
+//               size: { 
+//                 width: tileData.size_width || 30, 
+//                 height: tileData.size_height || 45 
+//               }
+//             });
+            
+//             setMode('select');
+//             onClose();
+            
+//             console.log('✅ Wall tile applied from QR scan (seller verified):', tileData.name);
+//           } else {
+//             setError('Tile not found or no image available');
+//           }
+          
+//         } catch (err) {
+//           console.error('❌ QR scan error:', err);
+//           setError('Failed to load tile from QR code');
+//         } finally {
+//           setIsLoading(false);
+//         }
+//       }}
+//       onClose={() => {
+//         setMode('select');
+//         setError(null);
+//       }}
+//     />
+//   );
+// }
+
+
+// // ═══════════════════════════════════════════════════════════
+// if (mode === 'manual') {
+ 
+// const handleManualSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
+  
+//   if (!manualCode.trim()) {
+//     setError('Please enter a tile code');
+//     return;
+//   }
+
+//   try {
+//     setIsLoading(true);
+//     setError(null);
+    
+//     console.log('🔍 Searching wall tile by code:', manualCode.trim());
+    
+//     const result = await getTileByCode(manualCode.trim().toUpperCase());
+    
+//     if (result.success && result.tile) {
+//       const tileData = result.tile;
+      
+//       // ✅ FIXED: Better user fallback
+//       const userForVerification = currentUser || (auth.currentUser ? {
+//         uid: auth.currentUser.uid,
+//         user_id: auth.currentUser.uid,  // ✅ ADD THIS
+//         email: auth.currentUser.email,
+//         role: 'worker'
+//       } : null);
+      
+//       // 🔒 PRODUCTION SECURITY: Verify seller ownership
+//       if (!verifyTileSeller(tileData, userForVerification)) {
+//         const tileSellerId = (tileData as any)?.seller_id || 
+//                              (tileData as any)?.sellerId || 
+//                              'unknown';
+        
+//         console.error('❌ BLOCKED: Wall tile manual code - unauthorized seller', {
+//           method: 'MANUAL_CODE',
+//           inputCode: manualCode.trim().toUpperCase(),
+//           tileId: tileData.id || 'unknown',
+//           tileName: tileData.name || 'unknown',
+//           tileSeller: tileSellerId,
+//           workerSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
+//           blocked: true,
+//           timestamp: new Date().toISOString()
+//         });
+        
+//         setError(
+//           `⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.\n\n` +
+//           `Code: ${manualCode.trim().toUpperCase()}\n\n` +
+//           `You can only use tile codes from your own seller's inventory.`
+//         );
+//         setIsLoading(false);
+//         return;
+//       }
+      
+//       // ✅ Seller verified - proceed
+//       const imageUrl = tileData.imageUrl || tileData.image_url;
+      
+//       if (imageUrl) {
+//         onTileSelected({
+//           imageUrl: imageUrl,
+//           tileId: tileData.id,
+//           tileName: tileData.name,
+//           size: { 
+//             width: tileData.size_width || 30, 
+//             height: tileData.size_height || 45 
+//           }
+//         });
+        
+//         setMode('select');
+//         setManualCode('');
+//         onClose();
+        
+//         console.log('✅ Wall tile applied from manual code (seller verified):', tileData.name);
+//       } else {
+//         setError('Tile found but no image available');
+//       }
+//     } else {
+//       setError(result.error || 'Tile not found. Please check the code.');
+//     }
+    
+//   } catch (err) {
+//     console.error('❌ Manual search error:', err);
+//     setError('Failed to search tile. Please try again.');
+//   } finally {
+//     setIsLoading(false);
+//   }
+// };
+
+
+
+
+
+//   // Continue with manual mode UI rendering...
+//   return (
+//     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+//       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//             <Hash className="w-6 h-6 text-purple-600" />
+//             Enter Tile Code
+//           </h3>
+//           <button 
+//             onClick={() => {
+//               setMode('select');
+//               setError(null);
+//               setManualCode('');
+//             }} 
+//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//           >
+//             <X className="w-5 h-5" />
+//           </button>
+//         </div>
+
+//         {error && (
+//           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//             <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
+//           </div>
+//         )}
+
+//         <form onSubmit={handleManualSubmit} className="space-y-4">
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-2">
+//               Tile Code / SKU / Product ID
+//             </label>
+//             <input
+//               type="text"
+//               value={manualCode}
+//               onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+//               placeholder="e.g., MAR60X60WH, TILE-001"
+//               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+//               autoFocus
+//               disabled={isLoading}
+//               autoComplete="off"
+//               autoCapitalize="characters"
+//             />
+//             <p className="mt-1 text-xs text-gray-500">
+//               Enter the unique code printed on the tile or box
+//             </p>
+//           </div>
+
+//           <button
+//             type="submit"
+//             disabled={!manualCode.trim() || isLoading}
+//             className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+//           >
+//             {isLoading ? (
+//               <>
+//                 <Loader className="w-5 h-5 animate-spin" />
+//                 Searching...
+//               </>
+//             ) : (
+//               <>
+//                 <Hash className="w-5 h-5" />
+//                 Search Tile
+//               </>
+//             )}
+//           </button>
+//         </form>
+
+//         <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
+//           <p className="font-semibold mb-1">💡 Where to find tile code?</p>
+//           <ul className="space-y-0.5 ml-4 list-disc">
+//             <li>Check the label on the tile box</li>
+//             <li>Look for code near the QR sticker</li>
+//             <li>Ask showroom staff for the code</li>
+//             <li>Usually format: ABC123 or TILE-001</li>
+//           </ul>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+//   if (mode === 'upload') {
+//     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+//       const file = e.target.files?.[0];
+//       if (!file) return;
+
+//       if (!file.type.startsWith('image/')) {
+//         setError('Please select a valid image file');
+//         return;
+//       }
+
+//       if (file.size > 10 * 1024 * 1024) {
+//         setError('Image size must be less than 10MB');
+//         return;
+//       }
+
+//       const imageUrl = URL.createObjectURL(file);
+      
+//       onTileSelected({
+//         imageUrl: imageUrl,
+//         tileId: 'CUSTOM_' + Date.now(),
+//         tileName: file.name.split('.')[0],
+//         size: { width: 30, height: 45 }
+//       });
+      
+//       setMode('select');
+//       onClose();
+      
+//       console.log('✅ Custom image uploaded:', file.name);
+//     };
+
+//     return (
+//       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+//           <div className="flex items-center justify-between mb-6">
+//             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//               <Upload className="w-6 h-6 text-blue-600" />
+//               Upload Tile Image
+//             </h3>
+//             <button 
+//               onClick={() => {
+//                 setMode('select');
+//                 setError(null);
+//               }} 
+//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//             >
+//               <X className="w-5 h-5" />
+//             </button>
+//           </div>
+
+//           {error && (
+//             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//               <p className="text-red-700 text-sm">{error}</p>
+//             </div>
+//           )}
+
+//           <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
+//             <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+//               <Upload className="w-10 h-10 text-white" />
+//             </div>
+            
+//             <p className="text-gray-700 font-medium mb-2">
+//               {isMobile ? 'Tap to upload tile image' : 'Click to upload tile image'}
+//             </p>
+//             <p className="text-gray-500 text-sm mb-4">
+//               JPG, PNG, or WebP (Max 10MB)
+//             </p>
+            
+//             <input
+//               ref={fileInputRef}
+//               type="file"
+//               accept="image/*"
+//               onChange={handleFileUpload}
+//               className="hidden"
+//             />
+            
+//             <button
+//               onClick={() => fileInputRef.current?.click()}
+//               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 mx-auto"
+//             >
+//               <ImageIcon className="w-5 h-5" />
+//               Choose Image
+//             </button>
+//           </div>
+
+//           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+//             <p><strong>💡 Tip:</strong> Use high-quality images for best 3D visualization results.</p>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   // ═══════════════════════════════════════════════════════════
+//   // DEFAULT: OPTION SELECTOR (3 Cards)
+//   // ═══════════════════════════════════════════════════════════
+//   return (
+//     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+//       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800">Choose Tile Source</h3>
+//           <button 
+//             onClick={onClose} 
+//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//           >
+//             <X className="w-5 h-5 text-gray-600" />
+//           </button>
+//         </div>
+
+//         <p className="text-sm text-gray-600 mb-4">
+//           Select how you want to add tiles to your selection
+//         </p>
+
+//         <div className="space-y-3">
+//           {/* Option 1: Upload Image */}
+//           {/* <button
+//             onClick={() => {
+//               setMode('upload');
+//               setError(null);
+//             }}
+//             className="w-full p-4 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all text-left group"
+//           >
+//             <div className="flex items-center gap-3">
+//               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
+//                 <Upload className="w-6 h-6 text-white" />
+//               </div>
+//               <div className="flex-1 min-w-0">
+//                 <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+//                   📤 Upload Image
+//                 </h4>
+//                 <p className="text-xs text-gray-500">Choose custom tile image from device</p>
+//               </div>
+//               <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+//                 →
+//               </div>
+//             </div>
+//           </button> */}
+
+//           {/* Option 2: Scan QR Code */}
+//           <button
+//             onClick={() => {
+//               setMode('qr');
+//               setError(null);
+//             }}
+//             className="w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-left group"
+//           >
+//             <div className="flex items-center gap-3">
+//               <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
+//                 <QrCode className="w-6 h-6 text-white" />
+//               </div>
+//               <div className="flex-1 min-w-0">
+//                 <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors">
+//                   🔲 Scan QR Code
+//                 </h4>
+//                 <p className="text-xs text-gray-500">Use camera or upload QR image</p>
+//               </div>
+//               <div className="text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+//                 →
+//               </div>
+//             </div>
+//           </button>
+
+//           {/* Option 3: Enter Tile Code */}
+//           {/* <button
+//             onClick={() => {
+//               setMode('manual');
+//               setError(null);
+//             }}
+//             className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl border-2 border-green-200 hover:border-green-400 transition-all text-left group"
+//           >
+//             <div className="flex items-center gap-3">
+//               <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center flex-shrink-0">
+//                 <Hash className="w-6 h-6 text-white" />
+//               </div>
+//               <div className="flex-1 min-w-0">
+//                 <h4 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors">
+//                   🔢 Enter Tile Code
+//                 </h4>
+//                 <p className="text-xs text-gray-500">Manual SKU/product code entry</p>
+//               </div>
+//               <div className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
+//                 →
+//               </div>
+//             </div>
+//           </button> */}
+//         </div>
+
+//         <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
+//           <p className="font-semibold mb-1">ℹ️ Quick Guide:</p>
+//           <ul className="space-y-0.5 ml-4 list-disc">
+          
+//             <li><strong>QR Scan:</strong> For tiles with QR codes (fastest)</li>
+           
+//           </ul>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
 const TileUploadOptionsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onTileSelected: (tileData: TileUploadData) => void;
-   currentUser?: any;
-}> = ({ isOpen, onClose, onTileSelected ,currentUser}) => {
+  currentUser?: any;
+}> = ({ isOpen, onClose, onTileSelected, currentUser }) => {
   
-  const [mode, setMode] = useState<UploadMode>('select');
+  // ✅ CHANGED: Default mode ab 'select' ki jagah direct 'qr' hai
+  const [mode, setMode] = useState<UploadMode>('qr'); 
   const [manualCode, setManualCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
 
+  // ✅ NEW: Jab bhi modal open hoga, humesha direct QR mode mein aayega
   useEffect(() => {
-    setIsMobile(/mobile|android|iphone|ipad/i.test(navigator.userAgent));
-  }, []);
+    if (isOpen) {
+      setMode('qr');
+      setError(null);
+      setManualCode('');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-
-if (mode === 'qr') {
-  return (
-    <QRScanner
-      currentUser={currentUser}
-      onScanSuccess={async (qrData) => {
-        console.log('🎯 QR Scanned for wall tile:', qrData);
-        
-        try {
-          setIsLoading(true);
-          setError(null);
-          
-          let tileData: any = null;
-          
-          if (qrData.tileId) {
-            const tileId = qrData.tileId.trim();
-            tileData = await getTileById(tileId);
+  // ═══════════════════════════════════════════════════════════
+  // DIRECT QR SCANNER MODE
+  // ═══════════════════════════════════════════════════════════
+  if (mode === 'qr') {
+    return (
+      <>
+        <QRScanner
+          currentUser={currentUser}
+          onScanSuccess={async (qrData) => {
+            console.log('🎯 QR Scanned for wall tile:', qrData);
             
-            if (!tileData) {
-              const result = await getTileByCode(tileId);
-              if (result.success && result.tile) {
-                tileData = result.tile;
+            try {
+              setIsLoading(true);
+              setError(null);
+              
+              let tileData: any = null;
+              
+              if (qrData.tileId) {
+                const tileId = qrData.tileId.trim();
+                tileData = await getTileById(tileId);
+                
+                if (!tileData) {
+                  const result = await getTileByCode(tileId);
+                  if (result.success && result.tile) {
+                    tileData = result.tile;
+                  }
+                }
               }
+              
+              if (tileData && (tileData.imageUrl || tileData.image_url)) {
+                const userForVerification = currentUser || (auth.currentUser ? {
+                  uid: auth.currentUser.uid,
+                  user_id: auth.currentUser.uid,
+                  email: auth.currentUser.email,
+                  role: 'worker'
+                } : null);
+                
+                // 🔒 PRODUCTION SECURITY: Verify seller ownership
+                if (!verifyTileSeller(tileData, userForVerification)) {
+                  setError(
+                    `⛔ BLOCKED: This tile belongs to another seller.\n\n` +
+                    `You can only scan QR codes of your own seller's tiles for walls.`
+                  );
+                  setIsLoading(false);
+                  return;
+                }
+                
+                // ✅ Seller verified - proceed
+                const imageUrl = tileData.imageUrl || tileData.image_url;
+                
+                onTileSelected({
+                  imageUrl: imageUrl,
+                  tileId: tileData.id,
+                  tileName: tileData.name,
+                  size: { 
+                    width: tileData.size_width || 30, 
+                    height: tileData.size_height || 45 
+                  }
+                });
+                
+                onClose(); // ✅ Modal close after success
+                console.log('✅ Wall tile applied from QR scan (seller verified):', tileData.name);
+              } else {
+                setError('Tile not found or no image available');
+              }
+              
+            } catch (err) {
+              console.error('❌ QR scan error:', err);
+              setError('Failed to load tile from QR code');
+            } finally {
+              setIsLoading(false);
             }
+          }}
+          onClose={() => {
+            onClose(); // ✅ Back jane ki jagah poora modal close hoga
+          }}
+        />
+
+        {/* ✅ PRO TIP: Floating "Manual Entry" Button over the Scanner */}
+        <div className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[60] animate-slideUp">
+          <button 
+            onClick={() => setMode('manual')}
+            className="bg-black/80 text-white px-5 py-2.5 rounded-full font-semibold text-sm shadow-2xl border border-white/20 backdrop-blur-md flex items-center gap-2 hover:bg-black transition-all active:scale-95"
+          >
+            <Hash className="w-4 h-4" />
+            Enter Code Manually
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // MANUAL CODE ENTRY MODE (Fallback)
+  // ═══════════════════════════════════════════════════════════
+  if (mode === 'manual') {
+    const handleManualSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (!manualCode.trim()) {
+        setError('Please enter a tile code');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const result = await getTileByCode(manualCode.trim().toUpperCase());
+        
+        if (result.success && result.tile) {
+          const tileData = result.tile;
+          
+          const userForVerification = currentUser || (auth.currentUser ? {
+            uid: auth.currentUser.uid,
+            user_id: auth.currentUser.uid,
+            email: auth.currentUser.email,
+            role: 'worker'
+          } : null);
+          
+          // 🔒 Verify seller ownership
+          if (!verifyTileSeller(tileData, userForVerification)) {
+            setError(
+              `⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.\n\n` +
+              `You can only use tile codes from your own seller's inventory.`
+            );
+            setIsLoading(false);
+            return;
           }
           
-          if (tileData && (tileData.imageUrl || tileData.image_url)) {
-            // ✅ FIXED: Better user fallback
-            const userForVerification = currentUser || (auth.currentUser ? {
-              uid: auth.currentUser.uid,
-              user_id: auth.currentUser.uid,  // ✅ ADD THIS
-              email: auth.currentUser.email,
-              role: 'worker'
-            } : null);
-            
-            // 🔒 PRODUCTION SECURITY: Verify seller ownership
-            if (!verifyTileSeller(tileData, userForVerification)) {
-              const tileSellerId = (tileData as any)?.seller_id || 
-                                   (tileData as any)?.sellerId || 
-                                   'unknown';
-              
-              console.error('❌ BLOCKED: Wall tile QR scan - unauthorized seller', {
-                method: 'QR_SCAN',
-                tileId: tileData.id || 'unknown',
-                tileName: tileData.name || 'unknown',
-                tileSeller: tileSellerId,
-                workerSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
-                blocked: true,
-                timestamp: new Date().toISOString()
-              });
-              
-              setError(
-                `⛔ BLOCKED: This tile belongs to another seller.\n\n` +
-                `You can only scan QR codes of your own seller's tiles for walls.`
-              );
-              setIsLoading(false);
-              return;
-            }
-            
-            // ✅ Seller verified - proceed
-            const imageUrl = tileData.imageUrl || tileData.image_url;
-            
+          // ✅ Seller verified - proceed
+          const imageUrl = tileData.imageUrl || tileData.image_url;
+          
+          if (imageUrl) {
             onTileSelected({
               imageUrl: imageUrl,
               tileId: tileData.id,
@@ -4285,406 +4983,92 @@ if (mode === 'qr') {
               }
             });
             
-            setMode('select');
-            onClose();
+            setManualCode('');
+            onClose(); // ✅ Modal close after success
             
-            console.log('✅ Wall tile applied from QR scan (seller verified):', tileData.name);
+            console.log('✅ Wall tile applied from manual code:', tileData.name);
           } else {
-            setError('Tile not found or no image available');
+            setError('Tile found but no image available');
           }
-          
-        } catch (err) {
-          console.error('❌ QR scan error:', err);
-          setError('Failed to load tile from QR code');
-        } finally {
-          setIsLoading(false);
+        } else {
+          setError(result.error || 'Tile not found. Please check the code.');
         }
-      }}
-      onClose={() => {
-        setMode('select');
-        setError(null);
-      }}
-    />
-  );
-}
-
-
-// ═══════════════════════════════════════════════════════════
-if (mode === 'manual') {
- 
-const handleManualSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (!manualCode.trim()) {
-    setError('Please enter a tile code');
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-    setError(null);
-    
-    console.log('🔍 Searching wall tile by code:', manualCode.trim());
-    
-    const result = await getTileByCode(manualCode.trim().toUpperCase());
-    
-    if (result.success && result.tile) {
-      const tileData = result.tile;
-      
-      // ✅ FIXED: Better user fallback
-      const userForVerification = currentUser || (auth.currentUser ? {
-        uid: auth.currentUser.uid,
-        user_id: auth.currentUser.uid,  // ✅ ADD THIS
-        email: auth.currentUser.email,
-        role: 'worker'
-      } : null);
-      
-      // 🔒 PRODUCTION SECURITY: Verify seller ownership
-      if (!verifyTileSeller(tileData, userForVerification)) {
-        const tileSellerId = (tileData as any)?.seller_id || 
-                             (tileData as any)?.sellerId || 
-                             'unknown';
         
-        console.error('❌ BLOCKED: Wall tile manual code - unauthorized seller', {
-          method: 'MANUAL_CODE',
-          inputCode: manualCode.trim().toUpperCase(),
-          tileId: tileData.id || 'unknown',
-          tileName: tileData.name || 'unknown',
-          tileSeller: tileSellerId,
-          workerSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
-          blocked: true,
-          timestamp: new Date().toISOString()
-        });
-        
-        setError(
-          `⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.\n\n` +
-          `Code: ${manualCode.trim().toUpperCase()}\n\n` +
-          `You can only use tile codes from your own seller's inventory.`
-        );
+      } catch (err) {
+        console.error('❌ Manual search error:', err);
+        setError('Failed to search tile. Please try again.');
+      } finally {
         setIsLoading(false);
-        return;
       }
-      
-      // ✅ Seller verified - proceed
-      const imageUrl = tileData.imageUrl || tileData.image_url;
-      
-      if (imageUrl) {
-        onTileSelected({
-          imageUrl: imageUrl,
-          tileId: tileData.id,
-          tileName: tileData.name,
-          size: { 
-            width: tileData.size_width || 30, 
-            height: tileData.size_height || 45 
-          }
-        });
-        
-        setMode('select');
-        setManualCode('');
-        onClose();
-        
-        console.log('✅ Wall tile applied from manual code (seller verified):', tileData.name);
-      } else {
-        setError('Tile found but no image available');
-      }
-    } else {
-      setError(result.error || 'Tile not found. Please check the code.');
-    }
-    
-  } catch (err) {
-    console.error('❌ Manual search error:', err);
-    setError('Failed to search tile. Please try again.');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
-
-
-  // Continue with manual mode UI rendering...
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Hash className="w-6 h-6 text-purple-600" />
-            Enter Tile Code
-          </h3>
-          <button 
-            onClick={() => {
-              setMode('select');
-              setError(null);
-              setManualCode('');
-            }} 
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleManualSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tile Code / SKU / Product ID
-            </label>
-            <input
-              type="text"
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-              placeholder="e.g., MAR60X60WH, TILE-001"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
-              autoFocus
-              disabled={isLoading}
-              autoComplete="off"
-              autoCapitalize="characters"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Enter the unique code printed on the tile or box
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={!manualCode.trim() || isLoading}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader className="w-5 h-5 animate-spin" />
-                Searching...
-              </>
-            ) : (
-              <>
-                <Hash className="w-5 h-5" />
-                Search Tile
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
-          <p className="font-semibold mb-1">💡 Where to find tile code?</p>
-          <ul className="space-y-0.5 ml-4 list-disc">
-            <li>Check the label on the tile box</li>
-            <li>Look for code near the QR sticker</li>
-            <li>Ask showroom staff for the code</li>
-            <li>Usually format: ABC123 or TILE-001</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-  if (mode === 'upload') {
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Image size must be less than 10MB');
-        return;
-      }
-
-      const imageUrl = URL.createObjectURL(file);
-      
-      onTileSelected({
-        imageUrl: imageUrl,
-        tileId: 'CUSTOM_' + Date.now(),
-        tileName: file.name.split('.')[0],
-        size: { width: 30, height: 45 }
-      });
-      
-      setMode('select');
-      onClose();
-      
-      console.log('✅ Custom image uploaded:', file.name);
     };
 
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Upload className="w-6 h-6 text-blue-600" />
-              Upload Tile Image
+              <Hash className="w-6 h-6 text-purple-600" />
+              Enter Tile Code
             </h3>
             <button 
               onClick={() => {
-                setMode('select');
+                setMode('qr'); // ✅ Wapas scanner par bhej do
                 setError(null);
               }} 
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-700 text-sm">{error}</p>
+              <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
             </div>
           )}
 
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-              <Upload className="w-10 h-10 text-white" />
+          <form onSubmit={handleManualSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tile Code / SKU
+              </label>
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                placeholder="e.g., MAR60X60WH"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+                autoFocus
+                disabled={isLoading}
+              />
             </div>
-            
-            <p className="text-gray-700 font-medium mb-2">
-              {isMobile ? 'Tap to upload tile image' : 'Click to upload tile image'}
-            </p>
-            <p className="text-gray-500 text-sm mb-4">
-              JPG, PNG, or WebP (Max 10MB)
-            </p>
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 mx-auto"
-            >
-              <ImageIcon className="w-5 h-5" />
-              Choose Image
-            </button>
-          </div>
 
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-            <p><strong>💡 Tip:</strong> Use high-quality images for best 3D visualization results.</p>
-          </div>
+            <button
+              type="submit"
+              disabled={!manualCode.trim() || isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5" />
+                  Apply Tile
+                </>
+              )}
+            </button>
+          </form>
         </div>
       </div>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // DEFAULT: OPTION SELECTOR (3 Cards)
-  // ═══════════════════════════════════════════════════════════
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-800">Choose Tile Source</h3>
-          <button 
-            onClick={onClose} 
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        <p className="text-sm text-gray-600 mb-4">
-          Select how you want to add tiles to your selection
-        </p>
-
-        <div className="space-y-3">
-          {/* Option 1: Upload Image */}
-          {/* <button
-            onClick={() => {
-              setMode('upload');
-              setError(null);
-            }}
-            className="w-full p-4 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Upload className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
-                  📤 Upload Image
-                </h4>
-                <p className="text-xs text-gray-500">Choose custom tile image from device</p>
-              </div>
-              <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
-                →
-              </div>
-            </div>
-          </button> */}
-
-          {/* Option 2: Scan QR Code */}
-          <button
-            onClick={() => {
-              setMode('qr');
-              setError(null);
-            }}
-            className="w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                <QrCode className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors">
-                  🔲 Scan QR Code
-                </h4>
-                <p className="text-xs text-gray-500">Use camera or upload QR image</p>
-              </div>
-              <div className="text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
-                →
-              </div>
-            </div>
-          </button>
-
-          {/* Option 3: Enter Tile Code */}
-          {/* <button
-            onClick={() => {
-              setMode('manual');
-              setError(null);
-            }}
-            className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl border-2 border-green-200 hover:border-green-400 transition-all text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Hash className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors">
-                  🔢 Enter Tile Code
-                </h4>
-                <p className="text-xs text-gray-500">Manual SKU/product code entry</p>
-              </div>
-              <div className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl">
-                →
-              </div>
-            </div>
-          </button> */}
-        </div>
-
-        <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
-          <p className="font-semibold mb-1">ℹ️ Quick Guide:</p>
-          <ul className="space-y-0.5 ml-4 list-disc">
-          
-            <li><strong>QR Scan:</strong> For tiles with QR codes (fastest)</li>
-           
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 };
-
 
 const CameraController: React.FC<{
   preset: CameraPreset | null;
@@ -5133,91 +5517,177 @@ const getNextPatternType = useCallback((): PatternType => {
 
 
 
+// const handleTileSelected = (tileData: TileUploadData) => {
+//   if (!activeWall) return;
+
+//   console.log('🎨 Applying highlighter tile:', activeWall, 'Count:', selectedTiles.length);
+
+  
+// const loader = new THREE.TextureLoader();
+// loader.load(tileData.imageUrl, (texture) => {
+//   texture.colorSpace = THREE.SRGBColorSpace;
+//   // ✅ FIX: ClampToEdge for individual tiles
+//   texture.wrapS = THREE.ClampToEdgeWrapping;
+//   texture.wrapT = THREE.ClampToEdgeWrapping;
+//   texture.minFilter = THREE.LinearMipMapLinearFilter;
+//   texture.magFilter = THREE.LinearFilter;
+//   texture.anisotropy = 16;
+//   texture.generateMipmaps = true;
+//   texture.premultiplyAlpha = false;
+//   // ✅ FIX: Single tile display
+//   texture.repeat.set(1, 1);
+//   texture.offset.set(0, 0);
+//   texture.needsUpdate = true;
+
+//   setLastAppliedTexture(texture);
+//   setCurrentPatternType('vertical');
+  
+//   // ✅ CRITICAL FIX: Set expected size for grid mode too
+//   setExpectedPatternTileSize({
+//     width: tileData.size.width,
+//     height: tileData.size.height
+//   });
+
+//   setCustomTiles(prev => {
+//     const newCustomTiles = { ...prev };
+//     const wallMap = new Map(prev[activeWall]);
+    
+//     selectedTiles.forEach(index => {
+//       const clonedTexture = texture.clone();
+//       // ✅ CRITICAL FIX: Configure cloned texture
+//       clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+//       clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+//       clonedTexture.repeat.set(1, 1);
+//       clonedTexture.offset.set(0, 0);
+//       clonedTexture.needsUpdate = true;
+      
+//       wallMap.set(index, {
+//         texture: clonedTexture,
+//         size: tileData.size
+//       });
+//     });
+    
+//     newCustomTiles[activeWall] = wallMap;
+//     return newCustomTiles;
+//   });
+
+
+//     setAllCustomTileIndices(prev => {
+//       const current = new Set([...prev[activeWall], ...selectedTiles]);
+//       const updated = {
+//         ...prev,
+//         [activeWall]: Array.from(current).sort((a, b) => a - b)
+//       };
+      
+//       if (onHighlighterUpdate) {
+//         onHighlighterUpdate(activeWall, updated[activeWall]);
+//         console.log('📤 Sent highlighter update:', activeWall, updated[activeWall].length);
+//       }
+      
+//       return updated;
+//     });
+
+//     setSelectedTiles([]);
+//     setIsGridMode(false);
+//     setActiveWall(null);
+    
+//     setSuccess(
+//       `✅ ${selectedTiles.length} highlighter tiles applied (cloned)!\n` +
+//       `Size: ${tileData.size.width}×${tileData.size.height}cm\n` +
+//       `Check calculator for breakdown.`
+//     );
+//     console.log('✅ Highlighter tiles tracked:', selectedTiles.length);
+//   }, undefined, (error) => {
+//     console.error('❌ Failed to load tile texture:', error);
+//   });
+// }; 
 const handleTileSelected = (tileData: TileUploadData) => {
   if (!activeWall) return;
 
   console.log('🎨 Applying highlighter tile:', activeWall, 'Count:', selectedTiles.length);
 
+  const loader = new THREE.TextureLoader();
   
-const loader = new THREE.TextureLoader();
-loader.load(tileData.imageUrl, (texture) => {
-  texture.colorSpace = THREE.SRGBColorSpace;
-  // ✅ FIX: ClampToEdge for individual tiles
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.minFilter = THREE.LinearMipMapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.anisotropy = 16;
-  texture.generateMipmaps = true;
-  texture.premultiplyAlpha = false;
-  // ✅ FIX: Single tile display
-  texture.repeat.set(1, 1);
-  texture.offset.set(0, 0);
-  texture.needsUpdate = true;
+  loader.load(
+    tileData.imageUrl, 
+    (texture) => {
+      // 1. Texture Configuration
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.minFilter = THREE.LinearMipMapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = 16;
+      texture.generateMipmaps = true;
+      texture.premultiplyAlpha = false;
+      texture.repeat.set(1, 1);
+      texture.offset.set(0, 0);
+      texture.needsUpdate = true;
 
-  setLastAppliedTexture(texture);
-  setCurrentPatternType('vertical');
-  
-  // ✅ CRITICAL FIX: Set expected size for grid mode too
-  setExpectedPatternTileSize({
-    width: tileData.size.width,
-    height: tileData.size.height
-  });
-
-  setCustomTiles(prev => {
-    const newCustomTiles = { ...prev };
-    const wallMap = new Map(prev[activeWall]);
-    
-    selectedTiles.forEach(index => {
-      const clonedTexture = texture.clone();
-      // ✅ CRITICAL FIX: Configure cloned texture
-      clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
-      clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
-      clonedTexture.repeat.set(1, 1);
-      clonedTexture.offset.set(0, 0);
-      clonedTexture.needsUpdate = true;
+      setLastAppliedTexture(texture);
+      setCurrentPatternType('vertical');
       
-      wallMap.set(index, {
-        texture: clonedTexture,
-        size: tileData.size
+      // ❌ Yahan se setExpectedPatternTileSize ko hata diya gaya hai kyunki wo state ab exist nahi karti
+
+      // 2. Apply Custom Tiles to Wall
+      setCustomTiles(prev => {
+        const newCustomTiles = { ...prev };
+        const wallMap = new Map(prev[activeWall]);
+        
+        selectedTiles.forEach(index => {
+          const clonedTexture = texture.clone();
+          clonedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          clonedTexture.wrapT = THREE.ClampToEdgeWrapping;
+          clonedTexture.repeat.set(1, 1);
+          clonedTexture.offset.set(0, 0);
+          clonedTexture.needsUpdate = true;
+          
+          wallMap.set(index, {
+            texture: clonedTexture,
+            size: tileData.size
+          });
+        });
+        
+        newCustomTiles[activeWall] = wallMap;
+        return newCustomTiles;
       });
-    });
-    
-    newCustomTiles[activeWall] = wallMap;
-    return newCustomTiles;
-  });
 
+      // 3. Update Indices for Highlighter/Calculator
+      setAllCustomTileIndices(prev => {
+        const current = new Set([...prev[activeWall], ...selectedTiles]);
+        const updated = {
+          ...prev,
+          [activeWall]: Array.from(current).sort((a, b) => a - b)
+        };
+        
+        if (onHighlighterUpdate) {
+          onHighlighterUpdate(activeWall, updated[activeWall]);
+          console.log('📤 Sent highlighter update:', activeWall, updated[activeWall].length);
+        }
+        
+        return updated;
+      });
 
-    setAllCustomTileIndices(prev => {
-      const current = new Set([...prev[activeWall], ...selectedTiles]);
-      const updated = {
-        ...prev,
-        [activeWall]: Array.from(current).sort((a, b) => a - b)
-      };
+      // 4. Reset Grid Mode States
+      setSelectedTiles([]);
+      setIsGridMode(false);
+      setActiveWall(null);
       
-      if (onHighlighterUpdate) {
-        onHighlighterUpdate(activeWall, updated[activeWall]);
-        console.log('📤 Sent highlighter update:', activeWall, updated[activeWall].length);
-      }
+      // 5. Show Success Notification
+      setSuccess(
+        `✅ ${selectedTiles.length} highlighter tiles applied!\n` +
+        `Size: ${tileData.size.width}×${tileData.size.height}cm`
+      );
+      console.log('✅ Highlighter tiles tracked:', selectedTiles.length);
       
-      return updated;
-    });
-
-    setSelectedTiles([]);
-    setIsGridMode(false);
-    setActiveWall(null);
-    
-    setSuccess(
-      `✅ ${selectedTiles.length} highlighter tiles applied (cloned)!\n` +
-      `Size: ${tileData.size.width}×${tileData.size.height}cm\n` +
-      `Check calculator for breakdown.`
-    );
-    console.log('✅ Highlighter tiles tracked:', selectedTiles.length);
-  }, undefined, (error) => {
-    console.error('❌ Failed to load tile texture:', error);
-  });
+    }, 
+    undefined, 
+    (error) => {
+      console.error('❌ Failed to load tile texture:', error);
+      setError('Failed to load the tile image. Please try another tile.');
+    }
+  );
 };
-
   const handleRandomPattern = () => {
     setShowRandomPattern(true);
   };
