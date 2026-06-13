@@ -591,43 +591,7 @@ const ModeSelectionModal: React.FC<{
         {/* Mode Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          {/* VIEW MODE */}
-          <button
-            onClick={() => onSelectMode('view')}
-            className="group bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-xl p-6 border-2 border-blue-200 hover:border-blue-400 transition-all text-left transform hover:scale-105"
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Eye className="w-8 h-8 text-white" />
-            </div>
-            
-            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
-              👁️ View Mode
-            </h3>
-            
-            <p className="text-gray-600 text-sm mb-4">
-              Perfect for visualizing how tiles look in the room
-            </p>
-            
-            <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2 text-gray-700">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                Camera presets & controls
-              </p>
-              <p className="flex items-center gap-2 text-gray-700">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                Change floor tiles
-              </p>
-              <p className="flex items-center gap-2 text-gray-700">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                Scan wall tiles
-              </p>
-              <p className="flex items-center gap-2 text-gray-700">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                Show/hide tile borders
-              </p>
-            </div>
-          </button>
-
+      
           {/* HIGHLIGHTER MODE */}
           <button
             onClick={() => onSelectMode('highlighter')}
