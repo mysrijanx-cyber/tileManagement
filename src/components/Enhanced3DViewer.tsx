@@ -8059,7 +8059,7 @@ const renderScene = () => {
   </>
 )} 
 
-{/* ═══════════════════════════════════════════════════════════════ */}
+
 {/* ✅ CLEAN 3D VIEWER - ALL BUTTONS MOVED TO PARENT SIDEBAR */}
 {/* ═══════════════════════════════════════════════════════════════ */}
 <div className="absolute top-2 right-2 z-10">
