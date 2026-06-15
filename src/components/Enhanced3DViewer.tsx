@@ -186,6 +186,7 @@ interface Enhanced3DViewerProps {
   triggerAddHighlighter?: boolean;
   triggerRandomPattern?: boolean;
   triggerShufflePattern?: boolean;
+  
 }
 interface CameraPreset {
   position: [number, number, number];
@@ -1030,6 +1031,117 @@ const TiledFloor: React.FC<{
   );
 };
 
+// const TiledWall: React.FC<{
+//   baseTexture: THREE.Texture | null;
+//   tileSize: { width: number; height: number };
+//   width: number;
+//   height: number;
+//   position: [number, number, number];
+//   rotation?: [number, number, number];
+//   quality: QualityLevel;
+//   highlightBorders?: boolean;
+// }> = ({ baseTexture, tileSize, width, height, position, rotation = [0, 0, 0], highlightBorders = false }) => {
+  
+//   const material = useMemo(() => {
+//     if (!baseTexture) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: '#f5f5f5',
+//         side: THREE.DoubleSide
+//       });
+//     }
+
+//     const clonedTexture = baseTexture.clone();
+//     clonedTexture.needsUpdate = true;
+//     clonedTexture.colorSpace = THREE.SRGBColorSpace;
+//     clonedTexture.wrapS = THREE.RepeatWrapping;
+//     clonedTexture.wrapT = THREE.RepeatWrapping;
+//     clonedTexture.minFilter = THREE.LinearMipMapLinearFilter;
+//     clonedTexture.magFilter = THREE.LinearFilter;
+//     clonedTexture.anisotropy = 16;
+    
+//     const tileSizeM = {
+//       width: tileSize.width / 100,
+//       height: tileSize.height / 100
+//     };
+    
+//     const repeatX = width / tileSizeM.width;
+//     const repeatY = height / tileSizeM.height;
+    
+//     clonedTexture.repeat.set(repeatX, repeatY);
+
+//     const mat = new THREE.MeshBasicMaterial({ 
+//       map: clonedTexture,
+//       side: THREE.DoubleSide,
+//       toneMapped: false
+//     });
+//     (mat as any)._customTexture = clonedTexture;
+//     return mat;
+//   }, [baseTexture, tileSize.width, tileSize.height, width, height]);
+
+//   useEffect(() => {
+//     return () => {
+//       if ((material as any)._customTexture) {
+//         (material as any)._customTexture.dispose();
+//       }
+//       material.dispose();
+//     };
+//   }, [material]);
+//   // ✅ NEW: Grid for walls
+//   const gridLines = useMemo(() => {
+//     if (!highlightBorders) return null;
+    
+//     const tileSizeM = {
+//       width: tileSize.width / 100,
+//       height: tileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     const points: THREE.Vector3[] = [];
+    
+//     // Vertical lines
+//     for (let i = 0; i <= cols; i++) {
+//       const x = -width/2 + i * tileSizeM.width;
+//       points.push(new THREE.Vector3(x, -height/2, 0.001));
+//       points.push(new THREE.Vector3(x, height/2, 0.001));
+//     }
+    
+//     // Horizontal lines
+//     for (let i = 0; i <= rows; i++) {
+//       const y = -height/2 + i * tileSizeM.height;
+//       points.push(new THREE.Vector3(-width/2, y, 0.001));
+//       points.push(new THREE.Vector3(width/2, y, 0.001));
+//     }
+    
+//     const geometry = new THREE.BufferGeometry().setFromPoints(points);
+//     return geometry;
+//   }, [highlightBorders, width, height, tileSize]);
+
+//   return (
+//     <group position={position} rotation={rotation}>
+//       <mesh>
+//         <planeGeometry args={[width, height]} />
+//         <primitive object={material} attach="material" />
+//       </mesh>
+      
+//       {/* ✅ NEW: Grid overlay */}
+//       {/* {highlightBorders && gridLines && (
+//         <lineSegments position={[0, 0, 0.001]}>
+//           <primitive object={gridLines} attach="geometry" />
+//           <lineBasicMaterial color="#000000" linewidth={3} opacity={1} transparent={false} />
+//         </lineSegments>
+//       )}  */} 
+
+//       {highlightBorders && gridLines && baseTexture && (
+//       <lineSegments position={[0, 0, 0.001]}>
+//         <primitive object={gridLines} attach="geometry" />
+//         <lineBasicMaterial color="#000000" linewidth={3} opacity={1} transparent={false} />
+//       </lineSegments>
+//     )}
+//     </group>
+//   );
+// }; 
 const TiledWall: React.FC<{
   baseTexture: THREE.Texture | null;
   tileSize: { width: number; height: number };
@@ -1043,8 +1155,9 @@ const TiledWall: React.FC<{
   
   const material = useMemo(() => {
     if (!baseTexture) {
+      // ✅ FIX 1: Jab wall tile scan na hui ho, toh Deewar strictly PURE WHITE rahegi
       return new THREE.MeshBasicMaterial({ 
-        color: '#f5f5f5',
+        color: '#ffffff',
         side: THREE.DoubleSide
       });
     }
@@ -1058,20 +1171,11 @@ const TiledWall: React.FC<{
     clonedTexture.magFilter = THREE.LinearFilter;
     clonedTexture.anisotropy = 16;
     
-    const tileSizeM = {
-      width: tileSize.width / 100,
-      height: tileSize.height / 100
-    };
-    
-    const repeatX = width / tileSizeM.width;
-    const repeatY = height / tileSizeM.height;
-    
-    clonedTexture.repeat.set(repeatX, repeatY);
+    const tileSizeM = { width: tileSize.width / 100, height: tileSize.height / 100 };
+    clonedTexture.repeat.set(width / tileSizeM.width, height / tileSizeM.height);
 
     const mat = new THREE.MeshBasicMaterial({ 
-      map: clonedTexture,
-      side: THREE.DoubleSide,
-      toneMapped: false
+      map: clonedTexture, side: THREE.DoubleSide, toneMapped: false
     });
     (mat as any)._customTexture = clonedTexture;
     return mat;
@@ -1085,36 +1189,25 @@ const TiledWall: React.FC<{
       material.dispose();
     };
   }, [material]);
-  // ✅ NEW: Grid for walls
+
   const gridLines = useMemo(() => {
     if (!highlightBorders) return null;
-    
-    const tileSizeM = {
-      width: tileSize.width / 100,
-      height: tileSize.height / 100
-    };
-    
+    const tileSizeM = { width: tileSize.width / 100, height: tileSize.height / 100 };
     const cols = Math.ceil(width / tileSizeM.width);
     const rows = Math.ceil(height / tileSizeM.height);
-    
     const points: THREE.Vector3[] = [];
     
-    // Vertical lines
     for (let i = 0; i <= cols; i++) {
       const x = -width/2 + i * tileSizeM.width;
       points.push(new THREE.Vector3(x, -height/2, 0.001));
       points.push(new THREE.Vector3(x, height/2, 0.001));
     }
-    
-    // Horizontal lines
     for (let i = 0; i <= rows; i++) {
       const y = -height/2 + i * tileSizeM.height;
       points.push(new THREE.Vector3(-width/2, y, 0.001));
       points.push(new THREE.Vector3(width/2, y, 0.001));
     }
-    
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    return geometry;
+    return new THREE.BufferGeometry().setFromPoints(points);
   }, [highlightBorders, width, height, tileSize]);
 
   return (
@@ -1124,8 +1217,8 @@ const TiledWall: React.FC<{
         <primitive object={material} attach="material" />
       </mesh>
       
-      {/* ✅ NEW: Grid overlay */}
-      {highlightBorders && gridLines && (
+      {/* ✅ FIX 2: Added '&& baseTexture' taaki plain white wall par black boxes na dikhein */}
+      {highlightBorders && gridLines && baseTexture && (
         <lineSegments position={[0, 0, 0.001]}>
           <primitive object={gridLines} attach="geometry" />
           <lineBasicMaterial color="#000000" linewidth={3} opacity={1} transparent={false} />
@@ -1134,6 +1227,7 @@ const TiledWall: React.FC<{
     </group>
   );
 };
+
 
 
 // const IndividualTile: React.FC<{
@@ -1506,7 +1600,6 @@ const TiledWall: React.FC<{
 //     </group>
 //   );
 // }; 
-
 const IndividualTile: React.FC<{
   tileData: TileData;
   baseTexture: THREE.Texture | null;
@@ -1528,14 +1621,14 @@ const IndividualTile: React.FC<{
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // ✅ PERFECTED MATERIAL LOGIC
+  // ✅ PERFECTED MATERIAL LOGIC - NO BLINKING
   const material = useMemo(() => {
     if (!customTileData) {
       return new THREE.MeshBasicMaterial({ 
         color: '#ffffff',
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // ✅ FIX: Only render front to avoid back-face collision
         transparent: true,      
-        opacity: 0.0, // Invisible base
+        opacity: 0.0, 
         depthWrite: false,      
         toneMapped: false
       });
@@ -1543,14 +1636,14 @@ const IndividualTile: React.FC<{
 
     return new THREE.MeshBasicMaterial({ 
       map: customTileData.texture, 
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide, // ✅ FIX: Render front side only
       toneMapped: false,
       depthWrite: true,
       depthTest: true,
       transparent: false, 
       polygonOffset: true,
-      polygonOffsetFactor: -2,
-      polygonOffsetUnits: -2
+      polygonOffsetFactor: -4, // ✅ FIX: Stronger offset to permanently stop blinking
+      polygonOffsetUnits: -4
     });
   }, [customTileData]);
 
@@ -1560,18 +1653,16 @@ const IndividualTile: React.FC<{
     };
   }, [material]);
 
-  // ✅ DYNAMIC TILE SIZE CALCULATION
+  // ✅ STRICT TILE SIZE (Always uses base wall tile size)
   const tileSizeM = useMemo(() => {
-    const activeWidth = customTileData?.size?.width || baseTileSize.width;
-    const activeHeight = customTileData?.size?.height || baseTileSize.height;
-
     return {
-      width: activeWidth / 100,
-      height: activeHeight / 100
+      width: baseTileSize.width / 100,
+      height: baseTileSize.height / 100
     };
-  }, [baseTileSize, customTileData]);
+  }, [baseTileSize]);
 
-  const zPosition = customTileData ? 0.005 : 0;
+  // ✅ FIX: Give slightly more breathing room to prevent Z-fighting
+  const zPosition = customTileData ? 0.008 : 0; 
 
   return (
     <group position={tileData.position}>
@@ -1591,7 +1682,7 @@ const IndividualTile: React.FC<{
         <primitive object={material} attach="material" />
       </mesh>
 
-      {/* HIGHLIGHTER CUSTOM BLACK BORDERS (Only shows in view mode) */}
+      {/* HIGHLIGHTER CUSTOM BLACK BORDERS */}
       {highlightBorders && !isGridMode && customTileData && (
         <>
           <mesh position={[0, tileSizeM.height / 2, zPosition + 0.001]}>
@@ -1613,20 +1704,14 @@ const IndividualTile: React.FC<{
         </>
       )}
 
-      {/* ✅ THE ULTIMATE CLEAN UI: Just Text changing color */}
+      {/* GRID MODE UI */}
       {isGridMode && (
         <Text
-          // X: 0, Y: 0 rakha hai taaki hamesha tile ke beecho-beech rahe
           position={[0, 0, zPosition + 0.005]} 
           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.28}
-          
-          // UI Colors: Unselected = Soft Black (#333333), Selected = Modern Green (#10b981)
           color={isSelected ? "#10b981" : "#333333"} 
-          
           anchorX="center"
           anchorY="middle"
-          
-          // White outline di hai taaki dark diwar par bhi number clearly padhne mein aaye
           outlineWidth={0.015} 
           outlineColor="#ffffff"
         >
@@ -1636,6 +1721,136 @@ const IndividualTile: React.FC<{
     </group>
   );
 };
+
+// const IndividualTile: React.FC<{
+//   tileData: TileData;
+//   baseTexture: THREE.Texture | null;
+//   customTileData: CustomTileData | null;
+//   baseTileSize: { width: number; height: number };
+//   isSelected: boolean;
+//   isGridMode: boolean;
+//   onTileClick: (index: number) => void;
+//   highlightBorders?: boolean;
+// }> = ({ 
+//   tileData, 
+//   baseTexture, 
+//   customTileData,
+//   baseTileSize,
+//   isSelected, 
+//   isGridMode, 
+//   onTileClick, 
+//   highlightBorders = false 
+// }) => {
+//   const meshRef = useRef<THREE.Mesh>(null);
+
+//   // ✅ PERFECTED MATERIAL LOGIC
+//   const material = useMemo(() => {
+//     if (!customTileData) {
+//       return new THREE.MeshBasicMaterial({ 
+//         color: '#ffffff',
+//         side: THREE.DoubleSide,
+//         transparent: true,      
+//         opacity: 0.0, // Invisible base
+//         depthWrite: false,      
+//         toneMapped: false
+//       });
+//     }
+
+//     return new THREE.MeshBasicMaterial({ 
+//       map: customTileData.texture, 
+//       side: THREE.DoubleSide,
+//       toneMapped: false,
+//       depthWrite: true,
+//       depthTest: true,
+//       transparent: false, 
+//       polygonOffset: true,
+//       polygonOffsetFactor: -2,
+//       polygonOffsetUnits: -2
+//     });
+//   }, [customTileData]);
+
+//   useEffect(() => {
+//     return () => {
+//       material.dispose();
+//     };
+//   }, [material]);
+
+//   // ✅ DYNAMIC TILE SIZE CALCULATION
+//   const tileSizeM = useMemo(() => {
+//     const activeWidth = customTileData?.size?.width || baseTileSize.width;
+//     const activeHeight = customTileData?.size?.height || baseTileSize.height;
+
+//     return {
+//       width: activeWidth / 100,
+//       height: activeHeight / 100
+//     };
+//   }, [baseTileSize, customTileData]);
+
+//   const zPosition = customTileData ? 0.005 : 0;
+
+//   return (
+//     <group position={tileData.position}>
+//       {/* MAIN TILE MESH */}
+//       <mesh 
+//         ref={meshRef}
+//         position={[0, 0, zPosition]}
+//         userData={{ tileIndex: tileData.index }}
+//         onClick={(e) => {
+//           e.stopPropagation();
+//           if (isGridMode) {
+//             onTileClick(tileData.index);
+//           }
+//         }}
+//       >
+//         <planeGeometry args={[tileSizeM.width, tileSizeM.height]} />
+//         <primitive object={material} attach="material" />
+//       </mesh>
+
+//       {/* HIGHLIGHTER CUSTOM BLACK BORDERS (Only shows in view mode) */}
+//       {highlightBorders && !isGridMode && customTileData && (
+//         <>
+//           <mesh position={[0, tileSizeM.height / 2, zPosition + 0.001]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//           <mesh position={[0, -tileSizeM.height / 2, zPosition + 0.001]}>
+//             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//           <mesh position={[-tileSizeM.width / 2, 0, zPosition + 0.001]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//           <mesh position={[tileSizeM.width / 2, 0, zPosition + 0.001]}>
+//             <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+//             <meshBasicMaterial color="#000000" />
+//           </mesh>
+//         </>
+//       )}
+
+//       {/* ✅ THE ULTIMATE CLEAN UI: Just Text changing color */}
+//       {isGridMode && (
+//         <Text
+//           // X: 0, Y: 0 rakha hai taaki hamesha tile ke beecho-beech rahe
+//           position={[0, 0, zPosition + 0.005]} 
+//           fontSize={Math.min(tileSizeM.width, tileSizeM.height) * 0.28}
+          
+//           // UI Colors: Unselected = Soft Black (#333333), Selected = Modern Green (#10b981)
+//           color={isSelected ? "#10b981" : "#333333"} 
+          
+//           anchorX="center"
+//           anchorY="middle"
+          
+//           // White outline di hai taaki dark diwar par bhi number clearly padhne mein aaye
+//           outlineWidth={0.015} 
+//           outlineColor="#ffffff"
+//         >
+//           {tileData.index}
+//         </Text>
+//       )}
+//     </group>
+//   );
+// };
 // const IndividualTile: React.FC<{
 //   tileData: TileData;
 //   baseTexture: THREE.Texture | null;
@@ -1806,6 +2021,162 @@ const IndividualTile: React.FC<{
 //     </group>
 //   );
 // };
+// const GridWall: React.FC<{
+//   baseTexture: THREE.Texture | null;
+//   tileSize: { width: number; height: number };
+//   width: number;
+//   height: number;
+//   position: [number, number, number];
+//   rotation?: [number, number, number];
+//   isGridMode: boolean;
+//   selectedTiles: number[];
+//   onTileClick: (index: number) => void;
+//   customTilesMap: Map<number, CustomTileData>;
+//   highlightBorders?: boolean;
+// }> = ({ 
+//   baseTexture, 
+//   tileSize, 
+//   width, 
+//   height, 
+//   position, 
+//   rotation = [0, 0, 0],
+//   isGridMode,
+//   selectedTiles,
+//   onTileClick,
+//   customTilesMap,
+//   highlightBorders = false
+// }) => {
+  
+//   const tilesData = useMemo(() => {
+//     // ✅ FIXED: Grid ALWAYS based on wall tile size (baseTileSize prop)
+//     const tileSizeM = {
+//       width: tileSize.width / 100,   // WALL TILE ONLY
+//       height: tileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     console.log(`🔧 Grid FIXED (WALL TILE): ${cols}×${rows} @ ${tileSize.width}×${tileSize.height}cm`);
+    
+//     const tiles: TileData[] = [];
+//     let index = 1;
+
+//     for (let row = 0; row < rows; row++) {
+//       for (let col = 0; col < cols; col++) {
+//         const x = (col - cols / 2 + 0.5) * tileSizeM.width;
+//         const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+        
+//         tiles.push({
+//           index,
+//           row,
+//           col,
+//           position: [x, y, 0],  // ✅ Wall tile grid position
+//           texture: null,
+//           isCustom: customTilesMap.has(index)
+//         });
+        
+//         index++;
+//       }
+//     }
+
+//     console.log(`✅ Grid tiles generated: ${tiles.length} tiles (${cols}×${rows})`);
+//     return tiles;
+//   }, [width, height, tileSize, customTilesMap]); 
+  
+//   // ✅ FIXED: Base grid lines always use wall tile size
+//   const baseGridLines = useMemo(() => {
+//     if (!highlightBorders) return null;
+    
+//     const tileSizeM = {
+//       width: tileSize.width / 100,   // WALL TILE ONLY
+//       height: tileSize.height / 100
+//     };
+    
+//     const cols = Math.ceil(width / tileSizeM.width);
+//     const rows = Math.ceil(height / tileSizeM.height);
+    
+//     const points: THREE.Vector3[] = [];
+    
+//     for (let i = 0; i <= cols; i++) {
+//       const x = -width/2 + i * tileSizeM.width;
+//       points.push(new THREE.Vector3(x, -height/2, 0.001));
+//       points.push(new THREE.Vector3(x, height/2, 0.001));
+//     }
+    
+//     for (let i = 0; i <= rows; i++) {
+//       const y = -height/2 + i * tileSizeM.height;
+//       points.push(new THREE.Vector3(-width/2, y, 0.001));
+//       points.push(new THREE.Vector3(width/2, y, 0.001));
+//     }
+    
+//     console.log(`⬛ Grid lines: ${cols}×${rows} @ ${tileSize.width}×${tileSize.height}cm (WALL TILE)`);
+    
+//     return new THREE.BufferGeometry().setFromPoints(points);
+//   }, [highlightBorders, width, height, tileSize]); 
+
+//   return (
+//     <group position={position} rotation={rotation as any}>
+      
+//       {/* ✅ NAYA ADDITION: SEAMLESS BACKGROUND WALL
+//         Yeh background wall hamesha render hogi taaki agar highlighter chhota ho,
+//         toh bachi hui jagah par white gap na dikhe, balki yeh base tile dikhe.
+//       */}
+//       <TiledWall
+//         baseTexture={baseTexture}
+//         tileSize={tileSize}
+//         width={width}
+//         height={height}
+//         position={[0, 0, -0.002]} // Grid se theek thoda piche render kiya hai
+//         quality="high"
+//         highlightBorders={false}
+//       />
+
+//       {/* INDIVIDUAL GRID TILES */}
+//       {tilesData.map((tile) => {
+//         const customTileData = customTilesMap.get(tile.index) || null;
+        
+//         return (
+//           <IndividualTile
+//             key={tile.index}
+//             tileData={tile}
+//             baseTexture={baseTexture}
+//             customTileData={customTileData}
+//             baseTileSize={tileSize}  
+//             isSelected={selectedTiles.includes(tile.index)}
+//             isGridMode={isGridMode}
+//             onTileClick={onTileClick}
+//             highlightBorders={highlightBorders}
+//           />
+//         );
+//       })}
+
+//       {/* GRID LINES */}
+//       {/* {highlightBorders && baseGridLines && (
+//         <lineSegments position={[0, 0, 0.001]}>
+//           <primitive object={baseGridLines} attach="geometry" />
+//           <lineBasicMaterial 
+//             color="#000000"
+//             linewidth={2} 
+//             opacity={0.6}
+//             transparent={true} 
+//           />
+//         </lineSegments>
+//       )} */} 
+//       {highlightBorders && baseGridLines && baseTexture && (
+//       <lineSegments position={[0, 0, 0.001]}>
+//         <primitive object={baseGridLines} attach="geometry" />
+//         <lineBasicMaterial 
+//           color="#000000"
+//           linewidth={2} 
+//           opacity={0.6}
+//           transparent={true} 
+//         />
+//       </lineSegments>
+//     )}
+//     </group>
+//   );
+// };
 const GridWall: React.FC<{
   baseTexture: THREE.Texture | null;
   tileSize: { width: number; height: number };
@@ -1833,9 +2204,8 @@ const GridWall: React.FC<{
 }) => {
   
   const tilesData = useMemo(() => {
-    // ✅ FIXED: Grid ALWAYS based on wall tile size (baseTileSize prop)
     const tileSizeM = {
-      width: tileSize.width / 100,   // WALL TILE ONLY
+      width: tileSize.width / 100,   
       height: tileSize.height / 100
     };
     
@@ -1849,14 +2219,19 @@ const GridWall: React.FC<{
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        const x = (col - cols / 2 + 0.5) * tileSizeM.width;
-        const y = (rows / 2 - row - 0.5) * tileSizeM.height;
+        // ✅ CHANGED: Calculation ab center se nahi, balki exact Bottom-Left corner se hogi 
+        // taaki yeh background texture mapping ke saath perfectly align ho jaye.
+        const x = -width / 2 + (col + 0.5) * tileSizeM.width;
+        
+        // Y ke liye hum bottom se count karenge taaki Row 0 top par hi rahe
+        const r_from_bottom = rows - 1 - row;
+        const y = -height / 2 + (r_from_bottom + 0.5) * tileSizeM.height;
         
         tiles.push({
           index,
           row,
           col,
-          position: [x, y, 0],  // ✅ Wall tile grid position
+          position: [x, y, 0], 
           texture: null,
           isCustom: customTilesMap.has(index)
         });
@@ -1869,12 +2244,11 @@ const GridWall: React.FC<{
     return tiles;
   }, [width, height, tileSize, customTilesMap]); 
   
-  // ✅ FIXED: Base grid lines always use wall tile size
   const baseGridLines = useMemo(() => {
     if (!highlightBorders) return null;
     
     const tileSizeM = {
-      width: tileSize.width / 100,   // WALL TILE ONLY
+      width: tileSize.width / 100,   
       height: tileSize.height / 100
     };
     
@@ -1883,12 +2257,14 @@ const GridWall: React.FC<{
     
     const points: THREE.Vector3[] = [];
     
+    // Vertical lines
     for (let i = 0; i <= cols; i++) {
       const x = -width/2 + i * tileSizeM.width;
       points.push(new THREE.Vector3(x, -height/2, 0.001));
       points.push(new THREE.Vector3(x, height/2, 0.001));
     }
     
+    // Horizontal lines
     for (let i = 0; i <= rows; i++) {
       const y = -height/2 + i * tileSizeM.height;
       points.push(new THREE.Vector3(-width/2, y, 0.001));
@@ -1903,16 +2279,12 @@ const GridWall: React.FC<{
   return (
     <group position={position} rotation={rotation as any}>
       
-      {/* ✅ NAYA ADDITION: SEAMLESS BACKGROUND WALL
-        Yeh background wall hamesha render hogi taaki agar highlighter chhota ho,
-        toh bachi hui jagah par white gap na dikhe, balki yeh base tile dikhe.
-      */}
       <TiledWall
         baseTexture={baseTexture}
         tileSize={tileSize}
         width={width}
         height={height}
-        position={[0, 0, -0.002]} // Grid se theek thoda piche render kiya hai
+        position={[0, 0, -0.002]} 
         quality="high"
         highlightBorders={false}
       />
@@ -1937,7 +2309,8 @@ const GridWall: React.FC<{
       })}
 
       {/* GRID LINES */}
-      {highlightBorders && baseGridLines && (
+      {/* ✅ FIX 3: Added '&& baseTexture' yahan bhi add kiya gaya hai */}
+      {highlightBorders && baseGridLines && baseTexture && (
         <lineSegments position={[0, 0, 0.001]}>
           <primitive object={baseGridLines} attach="geometry" />
           <lineBasicMaterial 
@@ -1948,6 +2321,7 @@ const GridWall: React.FC<{
           />
         </lineSegments>
       )}
+   ;
     </group>
   );
 };
@@ -3338,990 +3712,1399 @@ const WallSelectorModal: React.FC<{
 
 
 
-const RandomPatternModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  currentUser?: any; 
-  onApplyPattern: (result: QRScanResult, pattern: { type: PatternType; variant: number }) => void;
-  roomType: string;
-  wallTileHeight?: number; // ✅ FIX 1: Added missing prop
-}> = ({ isOpen, onClose, onApplyPattern, roomType, currentUser, wallTileHeight = 11 }) => { // ✅ FIX 2: Destructure wallTileHeight
+// const RandomPatternModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   currentUser?: any; 
+//   onApplyPattern: (result: QRScanResult, pattern: { type: PatternType; variant: number }) => void;
+//   roomType: string;
+//   wallTileHeight?: number; // ✅ FIX 1: Added missing prop
+// }> = ({ isOpen, onClose, onApplyPattern, roomType, currentUser, wallTileHeight = 11 }) => { // ✅ FIX 2: Destructure wallTileHeight
   
-  const [uploadMode, setUploadMode] = useState<UploadMode>('select');
-  const [selectedPattern, setSelectedPattern] = useState<PatternType>('vertical');
-  const [patternVariant, setPatternVariant] = useState(0);
-  const [manualCode, setManualCode] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [scanError, setScanError] = useState<string>('');
-  const [lastAppliedTexture, setLastAppliedTexture] = useState<THREE.Texture | null>(null);
-const [showTileBorders, setShowTileBorders] = useState(false); 
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+//   const [uploadMode, setUploadMode] = useState<UploadMode>('select');
+//   const [selectedPattern, setSelectedPattern] = useState<PatternType>('vertical');
+//   const [patternVariant, setPatternVariant] = useState(0);
+//   const [manualCode, setManualCode] = useState('');
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [scanError, setScanError] = useState<string>('');
+//   const [lastAppliedTexture, setLastAppliedTexture] = useState<THREE.Texture | null>(null);
+// const [showTileBorders, setShowTileBorders] = useState(false); 
+//   const [success, setSuccess] = useState<string | null>(null);
+//   const [error, setError] = useState<string | null>(null);
   
-  const customDimensions = useMemo(() => getRoomDimensions(roomType), [roomType]);
+//   const customDimensions = useMemo(() => getRoomDimensions(roomType), [roomType]);
   
-  const [isAutoShuffling, setIsAutoShuffling] = useState(false);
-  const [shuffleSpeed, setShuffleSpeed] = useState<number>(1500);
+//   const [isAutoShuffling, setIsAutoShuffling] = useState(false);
+//   const [shuffleSpeed, setShuffleSpeed] = useState<number>(1500);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
+//   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
-   const getWallDimensions = useCallback((wall: WallType, customWallHeight?: number) => {  // ✅ Add parameter
-  let roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
+//    const getWallDimensions = useCallback((wall: WallType, customWallHeight?: number) => {  // ✅ Add parameter
+//   let roomConfig = ROOM_CONFIGS[roomType as keyof typeof ROOM_CONFIGS];
   
-  // Check for custom dimensions
-  const customDims = getRoomDimensions(roomType);
-  if (customDims) {
-    roomConfig = {
-      width: customDims.width * 0.3048,
-      depth: customDims.depth * 0.3048,
-      height: customDims.height * 0.3048
-    };
-  }
+//   // Check for custom dimensions
+//   const customDims = getRoomDimensions(roomType);
+//   if (customDims) {
+//     roomConfig = {
+//       width: customDims.width * 0.3048,
+//       depth: customDims.depth * 0.3048,
+//       height: customDims.height * 0.3048
+//     };
+//   }
   
-  const wallTileSize = { width: 30, height: 45 };
-  const tileSizeM = { 
-    width: wallTileSize.width / 100, 
-    height: wallTileSize.height / 100 
-  };
+//   const wallTileSize = { width: 30, height: 45 };
+//   const tileSizeM = { 
+//     width: wallTileSize.width / 100, 
+//     height: wallTileSize.height / 100 
+//   };
   
-  // ✅ Calculate actual height based on wallTileHeight parameter
-  let heightToUse = roomConfig.height;  // Default: full height
+//   // ✅ Calculate actual height based on wallTileHeight parameter
+//   let heightToUse = roomConfig.height;  // Default: full height
   
-  if (customWallHeight !== undefined && customWallHeight > 0) {
-    const maxHeightFt = roomConfig.height / 0.3048;
+//   if (customWallHeight !== undefined && customWallHeight > 0) {
+//     const maxHeightFt = roomConfig.height / 0.3048;
     
-    if (customWallHeight <= maxHeightFt) {
-      heightToUse = customWallHeight * 0.3048;  // Convert feet to meters
-    }
-  }
+//     if (customWallHeight <= maxHeightFt) {
+//       heightToUse = customWallHeight * 0.3048;  // Convert feet to meters
+//     }
+//   }
   
-  if (wall === 'back' || wall === 'front') {
-    return {
-      cols: Math.ceil(roomConfig.width / tileSizeM.width),
-      rows: Math.ceil(heightToUse / tileSizeM.height)  // ✅ Use heightToUse
-    };
-  } else {
-    return {
-      cols: Math.ceil(roomConfig.depth / tileSizeM.width),
-      rows: Math.ceil(heightToUse / tileSizeM.height)  // ✅ Use heightToUse
-    };
-  }
-}, [roomType]);  // ✅ Dependency is correct
-  const backWallDims = useMemo(() => getWallDimensions('back', wallTileHeight), [getWallDimensions, wallTileHeight]); // ✅ FIX 7: Pass wallTileHeight
+//   if (wall === 'back' || wall === 'front') {
+//     return {
+//       cols: Math.ceil(roomConfig.width / tileSizeM.width),
+//       rows: Math.ceil(heightToUse / tileSizeM.height)  // ✅ Use heightToUse
+//     };
+//   } else {
+//     return {
+//       cols: Math.ceil(roomConfig.depth / tileSizeM.width),
+//       rows: Math.ceil(heightToUse / tileSizeM.height)  // ✅ Use heightToUse
+//     };
+//   }
+// }, [roomType]);  // ✅ Dependency is correct
+//   const backWallDims = useMemo(() => getWallDimensions('back', wallTileHeight), [getWallDimensions, wallTileHeight]); // ✅ FIX 7: Pass wallTileHeight
   
 
-  useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess(null);
-        setError(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [success, error]);
+//   useEffect(() => {
+//     if (success || error) {
+//       const timer = setTimeout(() => {
+//         setSuccess(null);
+//         setError(null);
+//       }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [success, error]);
   
-  // ✅ FIX 8: Updated currentPatternTiles calculation
-  const currentPatternTiles = useMemo(() => {
-    if (roomType === 'kitchen') {
-      const pattern = generatePattern(selectedPattern, backWallDims.cols, backWallDims.rows, patternVariant);
-      return pattern.length;
-    } else {
-      const backPattern = generatePattern(selectedPattern, backWallDims.cols, backWallDims.rows, patternVariant);
-      const frontDims = getWallDimensions('front', wallTileHeight); // ✅ Pass wallTileHeight
-      const leftDims = getWallDimensions('left', wallTileHeight);   // ✅ Pass wallTileHeight
-      const rightDims = getWallDimensions('right', wallTileHeight); // ✅ Pass wallTileHeight
+//   // ✅ FIX 8: Updated currentPatternTiles calculation
+//   const currentPatternTiles = useMemo(() => {
+//     if (roomType === 'kitchen') {
+//       const pattern = generatePattern(selectedPattern, backWallDims.cols, backWallDims.rows, patternVariant);
+//       return pattern.length;
+//     } else {
+//       const backPattern = generatePattern(selectedPattern, backWallDims.cols, backWallDims.rows, patternVariant);
+//       const frontDims = getWallDimensions('front', wallTileHeight); // ✅ Pass wallTileHeight
+//       const leftDims = getWallDimensions('left', wallTileHeight);   // ✅ Pass wallTileHeight
+//       const rightDims = getWallDimensions('right', wallTileHeight); // ✅ Pass wallTileHeight
       
-      return backPattern.length +
-             generatePattern(selectedPattern, frontDims.cols, frontDims.rows, patternVariant).length +
-             generatePattern(selectedPattern, leftDims.cols, leftDims.rows, patternVariant).length +
-             generatePattern(selectedPattern, rightDims.cols, rightDims.rows, patternVariant).length;
-    }
-  }, [selectedPattern, patternVariant, roomType, backWallDims, getWallDimensions, wallTileHeight]); // ✅ FIX 9: Added wallTileHeight dependency
+//       return backPattern.length +
+//              generatePattern(selectedPattern, frontDims.cols, frontDims.rows, patternVariant).length +
+//              generatePattern(selectedPattern, leftDims.cols, leftDims.rows, patternVariant).length +
+//              generatePattern(selectedPattern, rightDims.cols, rightDims.rows, patternVariant).length;
+//     }
+//   }, [selectedPattern, patternVariant, roomType, backWallDims, getWallDimensions, wallTileHeight]); // ✅ FIX 9: Added wallTileHeight dependency
 
-  const getRandomPattern = useCallback((): PatternType => {
-    const patterns: PatternType[] = [
-      'vertical', 'horizontal', 'diagonal', 'checkerboard',
-      'random', 'border', 'corners', 'cross'
-    ];
-    const randomIndex = Math.floor(Math.random() * patterns.length);
-    return patterns[randomIndex];
-  }, []);
+//   const getRandomPattern = useCallback((): PatternType => {
+//     const patterns: PatternType[] = [
+//       'vertical', 'horizontal', 'diagonal', 'checkerboard',
+//       'random', 'border', 'corners', 'cross'
+//     ];
+//     const randomIndex = Math.floor(Math.random() * patterns.length);
+//     return patterns[randomIndex];
+//   }, []);
 
-  useEffect(() => {
-    if (!isAutoShuffling) return;
+//   useEffect(() => {
+//     if (!isAutoShuffling) return;
     
-    const interval = setInterval(() => {
-      setSelectedPattern(getRandomPattern());
-      setPatternVariant(Math.floor(Math.random() * 10));
-    }, shuffleSpeed);
+//     const interval = setInterval(() => {
+//       setSelectedPattern(getRandomPattern());
+//       setPatternVariant(Math.floor(Math.random() * 10));
+//     }, shuffleSpeed);
     
-    return () => clearInterval(interval);
-  }, [isAutoShuffling, shuffleSpeed, getRandomPattern]);
+//     return () => clearInterval(interval);
+//   }, [isAutoShuffling, shuffleSpeed, getRandomPattern]);
 
-  useEffect(() => {
-    if (uploadMode !== 'select') {
-      setIsAutoShuffling(false);
-    }
-  }, [uploadMode]);
+//   useEffect(() => {
+//     if (uploadMode !== 'select') {
+//       setIsAutoShuffling(false);
+//     }
+//   }, [uploadMode]);
 
-  const handleShuffleVariant = () => {
-    setPatternVariant(prev => (prev + 1) % 10);
-  };
+//   const handleShuffleVariant = () => {
+//     setPatternVariant(prev => (prev + 1) % 10);
+//   };
 
-  const handleShufflePattern = () => {
-    setSelectedPattern(getRandomPattern());
-    setPatternVariant(Math.floor(Math.random() * 10));
-  };
+//   const handleShufflePattern = () => {
+//     setSelectedPattern(getRandomPattern());
+//     setPatternVariant(Math.floor(Math.random() * 10));
+//   };
 
-  const handleToggleAutoShuffle = () => {
-    setIsAutoShuffling(prev => !prev);
-  };
+//   const handleToggleAutoShuffle = () => {
+//     setIsAutoShuffling(prev => !prev);
+//   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+//   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = event.target.files?.[0];
+//     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setScanError('Please select a valid image file (JPG, PNG, WebP)');
-      return;
-    }
+//     if (!file.type.startsWith('image/')) {
+//       setScanError('Please select a valid image file (JPG, PNG, WebP)');
+//       return;
+//     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setScanError('Image size must be less than 10MB');
-      return;
-    }
+//     if (file.size > 10 * 1024 * 1024) {
+//       setScanError('Image size must be less than 10MB');
+//       return;
+//     }
 
-    setIsProcessing(true);
-    setScanError('');
+//     setIsProcessing(true);
+//     setScanError('');
 
-    try {
-      const imageUrl = URL.createObjectURL(file);
+//     try {
+//       const imageUrl = URL.createObjectURL(file);
 
-      const mockQRData: QRScanResult = {
-        tileId: 'PATTERN_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-        tileName: file.name.split('.')[0],
-        imageUrl: imageUrl,
-        size: { width: 30, height: 45 }
-      };
+//       const mockQRData: QRScanResult = {
+//         tileId: 'PATTERN_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+//         tileName: file.name.split('.')[0],
+//         imageUrl: imageUrl,
+//         size: { width: 30, height: 45 }
+//       };
 
-      onApplyPattern(mockQRData, { type: selectedPattern, variant: patternVariant });
-      setUploadMode('select');
-      setIsAutoShuffling(false);
-      onClose();
+//       onApplyPattern(mockQRData, { type: selectedPattern, variant: patternVariant });
+//       setUploadMode('select');
+//       setIsAutoShuffling(false);
+//       onClose();
       
-      console.log('✅ Pattern applied from uploaded image:', file.name);
-    } catch (error) {
-      setScanError('Failed to process image. Please try again.');
-      console.error('Upload error:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+//       console.log('✅ Pattern applied from uploaded image:', file.name);
+//     } catch (error) {
+//       setScanError('Failed to process image. Please try again.');
+//       console.error('Upload error:', error);
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+//   const handleManualSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
     
-    if (!manualCode.trim()) {
-      setScanError('Please enter a tile code');
-      return;
-    }
+//     if (!manualCode.trim()) {
+//       setScanError('Please enter a tile code');
+//       return;
+//     }
 
-    setIsProcessing(true);
-    setScanError('');
+//     setIsProcessing(true);
+//     setScanError('');
 
-    try {
-      console.log('🔍 Searching tile for wall pattern:', manualCode.trim());
+//     try {
+//       console.log('🔍 Searching tile for wall pattern:', manualCode.trim());
       
-      const result = await getTileByCode(manualCode.trim().toUpperCase());
+//       const result = await getTileByCode(manualCode.trim().toUpperCase());
       
-      if (result.success && result.tile) {
-        const tileData = result.tile;
+//       if (result.success && result.tile) {
+//         const tileData = result.tile;
         
-        if (!verifyTileSeller(tileData, currentUser)) {
-          const tileSellerId = (tileData as any)?.seller_id || 
-                               (tileData as any)?.sellerId || 
-                               (tileData as any)?.created_by || 
-                               'unknown-seller';
+//         if (!verifyTileSeller(tileData, currentUser)) {
+//           const tileSellerId = (tileData as any)?.seller_id || 
+//                                (tileData as any)?.sellerId || 
+//                                (tileData as any)?.created_by || 
+//                                'unknown-seller';
           
-          console.error('❌ BLOCKED: Wall pattern manual code - unauthorized seller', {
-            method: 'PATTERN_MANUAL',
-            inputCode: manualCode.trim().toUpperCase(),
-            tileId: tileData.id || 'unknown',
-            tileName: tileData.name || 'unknown',
-            tileSeller: tileSellerId,
-            workerSeller: currentUser?.uid || 'not-logged-in',
-            patternType: selectedPattern,
-            patternVariant: patternVariant,
-            blocked: true,
-            timestamp: new Date().toISOString()
-          });
+//           console.error('❌ BLOCKED: Wall pattern manual code - unauthorized seller', {
+//             method: 'PATTERN_MANUAL',
+//             inputCode: manualCode.trim().toUpperCase(),
+//             tileId: tileData.id || 'unknown',
+//             tileName: tileData.name || 'unknown',
+//             tileSeller: tileSellerId,
+//             workerSeller: currentUser?.uid || 'not-logged-in',
+//             patternType: selectedPattern,
+//             patternVariant: patternVariant,
+//             blocked: true,
+//             timestamp: new Date().toISOString()
+//           });
           
-          setScanError(`⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\nCode: ${manualCode.trim().toUpperCase()}\n\nYou can only use tile codes from your own seller's inventory for wall patterns.\n\nPlease contact your seller for correct tile codes.`);
-          setIsProcessing(false);
-          return;
-        }
+//           setScanError(`⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\nCode: ${manualCode.trim().toUpperCase()}\n\nYou can only use tile codes from your own seller's inventory for wall patterns.\n\nPlease contact your seller for correct tile codes.`);
+//           setIsProcessing(false);
+//           return;
+//         }
         
-        const imageUrl = tileData.imageUrl || tileData.image_url;
+//         const imageUrl = tileData.imageUrl || tileData.image_url;
         
-        if (imageUrl) {
-          const qrData: QRScanResult = {
-            tileId: tileData.id,
-            tileName: tileData.name,
-            imageUrl: imageUrl,
-            size: { 
-              width: tileData.size_width || 30, 
-              height: tileData.size_height || 45 
-            }
-          };
+//         if (imageUrl) {
+//           const qrData: QRScanResult = {
+//             tileId: tileData.id,
+//             tileName: tileData.name,
+//             imageUrl: imageUrl,
+//             size: { 
+//               width: tileData.size_width || 30, 
+//               height: tileData.size_height || 45 
+//             }
+//           };
 
-          onApplyPattern(qrData, { type: selectedPattern, variant: patternVariant });
-          setUploadMode('select');
-          setManualCode('');
-          setIsAutoShuffling(false);
-          onClose();
+//           onApplyPattern(qrData, { type: selectedPattern, variant: patternVariant });
+//           setUploadMode('select');
+//           setManualCode('');
+//           setIsAutoShuffling(false);
+//           onClose();
           
-          console.log('✅ Wall pattern applied from manual code (seller verified):', tileData.name);
-        } else {
-          setScanError('Tile found but no image available');
-        }
-      } else {
-        setScanError(result.error || 'Tile not found. Please check the code.');
-        console.error('❌ Tile code search failed:', result.error);
-      }
+//           console.log('✅ Wall pattern applied from manual code (seller verified):', tileData.name);
+//         } else {
+//           setScanError('Tile found but no image available');
+//         }
+//       } else {
+//         setScanError(result.error || 'Tile not found. Please check the code.');
+//         console.error('❌ Tile code search failed:', result.error);
+//       }
       
-    } catch (err) {
-      console.error('❌ Manual search error:', err);
-      setScanError('Failed to search tile. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+//     } catch (err) {
+//       console.error('❌ Manual search error:', err);
+//       setScanError('Failed to search tile. Please try again.');
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
 
-  // const handleQRScanSuccess = async (qrData: any) => {
-  //   console.log('🎯 QR Scanned for wall pattern:', qrData);
+//   // const handleQRScanSuccess = async (qrData: any) => {
+//   //   console.log('🎯 QR Scanned for wall pattern:', qrData);
     
-  //   setIsProcessing(true);
-  //   setScanError('');
+//   //   setIsProcessing(true);
+//   //   setScanError('');
 
-  //   try {
-  //     let tileData: any = null;
+//   //   try {
+//   //     let tileData: any = null;
       
-  //     if (qrData.tileId) {
-  //       tileData = await getTileById(qrData.tileId.trim());
+//   //     if (qrData.tileId) {
+//   //       tileData = await getTileById(qrData.tileId.trim());
         
-  //       if (!tileData) {
-  //         const result = await getTileByCode(qrData.tileId.trim());
-  //         if (result.success && result.tile) {
-  //           tileData = result.tile;
-  //         }
-  //       }
-  //     }
+//   //       if (!tileData) {
+//   //         const result = await getTileByCode(qrData.tileId.trim());
+//   //         if (result.success && result.tile) {
+//   //           tileData = result.tile;
+//   //         }
+//   //       }
+//   //     }
       
-  //     if (tileData && (tileData.imageUrl || tileData.image_url)) {
-  //       const userForVerification = currentUser || (auth.currentUser ? {
-  //         uid: auth.currentUser.uid,
-  //         user_id: auth.currentUser.uid,
-  //         email: auth.currentUser.email,
-  //         role: 'worker'
-  //       } : null);
+//   //     if (tileData && (tileData.imageUrl || tileData.image_url)) {
+//   //       const userForVerification = currentUser || (auth.currentUser ? {
+//   //         uid: auth.currentUser.uid,
+//   //         user_id: auth.currentUser.uid,
+//   //         email: auth.currentUser.email,
+//   //         role: 'worker'
+//   //       } : null);
         
-  //       if (!verifyTileSeller(tileData, userForVerification)) {
-  //         const tileSellerId = (tileData as any)?.seller_id || 
-  //                              (tileData as any)?.sellerId || 
-  //                              'unknown';
+//   //       if (!verifyTileSeller(tileData, userForVerification)) {
+//   //         const tileSellerId = (tileData as any)?.seller_id || 
+//   //                              (tileData as any)?.sellerId || 
+//   //                              'unknown';
           
-  //         console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
-  //           method: 'PATTERN_QR',
-  //           tileId: tileData.id || 'unknown',
-  //           tileName: tileData.name || 'unknown',
-  //           tileSeller: tileSellerId,
-  //           currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
-  //           blocked: true,
-  //           timestamp: new Date().toISOString()
-  //         });
+//   //         console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
+//   //           method: 'PATTERN_QR',
+//   //           tileId: tileData.id || 'unknown',
+//   //           tileName: tileData.name || 'unknown',
+//   //           tileSeller: tileSellerId,
+//   //           currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
+//   //           blocked: true,
+//   //           timestamp: new Date().toISOString()
+//   //         });
           
-  //         setScanError(
-  //           `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
-  //           `You can only scan QR codes of your own seller's tiles for wall patterns.`
-  //         );
-  //         setIsProcessing(false);
-  //         return;
-  //       }
+//   //         setScanError(
+//   //           `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
+//   //           `You can only scan QR codes of your own seller's tiles for wall patterns.`
+//   //         );
+//   //         setIsProcessing(false);
+//   //         return;
+//   //       }
         
-  //       const imageUrl = tileData.imageUrl || tileData.image_url;
+//   //       const imageUrl = tileData.imageUrl || tileData.image_url;
         
-  //       const qrResult: QRScanResult = {
-  //         tileId: tileData.id,
-  //         tileName: tileData.name,
-  //         imageUrl: imageUrl,
-  //         size: { 
-  //           width: tileData.size_width || 30, 
-  //           height: tileData.size_height || 45 
-  //         }
-  //       };
+//   //       const qrResult: QRScanResult = {
+//   //         tileId: tileData.id,
+//   //         tileName: tileData.name,
+//   //         imageUrl: imageUrl,
+//   //         size: { 
+//   //           width: tileData.size_width || 30, 
+//   //           height: tileData.size_height || 45 
+//   //         }
+//   //       };
 
-  //       onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
-  //       setUploadMode('select');
-  //       setIsAutoShuffling(false);
-  //       onClose();
+//   //       onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
+//   //       setUploadMode('select');
+//   //       setIsAutoShuffling(false);
+//   //       onClose();
         
-  //       console.log('✅ Wall pattern applied from QR scan (seller verified):', tileData.name);
-  //     } else {
-  //       setScanError('Tile not found or no image available');
-  //     }
+//   //       console.log('✅ Wall pattern applied from QR scan (seller verified):', tileData.name);
+//   //     } else {
+//   //       setScanError('Tile not found or no image available');
+//   //     }
       
-  //   } catch (err) {
-  //     console.error('❌ QR scan error:', err);
-  //     setScanError('Failed to load tile from QR code');
-  //   } finally {
-  //     setIsProcessing(false);
-  //   }
-  // }; 
+//   //   } catch (err) {
+//   //     console.error('❌ QR scan error:', err);
+//   //     setScanError('Failed to load tile from QR code');
+//   //   } finally {
+//   //     setIsProcessing(false);
+//   //   }
+//   // }; 
 
-  const handleQRScanSuccess = async (qrData: any) => {
-  console.log('🎯 QR Scanned for wall pattern:', qrData);
+//   const handleQRScanSuccess = async (qrData: any) => {
+//   console.log('🎯 QR Scanned for wall pattern:', qrData);
   
-  setIsProcessing(true);
-  setScanError('');
+//   setIsProcessing(true);
+//   setScanError('');
 
-  try {
-    let tileData: any = null;
+//   try {
+//     let tileData: any = null;
     
-    if (qrData.tileId) {
-      tileData = await getTileById(qrData.tileId.trim());
+//     if (qrData.tileId) {
+//       tileData = await getTileById(qrData.tileId.trim());
       
-      if (!tileData) {
-        const result = await getTileByCode(qrData.tileId.trim());
-        if (result.success && result.tile) {
-          tileData = result.tile;
-        }
-      }
-    }
+//       if (!tileData) {
+//         const result = await getTileByCode(qrData.tileId.trim());
+//         if (result.success && result.tile) {
+//           tileData = result.tile;
+//         }
+//       }
+//     }
     
-    console.log('🔍 FIRESTORE TILE DATA:', {
-      id: tileData?.id,
-      name: tileData?.name,
-      allFields: tileData ? Object.keys(tileData) : [],
-      size_width: tileData?.size_width,
-      size_height: tileData?.size_height,
-      width: tileData?.width,
-      height: tileData?.height,
-      size: tileData?.size,  // ✅ CHECK THIS
-      sizeString: qrData?.size  // ✅ CHECK QR DATA
-    });
+//     console.log('🔍 FIRESTORE TILE DATA:', {
+//       id: tileData?.id,
+//       name: tileData?.name,
+//       allFields: tileData ? Object.keys(tileData) : [],
+//       size_width: tileData?.size_width,
+//       size_height: tileData?.size_height,
+//       width: tileData?.width,
+//       height: tileData?.height,
+//       size: tileData?.size,  // ✅ CHECK THIS
+//       sizeString: qrData?.size  // ✅ CHECK QR DATA
+//     });
     
-    if (tileData && (tileData.imageUrl || tileData.image_url)) {
-      // ✅ EXISTING: Seller verification
-      const userForVerification = currentUser || (auth.currentUser ? {
-        uid: auth.currentUser.uid,
-        user_id: auth.currentUser.uid,
-        email: auth.currentUser.email,
-        role: 'worker'
-      } : null);
+//     if (tileData && (tileData.imageUrl || tileData.image_url)) {
+//       // ✅ EXISTING: Seller verification
+//       const userForVerification = currentUser || (auth.currentUser ? {
+//         uid: auth.currentUser.uid,
+//         user_id: auth.currentUser.uid,
+//         email: auth.currentUser.email,
+//         role: 'worker'
+//       } : null);
       
-      if (!verifyTileSeller(tileData, userForVerification)) {
-        const tileSellerId = (tileData as any)?.seller_id || 
-                             (tileData as any)?.sellerId || 
-                             'unknown';
+//       if (!verifyTileSeller(tileData, userForVerification)) {
+//         const tileSellerId = (tileData as any)?.seller_id || 
+//                              (tileData as any)?.sellerId || 
+//                              'unknown';
         
-        console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
-          method: 'PATTERN_QR',
-          tileId: tileData.id || 'unknown',
-          tileName: tileData.name || 'unknown',
-          tileSeller: tileSellerId,
-          currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
-          blocked: true,
-          timestamp: new Date().toISOString()
-        });
+//         console.error('❌ BLOCKED: Wall pattern QR - unauthorized seller', {
+//           method: 'PATTERN_QR',
+//           tileId: tileData.id || 'unknown',
+//           tileName: tileData.name || 'unknown',
+//           tileSeller: tileSellerId,
+//           currentUserSeller: userForVerification?.uid || userForVerification?.user_id || 'NONE',
+//           blocked: true,
+//           timestamp: new Date().toISOString()
+//         });
         
-        setScanError(
-          `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
-          `You can only scan QR codes of your own seller's tiles for wall patterns.`
-        );
-        setIsProcessing(false);
-        return;
-      }
+//         setScanError(
+//           `⛔ BLOCKED: Pattern tile "${tileData.name}" belongs to another seller.\n\n` +
+//           `You can only scan QR codes of your own seller's tiles for wall patterns.`
+//         );
+//         setIsProcessing(false);
+//         return;
+//       }
       
-      // ✅ NEW: Parse size from QR data first
-      let extractedWidth: number | undefined;
-      let extractedHeight: number | undefined;
+//       // ✅ NEW: Parse size from QR data first
+//       let extractedWidth: number | undefined;
+//       let extractedHeight: number | undefined;
       
-      // ✅ PRIORITY 1: Try to parse from QR data size string (e.g., "61x122 cm")
-      if (qrData?.size) {
-        const sizeString = qrData.size.toString().toLowerCase();
-        const match = sizeString.match(/(\d+)\s*[x×]\s*(\d+)/);
+//       // ✅ PRIORITY 1: Try to parse from QR data size string (e.g., "61x122 cm")
+//       if (qrData?.size) {
+//         const sizeString = qrData.size.toString().toLowerCase();
+//         const match = sizeString.match(/(\d+)\s*[x×]\s*(\d+)/);
         
-        if (match) {
-          extractedWidth = parseInt(match[1]);
-          extractedHeight = parseInt(match[2]);
+//         if (match) {
+//           extractedWidth = parseInt(match[1]);
+//           extractedHeight = parseInt(match[2]);
           
-          console.log('✅ SIZE PARSED FROM QR:', {
-            original: qrData.size,
-            parsed: `${extractedWidth}×${extractedHeight}cm`,
-            method: 'QR_STRING'
-          });
-        }
-      }
+//           console.log('✅ SIZE PARSED FROM QR:', {
+//             original: qrData.size,
+//             parsed: `${extractedWidth}×${extractedHeight}cm`,
+//             method: 'QR_STRING'
+//           });
+//         }
+//       }
       
-      // ✅ PRIORITY 2: Try Firestore document fields (if QR parsing failed)
-      if (!extractedWidth || !extractedHeight) {
-        extractedWidth = tileData.size_width || 
-                         tileData.sizeWidth || 
-                         tileData.width || 
-                         tileData.tile_width || 
-                         tileData.dimensions?.width;
+//       // ✅ PRIORITY 2: Try Firestore document fields (if QR parsing failed)
+//       if (!extractedWidth || !extractedHeight) {
+//         extractedWidth = tileData.size_width || 
+//                          tileData.sizeWidth || 
+//                          tileData.width || 
+//                          tileData.tile_width || 
+//                          tileData.dimensions?.width;
                          
-        extractedHeight = tileData.size_height || 
-                          tileData.sizeHeight || 
-                          tileData.height || 
-                          tileData.tile_height || 
-                          tileData.dimensions?.height;
+//         extractedHeight = tileData.size_height || 
+//                           tileData.sizeHeight || 
+//                           tileData.height || 
+//                           tileData.tile_height || 
+//                           tileData.dimensions?.height;
         
-        if (extractedWidth && extractedHeight) {
-          console.log('✅ SIZE FOUND IN FIRESTORE:', {
-            width: extractedWidth,
-            height: extractedHeight,
-            method: 'FIRESTORE_FIELDS'
-          });
-        }
-      }
+//         if (extractedWidth && extractedHeight) {
+//           console.log('✅ SIZE FOUND IN FIRESTORE:', {
+//             width: extractedWidth,
+//             height: extractedHeight,
+//             method: 'FIRESTORE_FIELDS'
+//           });
+//         }
+//       }
       
-      // ✅ CRITICAL DEBUG
-      console.log('📏 FINAL SIZE EXTRACTION:', {
-        extractedWidth,
-        extractedHeight,
-        source: (extractedWidth && extractedHeight) 
-          ? (qrData?.size ? 'QR_STRING' : 'FIRESTORE') 
-          : 'FALLBACK',
-        isUndefined: (!extractedWidth || !extractedHeight),
-        willUseFallback: (!extractedWidth || !extractedHeight)
-      });
+//       // ✅ CRITICAL DEBUG
+//       console.log('📏 FINAL SIZE EXTRACTION:', {
+//         extractedWidth,
+//         extractedHeight,
+//         source: (extractedWidth && extractedHeight) 
+//           ? (qrData?.size ? 'QR_STRING' : 'FIRESTORE') 
+//           : 'FALLBACK',
+//         isUndefined: (!extractedWidth || !extractedHeight),
+//         willUseFallback: (!extractedWidth || !extractedHeight)
+//       });
       
-      // ✅ WARNING if using fallback
-      if (!extractedWidth || !extractedHeight) {
-        console.warn('⚠️ SIZE NOT FOUND - Using fallback 30×45cm', {
-          tileId: tileData.id,
-          tileName: tileData.name,
-          qrDataSize: qrData?.size,
-          firestoreFields: Object.keys(tileData),
-          recommendation: 'Add width/height fields to Firestore or ensure QR has parseable size'
-        });
-      }
+//       // ✅ WARNING if using fallback
+//       if (!extractedWidth || !extractedHeight) {
+//         console.warn('⚠️ SIZE NOT FOUND - Using fallback 30×45cm', {
+//           tileId: tileData.id,
+//           tileName: tileData.name,
+//           qrDataSize: qrData?.size,
+//           firestoreFields: Object.keys(tileData),
+//           recommendation: 'Add width/height fields to Firestore or ensure QR has parseable size'
+//         });
+//       }
       
-      const imageUrl = tileData.imageUrl || tileData.image_url;
+//       const imageUrl = tileData.imageUrl || tileData.image_url;
       
-      const qrResult: QRScanResult = {
-        tileId: tileData.id,
-        tileName: tileData.name,
-        imageUrl: imageUrl,
-        size: { 
-          width: extractedWidth || 30, 
-          height: extractedHeight || 45 
-        }
-      };
+//       const qrResult: QRScanResult = {
+//         tileId: tileData.id,
+//         tileName: tileData.name,
+//         imageUrl: imageUrl,
+//         size: { 
+//           width: extractedWidth || 30, 
+//           height: extractedHeight || 45 
+//         }
+//       };
       
-      console.log('✅ FINAL QR RESULT FOR PATTERN:', {
-        tileId: qrResult.tileId,
-        tileName: qrResult.tileName,
-        size: qrResult.size,
-        sizeString: `${qrResult.size.width}×${qrResult.size.height}cm`,
-        hasImage: !!qrResult.imageUrl,
-        isDefaultSize: (qrResult.size.width === 30 && qrResult.size.height === 45),
-        patternType: selectedPattern,
-        patternVariant: patternVariant
-      });
+//       console.log('✅ FINAL QR RESULT FOR PATTERN:', {
+//         tileId: qrResult.tileId,
+//         tileName: qrResult.tileName,
+//         size: qrResult.size,
+//         sizeString: `${qrResult.size.width}×${qrResult.size.height}cm`,
+//         hasImage: !!qrResult.imageUrl,
+//         isDefaultSize: (qrResult.size.width === 30 && qrResult.size.height === 45),
+//         patternType: selectedPattern,
+//         patternVariant: patternVariant
+//       });
 
-      onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
-      setUploadMode('select');
-      setIsAutoShuffling(false);
-      onClose();
+//       onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
+//       setUploadMode('select');
+//       setIsAutoShuffling(false);
+//       onClose();
       
-      console.log('✅ Wall pattern applied from QR scan (seller verified):', 
-                  tileData.name, 
-                  'Size:', qrResult.size);
+//       console.log('✅ Wall pattern applied from QR scan (seller verified):', 
+//                   tileData.name, 
+//                   'Size:', qrResult.size);
       
-    } else {
-      console.error('❌ Tile data incomplete:', {
-        hasTileData: !!tileData,
-        hasImageUrl: !!(tileData?.imageUrl || tileData?.image_url),
-        tileId: tileData?.id
-      });
-      setScanError('Tile not found or no image available');
-    }
+//     } else {
+//       console.error('❌ Tile data incomplete:', {
+//         hasTileData: !!tileData,
+//         hasImageUrl: !!(tileData?.imageUrl || tileData?.image_url),
+//         tileId: tileData?.id
+//       });
+//       setScanError('Tile not found or no image available');
+//     }
     
-  } catch (err) {
-    console.error('❌ QR scan error:', err);
-    setScanError('Failed to load tile from QR code');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+//   } catch (err) {
+//     console.error('❌ QR scan error:', err);
+//     setScanError('Failed to load tile from QR code');
+//   } finally {
+//     setIsProcessing(false);
+//   }
+// };
 
-  if (!isOpen) return null;
+//   if (!isOpen) return null;
 
-  if (uploadMode === 'qr') {
-    return (
-      <QRScanner
-        currentUser={currentUser}
-        onScanSuccess={handleQRScanSuccess}
-        onClose={() => {
-          setUploadMode('select');
-          setScanError('');
-        }}
-      />
-    );
-  }
+//   if (uploadMode === 'qr') {
+//     return (
+//       <QRScanner
+//         currentUser={currentUser}
+//         onScanSuccess={handleQRScanSuccess}
+//         onClose={() => {
+//           setUploadMode('select');
+//           setScanError('');
+//         }}
+//       />
+//     );
+//   }
 
-  if (uploadMode === 'manual') {
-    return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Hash className="w-6 h-6 text-purple-600" />
-              Pattern Tile Code
-            </h3>
-            <button 
-              onClick={() => {
-                setUploadMode('select');
-                setScanError('');
-                setManualCode('');
-              }} 
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+//   if (uploadMode === 'manual') {
+//     return (
+//       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+//           <div className="flex items-center justify-between mb-6">
+//             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//               <Hash className="w-6 h-6 text-purple-600" />
+//               Pattern Tile Code
+//             </h3>
+//             <button 
+//               onClick={() => {
+//                 setUploadMode('select');
+//                 setScanError('');
+//                 setManualCode('');
+//               }} 
+//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//             >
+//               <X className="w-5 h-5" />
+//             </button>
+//           </div>
 
-          {scanError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-700 text-sm">{scanError}</p>
-            </div>
-          )}
+//           {scanError && (
+//             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//               <p className="text-red-700 text-sm">{scanError}</p>
+//             </div>
+//           )}
 
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Select Pattern Style
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {PATTERN_CONFIGS.map((pattern) => (
-                <button
-                  key={pattern.type}
-                  onClick={() => setSelectedPattern(pattern.type)}
-                  className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    selectedPattern === pattern.type
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{pattern.icon}</div>
-                  <div className="text-xs font-semibold text-gray-800">{pattern.name}</div>
-                  <div className="text-xs text-gray-500">{pattern.coverage}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+//           <div className="mb-4">
+//             <label className="block text-sm font-semibold text-gray-700 mb-2">
+//               Select Pattern Style
+//             </label>
+//             <div className="grid grid-cols-2 gap-2">
+//               {PATTERN_CONFIGS.map((pattern) => (
+//                 <button
+//                   key={pattern.type}
+//                   onClick={() => setSelectedPattern(pattern.type)}
+//                   className={`p-3 rounded-lg border-2 transition-all text-left ${
+//                     selectedPattern === pattern.type
+//                       ? 'border-purple-500 bg-purple-50'
+//                       : 'border-gray-200 hover:border-purple-300'
+//                   }`}
+//                 >
+//                   <div className="text-2xl mb-1">{pattern.icon}</div>
+//                   <div className="text-xs font-semibold text-gray-800">{pattern.name}</div>
+//                   <div className="text-xs text-gray-500">{pattern.coverage}</div>
+//                 </button>
+//               ))}
+//             </div>
+//           </div>
 
-          <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
-            <p className="text-sm font-semibold text-gray-700 mb-2">
-              {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name} Preview
-            </p>
-            <div className="bg-white rounded-lg p-3 mb-3">
-              <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
-                {Array.from({ length: 50 }).map((_, i) => {
-                  const pattern = generatePattern(selectedPattern, 10, 5, patternVariant);
-                  const isSelected = pattern.includes(i + 1);
-                  return (
-                    <div
-                      key={i}
-                      className={`aspect-square rounded-sm ${
-                        isSelected ? 'bg-purple-500' : 'bg-gray-200'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-              <span>{PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.description}</span>
-              <span>{currentPatternTiles} tiles</span>
-            </div>
-            <button
-              onClick={handleShuffleVariant}
-              className="w-full bg-white/50 hover:bg-white/80 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1"
-            >
-              <Shuffle className="w-3 h-3" />
-              Shuffle Variant
-            </button>
-          </div>
+//           <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+//             <p className="text-sm font-semibold text-gray-700 mb-2">
+//               {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name} Preview
+//             </p>
+//             <div className="bg-white rounded-lg p-3 mb-3">
+//               <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
+//                 {Array.from({ length: 50 }).map((_, i) => {
+//                   const pattern = generatePattern(selectedPattern, 10, 5, patternVariant);
+//                   const isSelected = pattern.includes(i + 1);
+//                   return (
+//                     <div
+//                       key={i}
+//                       className={`aspect-square rounded-sm ${
+//                         isSelected ? 'bg-purple-500' : 'bg-gray-200'
+//                       }`}
+//                     />
+//                   );
+//                 })}
+//               </div>
+//             </div>
+//             <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+//               <span>{PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.description}</span>
+//               <span>{currentPatternTiles} tiles</span>
+//             </div>
+//             <button
+//               onClick={handleShuffleVariant}
+//               className="w-full bg-white/50 hover:bg-white/80 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1"
+//             >
+//               <Shuffle className="w-3 h-3" />
+//               Shuffle Variant
+//             </button>
+//           </div>
 
-          <form onSubmit={handleManualSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter Tile Code
-              </label>
-              <input
-                type="text"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                placeholder="e.g., MAR60X60WH"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
-                autoFocus
-                disabled={isProcessing}
-              />
-            </div>
+//           <form onSubmit={handleManualSubmit} className="space-y-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 Enter Tile Code
+//               </label>
+//               <input
+//                 type="text"
+//                 value={manualCode}
+//                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+//                 placeholder="e.g., MAR60X60WH"
+//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+//                 autoFocus
+//                 disabled={isProcessing}
+//               />
+//             </div>
 
-            <button
-              type="submit"
-              disabled={!manualCode.trim() || isProcessing}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Applying Pattern...
-                </>
-              ) : (
-                <>
-                  <Shuffle className="w-5 h-5" />
-                  Apply Pattern
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+//             <button
+//               type="submit"
+//               disabled={!manualCode.trim() || isProcessing}
+//               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+//             >
+//               {isProcessing ? (
+//                 <>
+//                   <Loader className="w-5 h-5 animate-spin" />
+//                   Applying Pattern...
+//                 </>
+//               ) : (
+//                 <>
+//                   <Shuffle className="w-5 h-5" />
+//                   Apply Pattern
+//                 </>
+//               )}
+//             </button>
+//           </form>
+//         </div>
+//       </div>
+//     );
+//   }
 
-  if (uploadMode === 'upload') {
-    return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Upload className="w-6 h-6 text-blue-600" />
-              Upload Pattern Tile
-            </h3>
-            <button 
-              onClick={() => {
-                setUploadMode('select');
-                setScanError('');
-              }} 
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+//   if (uploadMode === 'upload') {
+//     return (
+//       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+//           <div className="flex items-center justify-between mb-6">
+//             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//               <Upload className="w-6 h-6 text-blue-600" />
+//               Upload Pattern Tile
+//             </h3>
+//             <button 
+//               onClick={() => {
+//                 setUploadMode('select');
+//                 setScanError('');
+//               }} 
+//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//             >
+//               <X className="w-5 h-5" />
+//             </button>
+//           </div>
 
-          {scanError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-700 text-sm">{scanError}</p>
-            </div>
-          )}
+//           {scanError && (
+//             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//               <p className="text-red-700 text-sm">{scanError}</p>
+//             </div>
+//           )}
 
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Select Pattern Style
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {PATTERN_CONFIGS.map((pattern) => (
-                <button
-                  key={pattern.type}
-                  onClick={() => setSelectedPattern(pattern.type)}
-                  className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    selectedPattern === pattern.type
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{pattern.icon}</div>
-                  <div className="text-xs font-semibold text-gray-800">{pattern.name}</div>
-                  <div className="text-xs text-gray-500">{pattern.coverage}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+//           <div className="mb-4">
+//             <label className="block text-sm font-semibold text-gray-700 mb-2">
+//               Select Pattern Style
+//             </label>
+//             <div className="grid grid-cols-2 gap-2">
+//               {PATTERN_CONFIGS.map((pattern) => (
+//                 <button
+//                   key={pattern.type}
+//                   onClick={() => setSelectedPattern(pattern.type)}
+//                   className={`p-3 rounded-lg border-2 transition-all text-left ${
+//                     selectedPattern === pattern.type
+//                       ? 'border-blue-500 bg-blue-50'
+//                       : 'border-gray-200 hover:border-blue-300'
+//                   }`}
+//                 >
+//                   <div className="text-2xl mb-1">{pattern.icon}</div>
+//                   <div className="text-xs font-semibold text-gray-800">{pattern.name}</div>
+//                   <div className="text-xs text-gray-500">{pattern.coverage}</div>
+//                 </button>
+//               ))}
+//             </div>
+//           </div>
 
-          <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
-            <p className="text-sm font-semibold text-gray-700 mb-2">
-              {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name}
-            </p>
-            <div className="bg-white rounded-lg p-3 mb-2">
-              <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
-                {Array.from({ length: 50 }).map((_, i) => {
-                  const pattern = generatePattern(selectedPattern, 10, 5, patternVariant);
-                  const isSelected = pattern.includes(i + 1);
-                  return (
-                    <div
-                      key={i}
-                      className={`aspect-square rounded-sm ${
-                        isSelected ? 'bg-purple-500' : 'bg-gray-200'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-              <span>{PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.coverage}</span>
-              <span>{currentPatternTiles} tiles</span>
-            </div>
-            <button
-              onClick={handleShuffleVariant}
-              className="w-full bg-white/50 hover:bg-white/80 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1"
-            >
-              <Shuffle className="w-3 h-3" />
-              Shuffle Variant
-            </button>
-          </div>
+//           <div className="mb-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+//             <p className="text-sm font-semibold text-gray-700 mb-2">
+//               {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name}
+//             </p>
+//             <div className="bg-white rounded-lg p-3 mb-2">
+//               <div className="grid grid-cols-10 gap-0.5 max-w-[200px] mx-auto">
+//                 {Array.from({ length: 50 }).map((_, i) => {
+//                   const pattern = generatePattern(selectedPattern, 10, 5, patternVariant);
+//                   const isSelected = pattern.includes(i + 1);
+//                   return (
+//                     <div
+//                       key={i}
+//                       className={`aspect-square rounded-sm ${
+//                         isSelected ? 'bg-purple-500' : 'bg-gray-200'
+//                       }`}
+//                     />
+//                   );
+//                 })}
+//               </div>
+//             </div>
+//             <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+//               <span>{PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.coverage}</span>
+//               <span>{currentPatternTiles} tiles</span>
+//             </div>
+//             <button
+//               onClick={handleShuffleVariant}
+//               className="w-full bg-white/50 hover:bg-white/80 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1"
+//             >
+//               <Shuffle className="w-3 h-3" />
+//               Shuffle Variant
+//             </button>
+//           </div>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center">
-              <Upload className="w-10 h-10 text-white" />
-            </div>
+//           <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
+//             <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center">
+//               <Upload className="w-10 h-10 text-white" />
+//             </div>
             
-            <p className="text-gray-700 font-medium mb-2">
-              Upload tile image for pattern
-            </p>
-            <p className="text-gray-500 text-sm mb-4">
-              JPG, PNG, or WebP (Max 10MB)
-            </p>
+//             <p className="text-gray-700 font-medium mb-2">
+//               Upload tile image for pattern
+//             </p>
+//             <p className="text-gray-500 text-sm mb-4">
+//               JPG, PNG, or WebP (Max 10MB)
+//             </p>
             
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
+//             <input
+//               ref={fileInputRef}
+//               type="file"
+//               accept="image/*"
+//               onChange={handleFileUpload}
+//               className="hidden"
+//             />
             
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isProcessing}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="w-5 h-5" />
-                  Choose Image
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+//             <button
+//               onClick={() => fileInputRef.current?.click()}
+//               disabled={isProcessing}
+//               className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+//             >
+//               {isProcessing ? (
+//                 <>
+//                   <Loader className="w-5 h-5 animate-spin" />
+//                   Processing...
+//                 </>
+//               ) : (
+//                 <>
+//                   <ImageIcon className="w-5 h-5" />
+//                   Choose Image
+//                 </>
+//               )}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
 
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto animate-slideUp">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Shuffle className="w-6 h-6 text-purple-600" />
-            Choose Pattern & Tile Source
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
+//   return (
+//     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+//       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto animate-slideUp">
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//             <Shuffle className="w-6 h-6 text-purple-600" />
+//             Choose Pattern & Tile Source
+//           </h3>
+//           <button
+//             onClick={onClose}
+//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//           >
+//             <X className="w-5 h-5 text-gray-600" />
+//           </button>
+//         </div>
 
-        <div className="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 border-2 border-orange-200">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <Shuffle className="w-4 h-4 text-orange-600" />
-                Auto Shuffle Patterns
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                Automatically cycle through all pattern types
-              </p>
-            </div>
-            {isAutoShuffling && (
-              <div className="flex items-center gap-2 text-xs font-medium text-orange-600">
-                <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div>
-                Shuffling...
-              </div>
-            )}
-          </div>
+//         <div className="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 border-2 border-orange-200">
+//           <div className="flex items-center justify-between mb-3">
+//             <div>
+//               <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+//                 <Shuffle className="w-4 h-4 text-orange-600" />
+//                 Auto Shuffle Patterns
+//               </p>
+//               <p className="text-xs text-gray-600 mt-1">
+//                 Automatically cycle through all pattern types
+//               </p>
+//             </div>
+//             {isAutoShuffling && (
+//               <div className="flex items-center gap-2 text-xs font-medium text-orange-600">
+//                 <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div>
+//                 Shuffling...
+//               </div>
+//             )}
+//           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleToggleAutoShuffle}
-              className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
-                isAutoShuffling
-                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg'
-                  : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg text-white'
-              }`}
-            >
-              {isAutoShuffling ? (
-                <>
-                  <X className="w-4 h-4" />
-                  Stop Auto Shuffle
-                </>
-              ) : (
-                <>
-                  <Shuffle className="w-4 h-4" />
-                  Start Auto Shuffle
-                </>
-              )}
-            </button>
+//           <div className="flex gap-2">
+//             <button
+//               onClick={handleToggleAutoShuffle}
+//               className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+//                 isAutoShuffling
+//                   ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg'
+//                   : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg text-white'
+//               }`}
+//             >
+//               {isAutoShuffling ? (
+//                 <>
+//                   <X className="w-4 h-4" />
+//                   Stop Auto Shuffle
+//                 </>
+//               ) : (
+//                 <>
+//                   <Shuffle className="w-4 h-4" />
+//                   Start Auto Shuffle
+//                 </>
+//               )}
+//             </button>
 
-            <button
-              onClick={handleShufflePattern}
-              disabled={isAutoShuffling}
-              className="px-4 py-2.5 bg-white hover:bg-gray-50 border-2 border-orange-300 text-orange-700 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              title="Shuffle once"
-            >
-              <Shuffle className="w-4 h-4" />
-              Once
-            </button>
-          </div>
+//             <button
+//               onClick={handleShufflePattern}
+//               disabled={isAutoShuffling}
+//               className="px-4 py-2.5 bg-white hover:bg-gray-50 border-2 border-orange-300 text-orange-700 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+//               title="Shuffle once"
+//             >
+//               <Shuffle className="w-4 h-4" />
+//               Once
+//             </button>
+//           </div>
 
-          {isAutoShuffling && (
-            <div className="mt-3 pt-3 border-t border-orange-200">
-              <label className="block text-xs font-medium text-gray-700 mb-2">
-                Shuffle Speed: {shuffleSpeed}ms
-              </label>
-              <input
-                type="range"
-                min="500"
-                max="3000"
-                step="100"
-                value={shuffleSpeed}
-                onChange={(e) => setShuffleSpeed(Number(e.target.value))}
-                className="w-full h-2 bg-orange-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Fast (0.5s)</span>
-                <span>Slow (3s)</span>
-              </div>
-            </div>
-          )}
-        </div>
+//           {isAutoShuffling && (
+//             <div className="mt-3 pt-3 border-t border-orange-200">
+//               <label className="block text-xs font-medium text-gray-700 mb-2">
+//                 Shuffle Speed: {shuffleSpeed}ms
+//               </label>
+//               <input
+//                 type="range"
+//                 min="500"
+//                 max="3000"
+//                 step="100"
+//                 value={shuffleSpeed}
+//                 onChange={(e) => setShuffleSpeed(Number(e.target.value))}
+//                 className="w-full h-2 bg-orange-200 rounded-lg appearance-none cursor-pointer"
+//               />
+//               <div className="flex justify-between text-xs text-gray-500 mt-1">
+//                 <span>Fast (0.5s)</span>
+//                 <span>Slow (3s)</span>
+//               </div>
+//             </div>
+//           )}
+//         </div>
 
-        <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between">
-            <span>Step 1: Select Pattern Style</span>
-            {!isAutoShuffling && (
-              <span className="text-xs text-gray-500">
-                Current: {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name}
-              </span>
-            )}
-          </h4>
-          <div className="grid grid-cols-4 gap-3">
-            {PATTERN_CONFIGS.map((pattern) => (
-              <button
-                key={pattern.type}
-                onClick={() => {
-                  setSelectedPattern(pattern.type);
-                  setIsAutoShuffling(false);
-                }}
-                disabled={isAutoShuffling}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                  selectedPattern === pattern.type
-                    ? 'border-purple-500 bg-purple-50 shadow-md scale-105'
-                    : 'border-gray-200 hover:border-purple-300 hover:shadow-sm'
-                } ${isAutoShuffling ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <div className="text-3xl mb-2">{pattern.icon}</div>
-                <div className="text-xs font-semibold text-gray-800 mb-1">{pattern.name}</div>
-                <div className="text-xs text-gray-500">{pattern.coverage}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+//         <div className="mb-6">
+//           <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between">
+//             <span>Step 1: Select Pattern Style</span>
+//             {!isAutoShuffling && (
+//               <span className="text-xs text-gray-500">
+//                 Current: {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name}
+//               </span>
+//             )}
+//           </h4>
+//           <div className="grid grid-cols-4 gap-3">
+//             {PATTERN_CONFIGS.map((pattern) => (
+//               <button
+//                 key={pattern.type}
+//                 onClick={() => {
+//                   setSelectedPattern(pattern.type);
+//                   setIsAutoShuffling(false);
+//                 }}
+//                 disabled={isAutoShuffling}
+//                 className={`p-4 rounded-xl border-2 transition-all text-center ${
+//                   selectedPattern === pattern.type
+//                     ? 'border-purple-500 bg-purple-50 shadow-md scale-105'
+//                     : 'border-gray-200 hover:border-purple-300 hover:shadow-sm'
+//                 } ${isAutoShuffling ? 'opacity-50 cursor-not-allowed' : ''}`}
+//               >
+//                 <div className="text-3xl mb-2">{pattern.icon}</div>
+//                 <div className="text-xs font-semibold text-gray-800 mb-1">{pattern.name}</div>
+//                 <div className="text-xs text-gray-500">{pattern.coverage}</div>
+//               </button>
+//             ))}
+//           </div>
+//         </div>
 
-        <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-gray-700">
-              {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name} Preview
-            </p>
-            <div className="flex gap-2">
-              {!isAutoShuffling && (
-                <button
-                  onClick={handleShuffleVariant}
-                  className="px-3 py-1.5 bg-white/70 hover:bg-white text-purple-700 rounded-lg text-xs font-semibold transition-all flex items-center gap-1"
-                >
-                  <Shuffle className="w-3 h-3" />
-                  Variant
-                </button>
-              )}
-            </div>
-          </div>
+//         <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+//           <div className="flex items-center justify-between mb-3">
+//             <p className="text-sm font-semibold text-gray-700">
+//               {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name} Preview
+//             </p>
+//             <div className="flex gap-2">
+//               {!isAutoShuffling && (
+//                 <button
+//                   onClick={handleShuffleVariant}
+//                   className="px-3 py-1.5 bg-white/70 hover:bg-white text-purple-700 rounded-lg text-xs font-semibold transition-all flex items-center gap-1"
+//                 >
+//                   <Shuffle className="w-3 h-3" />
+//                   Variant
+//                 </button>
+//               )}
+//             </div>
+//           </div>
           
-          <div className="bg-white rounded-lg p-4 mb-3">
-            <div className="grid grid-cols-12 gap-0.5 max-w-[300px] mx-auto">
-              {Array.from({ length: 60 }).map((_, i) => {
-                const pattern = generatePattern(selectedPattern, 12, 5, patternVariant);
-                const isSelected = pattern.includes(i + 1);
-                return (
-                  <div
-                    key={i}
-                    className={`aspect-square rounded-sm transition-all duration-300 ${
-                      isSelected ? 'bg-purple-500 scale-110' : 'bg-gray-200'
-                    }`}
-                  />
-                );
-              })}
-            </div>
-          </div>
+//           <div className="bg-white rounded-lg p-4 mb-3">
+//             <div className="grid grid-cols-12 gap-0.5 max-w-[300px] mx-auto">
+//               {Array.from({ length: 60 }).map((_, i) => {
+//                 const pattern = generatePattern(selectedPattern, 12, 5, patternVariant);
+//                 const isSelected = pattern.includes(i + 1);
+//                 return (
+//                   <div
+//                     key={i}
+//                     className={`aspect-square rounded-sm transition-all duration-300 ${
+//                       isSelected ? 'bg-purple-500 scale-110' : 'bg-gray-200'
+//                     }`}
+//                   />
+//                 );
+//               })}
+//             </div>
+//           </div>
           
-          <div className="text-center">
-            <p className="text-xs text-gray-600">
-              <strong>{currentPatternTiles} tiles</strong> will be applied
-              {roomType === 'kitchen' ? ' (back wall only)' : ' (all 4 walls)'}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Variant #{patternVariant + 1}/10 • Height: {wallTileHeight}ft
-            </p>
-          </div>
-        </div>
+//           <div className="text-center">
+//             <p className="text-xs text-gray-600">
+//               <strong>{currentPatternTiles} tiles</strong> will be applied
+//               {roomType === 'kitchen' ? ' (back wall only)' : ' (all 4 walls)'}
+//             </p>
+//             <p className="text-xs text-gray-500 mt-1">
+//               Variant #{patternVariant + 1}/10 • Height: {wallTileHeight}ft
+//             </p>
+//           </div>
+//         </div>
 
-        <div>
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">
-            Step 2: Choose Tile Source
-          </h4>
-          <div className="grid grid-cols-3 gap-3">
+//         <div>
+//           <h4 className="text-sm font-semibold text-gray-700 mb-3">
+//             Step 2: Choose Tile Source
+//           </h4>
+//           <div className="grid grid-cols-3 gap-3">
             
 
-            <button
-              onClick={() => setUploadMode('qr')}
-              className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-center group"
-            >
-              <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
-                <QrCode className="w-6 h-6 text-white" />
-              </div>
-              <h5 className="font-semibold text-gray-800 text-sm mb-1">Scan QR</h5>
-              <p className="text-xs text-gray-500">Camera/Upload</p>
-            </button>
+//             <button
+//               onClick={() => setUploadMode('qr')}
+//               className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-center group"
+//             >
+//               <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+//                 <QrCode className="w-6 h-6 text-white" />
+//               </div>
+//               <h5 className="font-semibold text-gray-800 text-sm mb-1">Scan QR</h5>
+//               <p className="text-xs text-gray-500">Camera/Upload</p>
+//             </button>
 
           
-          </div>
-        </div>
+//           </div>
+//         </div>
 
-        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-          <p>
-            <strong>ℹ️ Current:</strong> {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.description} - {currentPatternTiles} tiles @ {wallTileHeight}ft height
-            {isAutoShuffling && <span className="ml-2 text-orange-600 font-semibold">• Auto-shuffling active</span>}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+//         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+//           <p>
+//             <strong>ℹ️ Current:</strong> {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.description} - {currentPatternTiles} tiles @ {wallTileHeight}ft height
+//             {isAutoShuffling && <span className="ml-2 text-orange-600 font-semibold">• Auto-shuffling active</span>}
+//           </p>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// const RandomPatternModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   currentUser?: any; 
+//   onApplyPattern: (result: QRScanResult, pattern: { type: PatternType; variant: number }) => void;
+//   roomType: string;
+//   wallTileHeight?: number; 
+//   expectedTileSize?: { width: number; height: number }; // ✅ STRICT VALIDATION PROP
+// }> = ({ isOpen, onClose, onApplyPattern, roomType, currentUser, wallTileHeight = 11, expectedTileSize }) => { 
+  
+//   const [uploadMode, setUploadMode] = useState<UploadMode>('select');
+//   const [selectedPattern, setSelectedPattern] = useState<PatternType>('vertical');
+//   const [patternVariant, setPatternVariant] = useState(0);
+//   const [manualCode, setManualCode] = useState('');
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [scanError, setScanError] = useState<string>('');
+//   const [isAutoShuffling, setIsAutoShuffling] = useState(false);
+//   const [shuffleSpeed, setShuffleSpeed] = useState<number>(1500);
+  
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+
+//   // Auto Shuffle Logic
+//   const getRandomPattern = useCallback((): PatternType => {
+//     const patterns: PatternType[] = [
+//       'vertical', 'horizontal', 'diagonal', 'checkerboard',
+//       'random', 'border', 'corners', 'cross'
+//     ];
+//     const randomIndex = Math.floor(Math.random() * patterns.length);
+//     return patterns[randomIndex];
+//   }, []);
+
+//   useEffect(() => {
+//     if (!isAutoShuffling) return;
+//     const interval = setInterval(() => {
+//       setSelectedPattern(getRandomPattern());
+//       setPatternVariant(Math.floor(Math.random() * 10));
+//     }, shuffleSpeed);
+//     return () => clearInterval(interval);
+//   }, [isAutoShuffling, shuffleSpeed, getRandomPattern]);
+
+//   useEffect(() => {
+//     if (uploadMode !== 'select') {
+//       setIsAutoShuffling(false);
+//     }
+//   }, [uploadMode]);
+
+//   const handleShuffleVariant = () => setPatternVariant(prev => (prev + 1) % 10);
+//   const handleShufflePattern = () => {
+//     setSelectedPattern(getRandomPattern());
+//     setPatternVariant(Math.floor(Math.random() * 10));
+//   };
+//   const handleToggleAutoShuffle = () => setIsAutoShuffling(prev => !prev);
+
+//   // Image Upload Handler (If you still want to allow generic image uploads)
+//   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = event.target.files?.[0];
+//     if (!file) return;
+//     if (!file.type.startsWith('image/')) { setScanError('Please select a valid image file'); return; }
+//     if (file.size > 10 * 1024 * 1024) { setScanError('Image size must be less than 10MB'); return; }
+
+//     setIsProcessing(true);
+//     setScanError('');
+//     try {
+//       const imageUrl = URL.createObjectURL(file);
+//       const mockQRData: QRScanResult = {
+//         tileId: 'PATTERN_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+//         tileName: file.name.split('.')[0],
+//         imageUrl: imageUrl,
+//         size: expectedTileSize || { width: 30, height: 45 } // Fallback to expected size for pure images
+//       };
+//       onApplyPattern(mockQRData, { type: selectedPattern, variant: patternVariant });
+//       setUploadMode('select');
+//       onClose();
+//     } catch (error) {
+//       setScanError('Failed to process image. Please try again.');
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
+
+//   // ✅ 1. MANUAL ENTRY SUBMISSION WITH STRICT VALIDATION
+//   const handleManualSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!manualCode.trim()) { setScanError('Please enter a tile code'); return; }
+
+//     setIsProcessing(true);
+//     setScanError('');
+
+//     try {
+//       const result = await getTileByCode(manualCode.trim().toUpperCase());
+      
+//       if (result.success && result.tile) {
+//         const tileData = result.tile;
+        
+//         // A. Verify Seller
+//         if (!verifyTileSeller(tileData, currentUser)) {
+//           setScanError(`⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.\nPlease use your own tile codes.`);
+//           setIsProcessing(false);
+//           return;
+//         }
+
+//         // B. STRICT SIZE VALIDATION
+//         let extractedWidth = Number(tileData.size_width || tileData.width || 30);
+//         let extractedHeight = Number(tileData.size_height || tileData.height || 45);
+
+//         if (expectedTileSize) {
+//           if (extractedWidth !== Number(expectedTileSize.width) || extractedHeight !== Number(expectedTileSize.height)) {
+//             setScanError(
+//               `⛔ Size Mismatch Error!\n\nWall Base Tile: ${expectedTileSize.width}×${expectedTileSize.height} cm\nHighlighter Tile: ${extractedWidth}×${extractedHeight} cm\n\nPlease enter a tile code for exactly ${expectedTileSize.width}×${expectedTileSize.height} cm.`
+//             );
+//             setIsProcessing(false);
+//             return;
+//           }
+//         }
+        
+//         // C. Apply Tile
+//         const imageUrl = tileData.imageUrl || tileData.image_url;
+//         if (imageUrl) {
+//           const qrData: QRScanResult = {
+//             tileId: tileData.id,
+//             tileName: tileData.name,
+//             imageUrl: imageUrl,
+//             size: { width: extractedWidth, height: extractedHeight }
+//           };
+//           onApplyPattern(qrData, { type: selectedPattern, variant: patternVariant });
+//           setUploadMode('select');
+//           setManualCode('');
+//           onClose();
+//         } else {
+//           setScanError('Tile found but no image available');
+//         }
+//       } else {
+//         setScanError(result.error || 'Tile not found. Please check the code.');
+//       }
+//     } catch (err) {
+//       setScanError('Failed to search tile. Please try again.');
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
+
+//   // ✅ 2. QR SCAN SUCCESS WITH STRICT VALIDATION
+//   const handleQRScanSuccess = async (qrData: any) => {
+//     setIsProcessing(true);
+//     setScanError('');
+
+//     try {
+//       let tileData: any = null;
+//       if (qrData.tileId) {
+//         tileData = await getTileById(qrData.tileId.trim());
+//         if (!tileData) {
+//           const result = await getTileByCode(qrData.tileId.trim());
+//           if (result.success && result.tile) tileData = result.tile;
+//         }
+//       }
+      
+//       if (tileData && (tileData.imageUrl || tileData.image_url)) {
+        
+//         // A. Verify Seller
+//         if (!verifyTileSeller(tileData, currentUser)) {
+//           setScanError(`⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.`);
+//           setIsProcessing(false);
+//           return;
+//         }
+
+//         // B. Parse QR Size String (if exists) or Fallback to Firestore
+//         let extractedWidth = 0;
+//         let extractedHeight = 0;
+
+//         if (qrData?.size) {
+//           const match = qrData.size.toString().toLowerCase().match(/(\d+)\s*[x×]\s*(\d+)/);
+//           if (match) {
+//             extractedWidth = Number(match[1]);
+//             extractedHeight = Number(match[2]);
+//           }
+//         }
+
+//         if (!extractedWidth || !extractedHeight) {
+//           extractedWidth = Number(tileData.size_width || tileData.width || 30);
+//           extractedHeight = Number(tileData.size_height || tileData.height || 45);
+//         }
+
+//         // C. STRICT SIZE VALIDATION
+//         if (expectedTileSize) {
+//           if (extractedWidth !== Number(expectedTileSize.width) || extractedHeight !== Number(expectedTileSize.height)) {
+//             setScanError(
+//               `⛔ Size Mismatch Error!\n\nWall Base Tile: ${expectedTileSize.width}×${expectedTileSize.height} cm\nHighlighter Tile: ${extractedWidth}×${extractedHeight} cm\n\nPlease scan a tile of exactly ${expectedTileSize.width}×${expectedTileSize.height} cm.`
+//             );
+//             setIsProcessing(false);
+//             return;
+//           }
+//         }
+        
+//         // D. Apply Tile
+//         const imageUrl = tileData.imageUrl || tileData.image_url;
+//         const qrResult: QRScanResult = {
+//           tileId: tileData.id,
+//           tileName: tileData.name,
+//           imageUrl: imageUrl,
+//           size: { width: extractedWidth, height: extractedHeight }
+//         };
+
+//         onApplyPattern(qrResult, { type: selectedPattern, variant: patternVariant });
+//         setUploadMode('select');
+//         onClose();
+        
+//       } else {
+//         setScanError('Tile not found or no image available');
+//       }
+//     } catch (err) {
+//       setScanError('Failed to load tile from QR code');
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
+
+//   if (!isOpen) return null;
+
+//   // ════════════════════════════════════════════════════════
+//   // RENDER MODES
+//   // ════════════════════════════════════════════════════════
+
+//   if (uploadMode === 'qr') {
+//     return (
+//       <QRScanner
+//         currentUser={currentUser}
+//         onScanSuccess={handleQRScanSuccess}
+//         onClose={() => {
+//           setUploadMode('select');
+//           setScanError('');
+//         }}
+//       />
+//     );
+//   }
+
+//   if (uploadMode === 'manual') {
+//     return (
+//       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+//           <div className="flex items-center justify-between mb-6">
+//             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//               <Hash className="w-6 h-6 text-purple-600" />
+//               Pattern Tile Code
+//             </h3>
+//             <button 
+//               onClick={() => {
+//                 setUploadMode('select');
+//                 setScanError('');
+//                 setManualCode('');
+//               }} 
+//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//             >
+//               <X className="w-5 h-5" />
+//             </button>
+//           </div>
+
+//           {scanError && (
+//             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//               <p className="text-red-700 text-sm whitespace-pre-line">{scanError}</p>
+//             </div>
+//           )}
+
+//           <form onSubmit={handleManualSubmit} className="space-y-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 Enter Tile Code
+//               </label>
+//               <input
+//                 type="text"
+//                 value={manualCode}
+//                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+//                 placeholder="e.g., MAR60X60WH"
+//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+//                 autoFocus
+//                 disabled={isProcessing}
+//               />
+//             </div>
+
+//             <button
+//               type="submit"
+//               disabled={!manualCode.trim() || isProcessing}
+//               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+//             >
+//               {isProcessing ? (
+//                 <><Loader className="w-5 h-5 animate-spin" /> Applying Pattern...</>
+//               ) : (
+//                 <><Shuffle className="w-5 h-5" /> Apply Pattern</>
+//               )}
+//             </button>
+//           </form>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   // DEFAULT MAIN SELECTOR VIEW (Step 1 & 2)
+//   return (
+//     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+//       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto animate-slideUp">
+        
+//         {/* Header */}
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//             <Shuffle className="w-6 h-6 text-purple-600" />
+//             Choose Pattern & Tile Source
+//           </h3>
+//           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+//             <X className="w-5 h-5 text-gray-600" />
+//           </button>
+//         </div>
+
+//         {/* Auto Shuffle Controls */}
+//         <div className="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 border-2 border-orange-200">
+//           <div className="flex items-center justify-between mb-3">
+//             <div>
+//               <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+//                 <Shuffle className="w-4 h-4 text-orange-600" /> Auto Shuffle Patterns
+//               </p>
+//               <p className="text-xs text-gray-600 mt-1">Automatically cycle through all pattern types</p>
+//             </div>
+//             {isAutoShuffling && (
+//               <div className="flex items-center gap-2 text-xs font-medium text-orange-600">
+//                 <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div> Shuffling...
+//               </div>
+//             )}
+//           </div>
+//           <div className="flex gap-2">
+//             <button
+//               onClick={handleToggleAutoShuffle}
+//               className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+//                 isAutoShuffling ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg text-white'
+//               }`}
+//             >
+//               {isAutoShuffling ? <><X className="w-4 h-4" /> Stop Auto Shuffle</> : <><Shuffle className="w-4 h-4" /> Start Auto Shuffle</>}
+//             </button>
+//             <button
+//               onClick={handleShufflePattern}
+//               disabled={isAutoShuffling}
+//               className="px-4 py-2.5 bg-white hover:bg-gray-50 border-2 border-orange-300 text-orange-700 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 flex items-center gap-2"
+//             >
+//               <Shuffle className="w-4 h-4" /> Once
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Pattern Selection */}
+//         <div className="mb-6">
+//           <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between">
+//             <span>Step 1: Select Pattern Style</span>
+//           </h4>
+//           <div className="grid grid-cols-4 gap-3">
+//             {/* Pattern buttons loop (You can leave your existing PATTERN_CONFIGS loop here) */}
+//             {PATTERN_CONFIGS.map((pattern) => (
+//               <button
+//                 key={pattern.type}
+//                 onClick={() => { setSelectedPattern(pattern.type); setIsAutoShuffling(false); }}
+//                 disabled={isAutoShuffling}
+//                 className={`p-4 rounded-xl border-2 transition-all text-center ${
+//                   selectedPattern === pattern.type ? 'border-purple-500 bg-purple-50 shadow-md scale-105' : 'border-gray-200 hover:border-purple-300'
+//                 } ${isAutoShuffling ? 'opacity-50 cursor-not-allowed' : ''}`}
+//               >
+//                 <div className="text-3xl mb-2">{pattern.icon}</div>
+//                 <div className="text-xs font-semibold text-gray-800 mb-1">{pattern.name}</div>
+//               </button>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Tile Source Selection */}
+//         <div>
+//           <h4 className="text-sm font-semibold text-gray-700 mb-3">Step 2: Choose Tile Source</h4>
+//           <div className="grid grid-cols-2 gap-3">
+//             <button
+//               onClick={() => setUploadMode('qr')}
+//               className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-center"
+//             >
+//               <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+//                 <QrCode className="w-6 h-6 text-white" />
+//               </div>
+//               <h5 className="font-semibold text-gray-800 text-sm mb-1">Scan QR</h5>
+//               <p className="text-xs text-gray-500">Fastest method</p>
+//             </button>
+
+//             <button
+//               onClick={() => setUploadMode('manual')}
+//               className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all text-center"
+//             >
+//               <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center">
+//                 <Hash className="w-6 h-6 text-white" />
+//               </div>
+//               <h5 className="font-semibold text-gray-800 text-sm mb-1">Enter Code</h5>
+//               <p className="text-xs text-gray-500">Manual search</p>
+//             </button>
+//           </div>
+//         </div>
+
+//         {expectedTileSize && (
+//           <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-800 flex items-start gap-2">
+//             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+//             <p><strong>Note:</strong> The tile you select must strictly be <strong>{expectedTileSize.width}×{expectedTileSize.height} cm</strong> to match the base wall design.</p>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
 
 // const TileUploadOptionsModal: React.FC<{
 //   isOpen: boolean;
@@ -4815,20 +5598,896 @@ const [showTileBorders, setShowTileBorders] = useState(false);
 //   );
 // };
 
+// const TileUploadOptionsModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onTileSelected: (tileData: TileUploadData) => void;
+//   currentUser?: any;
+// }> = ({ isOpen, onClose, onTileSelected, currentUser }) => {
+  
+//   // ✅ CHANGED: Default mode ab 'select' ki jagah direct 'qr' hai
+//   const [mode, setMode] = useState<UploadMode>('qr'); 
+//   const [manualCode, setManualCode] = useState('');
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+
+//   // ✅ NEW: Jab bhi modal open hoga, humesha direct QR mode mein aayega
+//   useEffect(() => {
+//     if (isOpen) {
+//       setMode('qr');
+//       setError(null);
+//       setManualCode('');
+//     }
+//   }, [isOpen]);
+
+//   if (!isOpen) return null;
+
+//   // ═══════════════════════════════════════════════════════════
+//   // DIRECT QR SCANNER MODE
+//   // ═══════════════════════════════════════════════════════════
+//   if (mode === 'qr') {
+//     return (
+//       <>
+//         <QRScanner
+//           currentUser={currentUser}
+//           onScanSuccess={async (qrData) => {
+//             console.log('🎯 QR Scanned for wall tile:', qrData);
+            
+//             try {
+//               setIsLoading(true);
+//               setError(null);
+              
+//               let tileData: any = null;
+              
+//               if (qrData.tileId) {
+//                 const tileId = qrData.tileId.trim();
+//                 tileData = await getTileById(tileId);
+                
+//                 if (!tileData) {
+//                   const result = await getTileByCode(tileId);
+//                   if (result.success && result.tile) {
+//                     tileData = result.tile;
+//                   }
+//                 }
+//               }
+              
+//               if (tileData && (tileData.imageUrl || tileData.image_url)) {
+//                 const userForVerification = currentUser || (auth.currentUser ? {
+//                   uid: auth.currentUser.uid,
+//                   user_id: auth.currentUser.uid,
+//                   email: auth.currentUser.email,
+//                   role: 'worker'
+//                 } : null);
+                
+//                 // 🔒 PRODUCTION SECURITY: Verify seller ownership
+//                 if (!verifyTileSeller(tileData, userForVerification)) {
+//                   setError(
+//                     `⛔ BLOCKED: This tile belongs to another seller.\n\n` +
+//                     `You can only scan QR codes of your own seller's tiles for walls.`
+//                   );
+//                   setIsLoading(false);
+//                   return;
+//                 }
+                
+//                 // ✅ Seller verified - proceed
+//                 const imageUrl = tileData.imageUrl || tileData.image_url;
+                
+//                 onTileSelected({
+//                   imageUrl: imageUrl,
+//                   tileId: tileData.id,
+//                   tileName: tileData.name,
+//                   size: { 
+//                     width: tileData.size_width || 30, 
+//                     height: tileData.size_height || 45 
+//                   }
+//                 });
+                
+//                 onClose(); // ✅ Modal close after success
+//                 console.log('✅ Wall tile applied from QR scan (seller verified):', tileData.name);
+//               } else {
+//                 setError('Tile not found or no image available');
+//               }
+              
+//             } catch (err) {
+//               console.error('❌ QR scan error:', err);
+//               setError('Failed to load tile from QR code');
+//             } finally {
+//               setIsLoading(false);
+//             }
+//           }}
+//           onClose={() => {
+//             onClose(); // ✅ Back jane ki jagah poora modal close hoga
+//           }}
+//         />
+
+//         {/* ✅ PRO TIP: Floating "Manual Entry" Button over the Scanner */}
+//         <div className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[60] animate-slideUp">
+//           <button 
+//             onClick={() => setMode('manual')}
+//             className="bg-black/80 text-white px-5 py-2.5 rounded-full font-semibold text-sm shadow-2xl border border-white/20 backdrop-blur-md flex items-center gap-2 hover:bg-black transition-all active:scale-95"
+//           >
+//             <Hash className="w-4 h-4" />
+//             Enter Code Manually
+//           </button>
+//         </div>
+//       </>
+//     );
+//   }
+
+//   // ═══════════════════════════════════════════════════════════
+//   // MANUAL CODE ENTRY MODE (Fallback)
+//   // ═══════════════════════════════════════════════════════════
+//   if (mode === 'manual') {
+//     const handleManualSubmit = async (e: React.FormEvent) => {
+//       e.preventDefault();
+      
+//       if (!manualCode.trim()) {
+//         setError('Please enter a tile code');
+//         return;
+//       }
+
+//       try {
+//         setIsLoading(true);
+//         setError(null);
+        
+//         const result = await getTileByCode(manualCode.trim().toUpperCase());
+        
+//         if (result.success && result.tile) {
+//           const tileData = result.tile;
+          
+//           const userForVerification = currentUser || (auth.currentUser ? {
+//             uid: auth.currentUser.uid,
+//             user_id: auth.currentUser.uid,
+//             email: auth.currentUser.email,
+//             role: 'worker'
+//           } : null);
+          
+//           // 🔒 Verify seller ownership
+//           if (!verifyTileSeller(tileData, userForVerification)) {
+//             setError(
+//               `⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.\n\n` +
+//               `You can only use tile codes from your own seller's inventory.`
+//             );
+//             setIsLoading(false);
+//             return;
+//           }
+          
+//           // ✅ Seller verified - proceed
+//           const imageUrl = tileData.imageUrl || tileData.image_url;
+          
+//           if (imageUrl) {
+//             onTileSelected({
+//               imageUrl: imageUrl,
+//               tileId: tileData.id,
+//               tileName: tileData.name,
+//               size: { 
+//                 width: tileData.size_width || 30, 
+//                 height: tileData.size_height || 45 
+//               }
+//             });
+            
+//             setManualCode('');
+//             onClose(); // ✅ Modal close after success
+            
+//             console.log('✅ Wall tile applied from manual code:', tileData.name);
+//           } else {
+//             setError('Tile found but no image available');
+//           }
+//         } else {
+//           setError(result.error || 'Tile not found. Please check the code.');
+//         }
+        
+//       } catch (err) {
+//         console.error('❌ Manual search error:', err);
+//         setError('Failed to search tile. Please try again.');
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     return (
+//       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
+//           <div className="flex items-center justify-between mb-6">
+//             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//               <Hash className="w-6 h-6 text-purple-600" />
+//               Enter Tile Code
+//             </h3>
+//             <button 
+//               onClick={() => {
+//                 setMode('qr'); // ✅ Wapas scanner par bhej do
+//                 setError(null);
+//               }} 
+//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//             >
+//               <X className="w-5 h-5 text-gray-600" />
+//             </button>
+//           </div>
+
+//           {error && (
+//             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//               <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
+//             </div>
+//           )}
+
+//           <form onSubmit={handleManualSubmit} className="space-y-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 Tile Code / SKU
+//               </label>
+//               <input
+//                 type="text"
+//                 value={manualCode}
+//                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+//                 placeholder="e.g., MAR60X60WH"
+//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+//                 autoFocus
+//                 disabled={isLoading}
+//               />
+//             </div>
+
+//             <button
+//               type="submit"
+//               disabled={!manualCode.trim() || isLoading}
+//               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+//             >
+//               {isLoading ? (
+//                 <>
+//                   <Loader className="w-5 h-5 animate-spin" />
+//                   Searching...
+//                 </>
+//               ) : (
+//                 <>
+//                   <Check className="w-5 h-5" />
+//                   Apply Tile
+//                 </>
+//               )}
+//             </button>
+//           </form>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return null;
+// };
+
+// const TileUploadOptionsModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onTileSelected: (tileData: TileUploadData) => void;
+//   currentUser?: any;
+//   expectedTileSize?: { width: number; height: number }; // ✅ STRICT SIZE VALIDATION PROP
+// }> = ({ isOpen, onClose, onTileSelected, currentUser, expectedTileSize }) => {
+  
+//   const [mode, setMode] = useState<UploadMode>('qr'); 
+//   const [manualCode, setManualCode] = useState('');
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+
+//   // Modal open hone par state reset karein
+//   useEffect(() => {
+//     if (isOpen) {
+//       setMode('qr'); // Hamesha QR se start hoga
+//       setError(null);
+//       setManualCode('');
+//     }
+//   }, [isOpen]);
+
+//   if (!isOpen) return null;
+
+//   // ✅ SHARED VALIDATION FUNCTION (Used by both QR and Manual Mode)
+//   const validateAndApplyTile = async (tileData: any) => {
+//     const userForVerification = currentUser || (auth.currentUser ? {
+//       uid: auth.currentUser.uid,
+//       user_id: auth.currentUser.uid,
+//       email: auth.currentUser.email,
+//       role: 'worker'
+//     } : null);
+    
+//     // 1. Seller Verification
+//     if (!verifyTileSeller(tileData, userForVerification)) {
+//       setError(`⛔ BLOCKED: This tile belongs to another seller.\nYou can only scan QR codes of your own seller's tiles for walls.`);
+//       setIsLoading(false);
+//       return;
+//     }
+
+//     // 2. STRICT SIZE VALIDATION
+//     let scannedWidth = Number(tileData.size_width || tileData.sizeWidth || tileData.width || 30);
+//     let scannedHeight = Number(tileData.size_height || tileData.sizeHeight || tileData.height || 45);
+
+//     if (expectedTileSize) {
+//       if (scannedWidth !== Number(expectedTileSize.width) || scannedHeight !== Number(expectedTileSize.height)) {
+//         setError(
+//           `⛔ Size Mismatch Error!\n\n` +
+//           `Wall Base Tile: ${expectedTileSize.width}×${expectedTileSize.height} cm\n` +
+//           `Highlighter Tile: ${scannedWidth}×${scannedHeight} cm\n\n` +
+//           `Please use a highlighter tile of exactly ${expectedTileSize.width}×${expectedTileSize.height} cm.`
+//         );
+//         setIsLoading(false);
+//         return; // Execution stops here if size doesn't match
+//       }
+//     }
+
+//     // 3. Success - Apply Tile
+//     const imageUrl = tileData.imageUrl || tileData.image_url;
+//     if (imageUrl) {
+//       onTileSelected({
+//         imageUrl: imageUrl,
+//         tileId: tileData.id,
+//         tileName: tileData.name,
+//         size: { width: scannedWidth, height: scannedHeight }
+//       });
+//       onClose(); // Modal proper close
+//     } else {
+//       setError('Tile not found or no image available');
+//     }
+//     setIsLoading(false);
+//   };
+
+//   // ═══════════════════════════════════════════════════════════
+//   // MODE 1: QR SCANNER
+//   // ═══════════════════════════════════════════════════════════
+//   if (mode === 'qr') {
+//     return (
+//       <>
+//         <QRScanner
+//           currentUser={currentUser}
+//           onScanSuccess={async (qrData) => {
+//             try {
+//               setIsLoading(true);
+//               setError(null);
+//               let tileData: any = null;
+              
+//               if (qrData.tileId) {
+//                 const tileId = qrData.tileId.trim();
+//                 tileData = await getTileById(tileId);
+                
+//                 if (!tileData) {
+//                   const result = await getTileByCode(tileId);
+//                   if (result.success && result.tile) {
+//                     tileData = result.tile;
+//                   }
+//                 }
+//               }
+              
+//               if (tileData) {
+//                 await validateAndApplyTile(tileData);
+//               } else {
+//                 setError('Tile not found in database');
+//                 setIsLoading(false);
+//               }
+//             } catch (err) {
+//               setError('Failed to load tile from QR code');
+//               setIsLoading(false);
+//             }
+//           }}
+//           onClose={() => onClose()}
+//         />
+        
+//         {/* Floating Manual Entry Button over QR Scanner */}
+//         <div className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[60] animate-slideUp">
+//           <button 
+//             onClick={() => setMode('manual')}
+//             className="bg-black/80 text-white px-5 py-2.5 rounded-full font-semibold text-sm shadow-2xl border border-white/20 backdrop-blur-md flex items-center gap-2 hover:bg-black transition-all active:scale-95"
+//           >
+//             <Hash className="w-4 h-4" />
+//             Enter Code Manually
+//           </button>
+//         </div>
+
+//         {/* Floating Error Box for QR Mode (if any error occurs during scan) */}
+//         {error && (
+//           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[70] w-[90%] max-w-sm">
+//             <div className="bg-red-50 p-4 rounded-xl border-2 border-red-400 shadow-2xl flex items-start gap-3">
+//               <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+//               <p className="text-red-700 text-sm font-medium whitespace-pre-line flex-1">{error}</p>
+//               <button onClick={() => setError(null)} className="p-1 hover:bg-red-100 rounded-md">
+//                 <X className="w-5 h-5 text-red-600" />
+//               </button>
+//             </div>
+//           </div>
+//         )}
+//       </>
+//     );
+//   }
+
+//   // ═══════════════════════════════════════════════════════════
+//   // MODE 2: MANUAL CODE ENTRY
+//   // ═══════════════════════════════════════════════════════════
+//   if (mode === 'manual') {
+//     const handleManualSubmit = async (e: React.FormEvent) => {
+//       e.preventDefault();
+//       if (!manualCode.trim()) {
+//         setError('Please enter a tile code');
+//         return;
+//       }
+
+//       try {
+//         setIsLoading(true);
+//         setError(null);
+//         const result = await getTileByCode(manualCode.trim().toUpperCase());
+        
+//         if (result.success && result.tile) {
+//           await validateAndApplyTile(result.tile);
+//         } else {
+//           setError(result.error || 'Tile not found. Please check the code.');
+//           setIsLoading(false);
+//         }
+//       } catch (err) {
+//         setError('Failed to search tile. Please try again.');
+//         setIsLoading(false);
+//       }
+//     };
+
+//     return (
+//       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+//         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
+          
+//           <div className="flex items-center justify-between mb-6">
+//             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//               <Hash className="w-6 h-6 text-purple-600" />
+//               Enter Tile Code
+//             </h3>
+//             <button 
+//               onClick={() => {
+//                 setMode('qr'); // Wapas scanner par bhej do
+//                 setError(null);
+//               }} 
+//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//             >
+//               <X className="w-5 h-5 text-gray-600" />
+//             </button>
+//           </div>
+
+//           {error && (
+//             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+//               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//               <p className="text-red-700 text-sm font-medium whitespace-pre-line leading-relaxed">{error}</p>
+//             </div>
+//           )}
+
+//           <form onSubmit={handleManualSubmit} className="space-y-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 Tile Code / SKU
+//               </label>
+//               <input
+//                 type="text"
+//                 value={manualCode}
+//                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+//                 placeholder="e.g., MAR60X60WH"
+//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono text-lg transition-all"
+//                 autoFocus
+//                 disabled={isLoading}
+//               />
+//             </div>
+
+//             <button
+//               type="submit"
+//               disabled={!manualCode.trim() || isLoading}
+//               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95"
+//             >
+//               {isLoading ? (
+//                 <>
+//                   <Loader className="w-5 h-5 animate-spin" />
+//                   Searching & Validating...
+//                 </>
+//               ) : (
+//                 <>
+//                   <Check className="w-5 h-5" />
+//                   Apply Tile
+//                 </>
+//               )}
+//             </button>
+//           </form>
+
+//           {expectedTileSize && (
+//             <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-800 flex items-start gap-2">
+//               <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+//               <p><strong>Note:</strong> The tile you select must exactly be <strong>{expectedTileSize.width}×{expectedTileSize.height} cm</strong> to match your base wall size.</p>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return null;
+// };
+const RandomPatternModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  currentUser?: any; 
+  onApplyPattern: (result: QRScanResult, pattern: { type: PatternType; variant: number }) => void;
+  roomType: string;
+  wallTileHeight?: number; 
+  expectedTileSize?: { width: number; height: number }; // ✅ STRICT VALIDATION PROP
+}> = ({ isOpen, onClose, onApplyPattern, roomType, currentUser, wallTileHeight = 11, expectedTileSize }) => { 
+  
+  const [uploadMode, setUploadMode] = useState<UploadMode>('select');
+  const [selectedPattern, setSelectedPattern] = useState<PatternType>('vertical');
+  const [patternVariant, setPatternVariant] = useState(0);
+  const [manualCode, setManualCode] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scanError, setScanError] = useState<string>('');
+  
+  const [isAutoShuffling, setIsAutoShuffling] = useState(false);
+  const [shuffleSpeed, setShuffleSpeed] = useState<number>(1500);
+  
+  const getRandomPattern = useCallback((): PatternType => {
+    const patterns: PatternType[] = ['vertical', 'horizontal', 'diagonal', 'checkerboard', 'random', 'border', 'corners', 'cross'];
+    return patterns[Math.floor(Math.random() * patterns.length)];
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoShuffling) return;
+    const interval = setInterval(() => {
+      setSelectedPattern(getRandomPattern());
+      setPatternVariant(Math.floor(Math.random() * 10));
+    }, shuffleSpeed);
+    return () => clearInterval(interval);
+  }, [isAutoShuffling, shuffleSpeed, getRandomPattern]);
+
+  useEffect(() => {
+    if (uploadMode !== 'select') {
+      setIsAutoShuffling(false);
+    }
+  }, [uploadMode]);
+
+  const handleToggleAutoShuffle = () => setIsAutoShuffling(prev => !prev);
+  const handleShufflePattern = () => { setSelectedPattern(getRandomPattern()); setPatternVariant(Math.floor(Math.random() * 10)); };
+  const handleShuffleVariant = () => setPatternVariant(prev => (prev + 1) % 10);
+
+  // ✅ SHARED VALIDATION FUNCTION FOR PATTERNS
+  const validateAndApplyPatternTile = async (tileData: any, qrDataSize?: string) => {
+    // 1. Verify Seller
+    if (!verifyTileSeller(tileData, currentUser)) {
+      setUploadMode('manual'); // ✅ FORCE CLOSE SCANNER
+      setScanError(`⛔ BLOCKED: Tile "${tileData.name}" belongs to another showroom.`);
+      setIsProcessing(false);
+      return;
+    }
+
+    // 2. PROPER SIZE EXTRACTION FROM FIREBASE
+    let extractedWidth = 0;
+    let extractedHeight = 0;
+
+    if (qrDataSize) {
+      const match = String(qrDataSize).toLowerCase().match(/(\d+)\s*[x×]\s*(\d+)/);
+      if (match) {
+        extractedWidth = Number(match[1]);
+        extractedHeight = Number(match[2]);
+      }
+    }
+
+    if (!extractedWidth || !extractedHeight) {
+      extractedWidth = Number(tileData.size_width || tileData.width || 30);
+      extractedHeight = Number(tileData.size_height || tileData.height || 45);
+    }
+
+    // 3. STRICT EQUAL SIZE VALIDATION
+    if (expectedTileSize) {
+      if (extractedWidth !== Number(expectedTileSize.width) || extractedHeight !== Number(expectedTileSize.height)) {
+        setUploadMode('manual'); // ✅ FORCE CLOSE SCANNER TO SHOW ERROR
+        setScanError(
+          `⛔ Size Mismatch Error!\n\nWall Base Tile: ${expectedTileSize.width}×${expectedTileSize.height} cm\nHighlighter Tile: ${extractedWidth}×${extractedHeight} cm\n\nPlease enter/scan a highlighter tile of exactly ${expectedTileSize.width}×${expectedTileSize.height} cm.`
+        );
+        setIsProcessing(false);
+        return;
+      }
+    }
+    
+    // 4. Success Apply
+    const imageUrl = tileData.imageUrl || tileData.image_url;
+    if (imageUrl) {
+      const qrData: QRScanResult = {
+        tileId: tileData.id,
+        tileName: tileData.name,
+        imageUrl: imageUrl,
+        size: { width: extractedWidth, height: extractedHeight }
+      };
+      onApplyPattern(qrData, { type: selectedPattern, variant: patternVariant });
+      setUploadMode('select');
+      setManualCode('');
+      onClose();
+    } else {
+      setUploadMode('manual');
+      setScanError('Tile found but no image available');
+    }
+    setIsProcessing(false);
+  };
+
+  // ✅ MANUAL SUBMIT
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualCode.trim()) { setScanError('Please enter a tile code'); return; }
+    setIsProcessing(true);
+    setScanError('');
+
+    try {
+      const result = await getTileByCode(manualCode.trim().toUpperCase());
+      if (result.success && result.tile) {
+        await validateAndApplyPatternTile(result.tile);
+      } else {
+        setScanError(result.error || 'Tile not found. Please check the code.');
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      setScanError('Failed to search tile. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  // ✅ QR SCAN SUCCESS
+  const handleQRScanSuccess = async (qrData: any) => {
+    setIsProcessing(true);
+    setScanError('');
+
+    try {
+      let tileData: any = null;
+      if (qrData.tileId) {
+        tileData = await getTileById(qrData.tileId.trim());
+        if (!tileData) {
+          const result = await getTileByCode(qrData.tileId.trim());
+          if (result.success && result.tile) tileData = result.tile;
+        }
+      }
+      
+      if (tileData) {
+        await validateAndApplyPatternTile(tileData, qrData.size);
+      } else {
+        setUploadMode('manual');
+        setScanError('Tile not found in database');
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      setUploadMode('manual');
+      setScanError('Failed to load tile from QR code');
+      setIsProcessing(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  // ════════════════════════════════════════════════════════
+  // RENDER MODES
+  // ════════════════════════════════════════════════════════
+
+  if (uploadMode === 'qr') {
+    return (
+      <QRScanner 
+        currentUser={currentUser} 
+        onScanSuccess={handleQRScanSuccess} 
+        onClose={() => { setUploadMode('select'); setScanError(''); }} 
+      />
+    );
+  }
+
+  if (uploadMode === 'manual') {
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto animate-slideUp">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Hash className="w-6 h-6 text-purple-600" />
+              Pattern Tile Code
+            </h3>
+            <button onClick={() => { setUploadMode('select'); setScanError(''); setManualCode(''); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* 🔥 BIG ERROR BOX FOR VISIBILITY */}
+          {scanError && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 rounded-xl flex items-start gap-3 shadow-md">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-800 text-sm font-bold whitespace-pre-line leading-relaxed">{scanError}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleManualSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Enter Tile Code</label>
+              <input 
+                type="text" 
+                value={manualCode} 
+                onChange={(e) => setManualCode(e.target.value.toUpperCase())} 
+                placeholder="e.g., MAR60X60WH"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono text-lg" 
+                disabled={isProcessing} 
+                autoFocus 
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={!manualCode.trim() || isProcessing} 
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3.5 rounded-lg font-bold flex justify-center items-center gap-2 text-lg active:scale-95 disabled:opacity-50 transition-all hover:shadow-lg"
+            >
+              {isProcessing ? <><Loader className="w-5 h-5 animate-spin" /> Applying Pattern...</> : <><Shuffle className="w-5 h-5" /> Apply Pattern</>}
+            </button>
+          </form>
+
+          {expectedTileSize && !scanError && (
+            <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-800 flex items-start gap-2">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p>Your highlighter tile must strictly be <strong>{expectedTileSize.width}×{expectedTileSize.height} cm</strong> to match your base wall size.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // DEFAULT MAIN SELECTOR VIEW (Step 1 & 2)
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto animate-slideUp">
+        
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Shuffle className="w-6 h-6 text-purple-600" /> Choose Pattern & Source
+          </h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Auto Shuffle Controls */}
+        <div className="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 border-2 border-orange-200">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Shuffle className="w-4 h-4 text-orange-600" /> Auto Shuffle Patterns
+              </p>
+              <p className="text-xs text-gray-600 mt-1">Automatically cycle through all pattern types</p>
+            </div>
+            {isAutoShuffling && (
+              <div className="flex items-center gap-2 text-xs font-medium text-orange-600">
+                <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div> Shuffling...
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleToggleAutoShuffle}
+              className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                isAutoShuffling ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg text-white'
+              }`}
+            >
+              {isAutoShuffling ? <><X className="w-4 h-4" /> Stop Auto Shuffle</> : <><Shuffle className="w-4 h-4" /> Start Auto Shuffle</>}
+            </button>
+            <button
+              onClick={handleShufflePattern}
+              disabled={isAutoShuffling}
+              className="px-4 py-2.5 bg-white hover:bg-gray-50 border-2 border-orange-300 text-orange-700 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Shuffle className="w-4 h-4" /> Once
+            </button>
+          </div>
+          {isAutoShuffling && (
+            <div className="mt-3 pt-3 border-t border-orange-200">
+              <label className="block text-xs font-medium text-gray-700 mb-2">Shuffle Speed: {shuffleSpeed}ms</label>
+              <input
+                type="range"
+                min="500" max="3000" step="100"
+                value={shuffleSpeed}
+                onChange={(e) => setShuffleSpeed(Number(e.target.value))}
+                className="w-full h-2 bg-orange-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Fast (0.5s)</span>
+                <span>Slow (3s)</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Pattern Selection Grid */}
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between">
+            <span>Step 1: Select Pattern Style</span>
+            {!isAutoShuffling && (
+              <span className="text-xs text-gray-500">
+                Current: {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name}
+              </span>
+            )}
+          </h4>
+          <div className="grid grid-cols-4 gap-3">
+            {PATTERN_CONFIGS.map((pattern) => (
+              <button
+                key={pattern.type}
+                onClick={() => { setSelectedPattern(pattern.type); setIsAutoShuffling(false); }}
+                disabled={isAutoShuffling}
+                className={`p-4 rounded-xl border-2 transition-all text-center ${
+                  selectedPattern === pattern.type ? 'border-purple-500 bg-purple-50 shadow-md scale-105' : 'border-gray-200 hover:border-purple-300 hover:shadow-sm'
+                } ${isAutoShuffling ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <div className="text-3xl mb-2">{pattern.icon}</div>
+                <div className="text-xs font-semibold text-gray-800 mb-1">{pattern.name}</div>
+                <div className="text-xs text-gray-500">{pattern.coverage}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pattern Preview */}
+        <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-700">
+              {PATTERN_CONFIGS.find(p => p.type === selectedPattern)?.name} Preview
+            </p>
+            {!isAutoShuffling && (
+              <button onClick={handleShuffleVariant} className="px-3 py-1.5 bg-white/70 hover:bg-white text-purple-700 rounded-lg text-xs font-semibold transition-all flex items-center gap-1">
+                <Shuffle className="w-3 h-3" /> Variant
+              </button>
+            )}
+          </div>
+          <div className="bg-white rounded-lg p-4 mb-3">
+            <div className="grid grid-cols-12 gap-0.5 max-w-[300px] mx-auto">
+              {Array.from({ length: 60 }).map((_, i) => {
+                const pattern = generatePattern(selectedPattern, 12, 5, patternVariant);
+                const isSelected = pattern.includes(i + 1);
+                return (
+                  <div
+                    key={i}
+                    className={`aspect-square rounded-sm transition-all duration-300 ${
+                      isSelected ? 'bg-purple-500 scale-110' : 'bg-gray-200'
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Source Selection */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Step 2: Choose Tile Source</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => setUploadMode('qr')} className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all text-center group">
+              <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                <QrCode className="w-6 h-6 text-white" />
+              </div>
+              <h5 className="font-semibold text-gray-800 text-sm mb-1">Scan QR</h5>
+              <p className="text-xs text-gray-500">Camera/Upload</p>
+            </button>
+
+            <button onClick={() => setUploadMode('manual')} className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all text-center group">
+              <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center">
+                <Hash className="w-6 h-6 text-white" />
+              </div>
+              <h5 className="font-semibold text-gray-800 text-sm mb-1">Enter Code</h5>
+              <p className="text-xs text-gray-500">Manual search</p>
+            </button>
+          </div>
+        </div>
+
+        {/* Expected Size Note */}
+        {expectedTileSize && (
+          <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-800 flex items-start gap-2">
+            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <p><strong>Note:</strong> Selected tile must be exactly <strong>{expectedTileSize.width}×{expectedTileSize.height} cm</strong> to match the wall grid.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 const TileUploadOptionsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onTileSelected: (tileData: TileUploadData) => void;
   currentUser?: any;
-}> = ({ isOpen, onClose, onTileSelected, currentUser }) => {
+  expectedTileSize?: { width: number; height: number }; // ✅ ADDED EXPECTED SIZE PROP
+}> = ({ isOpen, onClose, onTileSelected, currentUser, expectedTileSize }) => {
   
-  // ✅ CHANGED: Default mode ab 'select' ki jagah direct 'qr' hai
   const [mode, setMode] = useState<UploadMode>('qr'); 
   const [manualCode, setManualCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ NEW: Jab bhi modal open hoga, humesha direct QR mode mein aayega
   useEffect(() => {
     if (isOpen) {
       setMode('qr');
@@ -4839,27 +6498,88 @@ const TileUploadOptionsModal: React.FC<{
 
   if (!isOpen) return null;
 
-  // ═══════════════════════════════════════════════════════════
-  // DIRECT QR SCANNER MODE
-  // ═══════════════════════════════════════════════════════════
+  // ✅ SHARED VALIDATION FUNCTION FOR BOTH QR AND MANUAL
+  const validateAndApplyTile = async (tileData: any, qrDataSize?: string) => {
+    const userForVerification = currentUser || (auth.currentUser ? {
+      uid: auth.currentUser.uid,
+      user_id: auth.currentUser.uid,
+      email: auth.currentUser.email,
+      role: 'worker'
+    } : null);
+    
+    // 1. Seller Verification
+    if (!verifyTileSeller(tileData, userForVerification)) {
+      setMode('manual'); // ✅ FORCE CLOSE SCANNER
+      setError(`⛔ BLOCKED: This tile belongs to another seller.`);
+      setIsLoading(false);
+      return;
+    }
+
+    // 2. EXACT SIZE EXTRACTION
+    let scannedWidth = 0;
+    let scannedHeight = 0;
+
+    // A. Parse from QR String (if available)
+    if (qrDataSize) {
+      const match = String(qrDataSize).toLowerCase().match(/(\d+)\s*[x×]\s*(\d+)/);
+      if (match) {
+        scannedWidth = Number(match[1]);
+        scannedHeight = Number(match[2]);
+      }
+    }
+
+    // B. Fallback to Database fields
+    if (!scannedWidth || !scannedHeight) {
+      scannedWidth = Number(tileData.size_width || tileData.sizeWidth || tileData.width || 30);
+      scannedHeight = Number(tileData.size_height || tileData.sizeHeight || tileData.height || 45);
+    }
+
+    // 3. STRICT SIZE VALIDATION (EQUAL CHECK)
+    if (expectedTileSize) {
+      if (scannedWidth !== Number(expectedTileSize.width) || scannedHeight !== Number(expectedTileSize.height)) {
+        setMode('manual'); // ✅ FORCE CLOSE SCANNER TO SHOW ERROR
+        setError(
+          `⛔ Size Mismatch Error!\n\n` +
+          `Wall Tile Size: ${expectedTileSize.width}×${expectedTileSize.height} cm\n` +
+          `Highlighter Tile: ${scannedWidth}×${scannedHeight} cm\n\n` +
+          `Please use a highlighter tile of exactly ${expectedTileSize.width}×${expectedTileSize.height} cm.`
+        );
+        setIsLoading(false);
+        return; // Stops here, view remains unchanged
+      }
+    }
+
+    // 4. Apply Tile
+    const imageUrl = tileData.imageUrl || tileData.image_url;
+    if (imageUrl) {
+      onTileSelected({
+        imageUrl: imageUrl,
+        tileId: tileData.id,
+        tileName: tileData.name,
+        size: { width: scannedWidth, height: scannedHeight }
+      });
+      onClose();
+    } else {
+      setMode('manual');
+      setError('Tile found but no image available');
+    }
+    setIsLoading(false);
+  };
+
   if (mode === 'qr') {
     return (
       <>
         <QRScanner
           currentUser={currentUser}
           onScanSuccess={async (qrData) => {
-            console.log('🎯 QR Scanned for wall tile:', qrData);
-            
             try {
               setIsLoading(true);
               setError(null);
-              
               let tileData: any = null;
               
               if (qrData.tileId) {
                 const tileId = qrData.tileId.trim();
                 tileData = await getTileById(tileId);
-                
                 if (!tileData) {
                   const result = await getTileByCode(tileId);
                   if (result.success && result.tile) {
@@ -4868,56 +6588,22 @@ const TileUploadOptionsModal: React.FC<{
                 }
               }
               
-              if (tileData && (tileData.imageUrl || tileData.image_url)) {
-                const userForVerification = currentUser || (auth.currentUser ? {
-                  uid: auth.currentUser.uid,
-                  user_id: auth.currentUser.uid,
-                  email: auth.currentUser.email,
-                  role: 'worker'
-                } : null);
-                
-                // 🔒 PRODUCTION SECURITY: Verify seller ownership
-                if (!verifyTileSeller(tileData, userForVerification)) {
-                  setError(
-                    `⛔ BLOCKED: This tile belongs to another seller.\n\n` +
-                    `You can only scan QR codes of your own seller's tiles for walls.`
-                  );
-                  setIsLoading(false);
-                  return;
-                }
-                
-                // ✅ Seller verified - proceed
-                const imageUrl = tileData.imageUrl || tileData.image_url;
-                
-                onTileSelected({
-                  imageUrl: imageUrl,
-                  tileId: tileData.id,
-                  tileName: tileData.name,
-                  size: { 
-                    width: tileData.size_width || 30, 
-                    height: tileData.size_height || 45 
-                  }
-                });
-                
-                onClose(); // ✅ Modal close after success
-                console.log('✅ Wall tile applied from QR scan (seller verified):', tileData.name);
+              if (tileData) {
+                await validateAndApplyTile(tileData, qrData.size); // Pass QR size string
               } else {
-                setError('Tile not found or no image available');
+                setMode('manual'); // Close scanner
+                setError('Tile not found in database');
+                setIsLoading(false);
               }
-              
             } catch (err) {
-              console.error('❌ QR scan error:', err);
+              setMode('manual');
               setError('Failed to load tile from QR code');
-            } finally {
               setIsLoading(false);
             }
           }}
-          onClose={() => {
-            onClose(); // ✅ Back jane ki jagah poora modal close hoga
-          }}
+          onClose={() => onClose()}
         />
-
-        {/* ✅ PRO TIP: Floating "Manual Entry" Button over the Scanner */}
+        
         <div className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[60] animate-slideUp">
           <button 
             onClick={() => setMode('manual')}
@@ -4931,79 +6617,31 @@ const TileUploadOptionsModal: React.FC<{
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // MANUAL CODE ENTRY MODE (Fallback)
-  // ═══════════════════════════════════════════════════════════
   if (mode === 'manual') {
     const handleManualSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      
       if (!manualCode.trim()) {
         setError('Please enter a tile code');
         return;
       }
-
       try {
         setIsLoading(true);
         setError(null);
-        
         const result = await getTileByCode(manualCode.trim().toUpperCase());
-        
         if (result.success && result.tile) {
-          const tileData = result.tile;
-          
-          const userForVerification = currentUser || (auth.currentUser ? {
-            uid: auth.currentUser.uid,
-            user_id: auth.currentUser.uid,
-            email: auth.currentUser.email,
-            role: 'worker'
-          } : null);
-          
-          // 🔒 Verify seller ownership
-          if (!verifyTileSeller(tileData, userForVerification)) {
-            setError(
-              `⛔ BLOCKED: Tile "${tileData.name}" belongs to another seller.\n\n` +
-              `You can only use tile codes from your own seller's inventory.`
-            );
-            setIsLoading(false);
-            return;
-          }
-          
-          // ✅ Seller verified - proceed
-          const imageUrl = tileData.imageUrl || tileData.image_url;
-          
-          if (imageUrl) {
-            onTileSelected({
-              imageUrl: imageUrl,
-              tileId: tileData.id,
-              tileName: tileData.name,
-              size: { 
-                width: tileData.size_width || 30, 
-                height: tileData.size_height || 45 
-              }
-            });
-            
-            setManualCode('');
-            onClose(); // ✅ Modal close after success
-            
-            console.log('✅ Wall tile applied from manual code:', tileData.name);
-          } else {
-            setError('Tile found but no image available');
-          }
+          await validateAndApplyTile(result.tile);
         } else {
           setError(result.error || 'Tile not found. Please check the code.');
+          setIsLoading(false);
         }
-        
       } catch (err) {
-        console.error('❌ Manual search error:', err);
         setError('Failed to search tile. Please try again.');
-      } finally {
         setIsLoading(false);
       }
     };
 
     return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -5011,10 +6649,7 @@ const TileUploadOptionsModal: React.FC<{
               Enter Tile Code
             </h3>
             <button 
-              onClick={() => {
-                setMode('qr'); // ✅ Wapas scanner par bhej do
-                setError(null);
-              }} 
+              onClick={() => { setMode('qr'); setError(null); }} 
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-gray-600" />
@@ -5024,15 +6659,13 @@ const TileUploadOptionsModal: React.FC<{
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
+              <p className="text-red-700 text-sm font-medium whitespace-pre-line leading-relaxed">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleManualSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tile Code / SKU
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tile Code / SKU</label>
               <input
                 type="text"
                 value={manualCode}
@@ -5043,23 +6676,12 @@ const TileUploadOptionsModal: React.FC<{
                 disabled={isLoading}
               />
             </div>
-
             <button
               type="submit"
               disabled={!manualCode.trim() || isLoading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
             >
-              {isLoading ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Check className="w-5 h-5" />
-                  Apply Tile
-                </>
-              )}
+              {isLoading ? <><Loader className="w-5 h-5 animate-spin" /> Searching & Validating...</> : <><Check className="w-5 h-5" /> Apply Tile</>}
             </button>
           </form>
         </div>
@@ -5069,6 +6691,7 @@ const TileUploadOptionsModal: React.FC<{
 
   return null;
 };
+
 
 const CameraController: React.FC<{
   preset: CameraPreset | null;
@@ -6637,6 +8260,7 @@ const renderScene = () => {
         onClose={() => setShowTileUploadOptions(false)}
         onTileSelected={handleTileSelected}
         currentUser={currentUser}
+        expectedTileSize={wallTile?.size}
       />
 
       <TileUploadOptionsModal
@@ -6653,6 +8277,7 @@ const renderScene = () => {
         roomType={roomType}
         currentUser={currentUser}
           wallTileHeight={11}
+          expectedTileSize={wallTile?.size}
       />
  {success && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] max-w-md mx-4 animate-slideDown">
