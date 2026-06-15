@@ -2321,7 +2321,7 @@ const GridWall: React.FC<{
           />
         </lineSegments>
       )}
-   ;
+   
     </group>
   );
 };
