@@ -2489,7 +2489,8 @@ export const SellerDashboard: React.FC = () => {
         
         {activeTab === "analytics" && <AnalyticsDashboard sellerId={currentUser?.user_id} />}
         {activeTab === "billing" && (
-    <BillingTab
+    <BillingTab 
+    key={`billing-tab-${planRefreshTrigger}`}
       sellerId={currentUser?.user_id || ''}
       // sellerBusiness={sellerData?.business_name || 'Your Business'}
       sellerEmail={currentUser?.email || ''}
