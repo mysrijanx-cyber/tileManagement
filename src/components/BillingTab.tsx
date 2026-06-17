@@ -59,6 +59,58 @@ export const BillingTab: React.FC<BillingTabProps> = ({
     }
   };
 
+  // const loadPayments = async (forceRefresh: boolean = false) => {
+  //   setLoading(true);
+  //   setError(null);
+    
+  //   try {
+  //     console.log('📋 Loading payment history for seller:', sellerId);
+      
+  //     if (forceRefresh) {
+  //       clearPaymentCache(sellerId);
+  //       console.log('🔄 Cache cleared, force refreshing...');
+  //     }
+      
+  //     const paymentRecords = await getSellerPayments(sellerId, 100, forceRefresh);
+      
+  //     console.log(`✅ Fetched ${paymentRecords.length} payment records`);
+      
+  //     const completedPayments = paymentRecords.filter(
+  //       p => p.payment_status === 'completed' && p.verified
+  //     );
+      
+  //     console.log(`✅ ${completedPayments.length} completed payments`);
+      
+  //     const paymentsWithPlans: PaymentWithPlan[] = await Promise.all(
+  //       completedPayments.map(async (payment) => {
+  //         try {
+  //           const plan = await getPlanById(payment.plan_id);
+  //           return {
+  //             ...payment,
+  //             plan_name: plan?.plan_name || payment.plan_name || 'Unknown Plan',
+  //             plan_price: plan?.price || payment.amount
+  //           } as PaymentWithPlan;
+  //         } catch (err) {
+  //           console.warn('⚠️ Could not fetch plan for payment:', payment.id);
+  //           return {
+  //             ...payment,
+  //             plan_name: payment.plan_name || 'Unknown Plan',
+  //             plan_price: payment.amount
+  //           } as PaymentWithPlan;
+  //         }
+  //       })
+  //     );
+      
+  //     setPayments(paymentsWithPlans);
+  //     setCurrentPage(1);
+      
+  //   } catch (err: any) {
+  //     console.error('❌ Error loading payments:', err);
+  //     setError('Failed to load payment history');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const loadPayments = async (forceRefresh: boolean = false) => {
     setLoading(true);
     setError(null);
@@ -101,6 +153,14 @@ export const BillingTab: React.FC<BillingTabProps> = ({
         })
       );
       
+      // 🔥 YAHAN CHANGE KIYA HAI: Sorting logic added before setting state
+      paymentsWithPlans.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA; // Highest (Latest) date comes first
+      });
+      // 👆 YAHAN TAK 🔥
+
       setPayments(paymentsWithPlans);
       setCurrentPage(1);
       

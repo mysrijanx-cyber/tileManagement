@@ -5741,10 +5741,53 @@ console.log('✅ createWorkerAccount loaded - PRODUCTION v7.0 (SELLER_ID FIX)');
  * @param sellerId - Seller's user ID
  * @returns Worker profile or null
  */
+// export const getSellerWorker = async (sellerId: string): Promise<UserProfile | null> => {
+//   try {
+//     console.log('🔍 Fetching worker for seller:', sellerId);
+
+//     const workerQuery = query(
+//       collection(db, 'users'),
+//       where('seller_id', '==', sellerId),
+//       where('role', '==', 'worker')
+//     );
+
+//     const workerSnapshot = await getDocs(workerQuery);
+
+//     if (workerSnapshot.empty) {
+//       console.log('ℹ️ No worker found for this seller');
+//       return null;
+//     }
+
+//     // ✅ PRODUCTION FIX: Filter out deleted/inactive workers
+//     for (const workerDoc of workerSnapshot.docs) {
+//       const workerData = workerDoc.data() as UserProfile;
+      
+//       // Skip deleted or inactive workers
+//       if (
+//         workerData.account_status === 'deleted' || 
+//         workerData.is_active === false
+//       ) {
+//         console.log('⚠️ Skipping deleted/inactive worker:', workerData.email);
+//         continue;
+//       }
+
+//       // Found active worker
+//       console.log('✅ Active worker found:', workerData.email);
+//       return workerData;
+//     }
+
+//     // No active worker found
+//     console.log('ℹ️ No active worker found (all deleted/inactive)');
+//     return null;
+
+//   } catch (error) {
+//     console.error('❌ Error fetching worker:', error);
+//     return null;
+//   }
+// };
+
 export const getSellerWorker = async (sellerId: string): Promise<UserProfile | null> => {
   try {
-    console.log('🔍 Fetching worker for seller:', sellerId);
-
     const workerQuery = query(
       collection(db, 'users'),
       where('seller_id', '==', sellerId),
@@ -5754,30 +5797,22 @@ export const getSellerWorker = async (sellerId: string): Promise<UserProfile | n
     const workerSnapshot = await getDocs(workerQuery);
 
     if (workerSnapshot.empty) {
-      console.log('ℹ️ No worker found for this seller');
       return null;
     }
 
-    // ✅ PRODUCTION FIX: Filter out deleted/inactive workers
     for (const workerDoc of workerSnapshot.docs) {
       const workerData = workerDoc.data() as UserProfile;
       
-      // Skip deleted or inactive workers
-      if (
-        workerData.account_status === 'deleted' || 
-        workerData.is_active === false
-      ) {
-        console.log('⚠️ Skipping deleted/inactive worker:', workerData.email);
+      // ✅ FIX: Ab hum 'is_active === false' wale worker ko SKIP NAHI karenge
+      // Sirf unko skip karenge jo permanently delete ho chuke hain
+      if (workerData.account_status === 'deleted') {
         continue;
       }
 
-      // Found active worker
-      console.log('✅ Active worker found:', workerData.email);
+      // Worker mil gaya (Chahe active ho ya disabled)
       return workerData;
     }
 
-    // No active worker found
-    console.log('ℹ️ No active worker found (all deleted/inactive)');
     return null;
 
   } catch (error) {
