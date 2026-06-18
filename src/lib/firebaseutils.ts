@@ -33,7 +33,7 @@ serverTimestamp,
   addDoc,
   orderBy,
   limit, 
-  writeBatch,
+
   onSnapshot,     // ← YEH ADD KARO
   Unsubscribe, writeBatch
 } from 'firebase/firestore';
@@ -316,293 +316,7 @@ export const getAllTileCodes = async () => {
     return [];
   }
 };
-/**
- * Get tile by tile code (Manual Entry Support)
- * PRODUCTION v1.0 - Case Insensitive + Worker Security
- * 
- * @param tileCode - Tile code entered by user (e.g., "MAR60X60WH")
- * @param workerId - Optional worker ID for authorization check
- * @returns Success object with tile data or error message
- */
-// export const getTileByCode = async (
 
-//   tileCode: string,
-//   workerId?: string
-// ): Promise<{ success: boolean; tile?: any; error?: string }> => {
-  
-//   try {
-//     console.log('🔍 Searching tile by code:', tileCode);
-
-//     // ═══════════════════════════════════════════════════════════
-//     // STEP 1: VALIDATE INPUT
-//     // ═══════════════════════════════════════════════════════════
-    
-//     if (!tileCode?.trim()) {
-//       return { success: false, error: 'Tile code is required' };
-//     }
-
-//     if (tileCode.trim().length < 3) {
-//       return { success: false, error: 'Tile code too short. Enter at least 3 characters.' };
-//     }
-
-//     // Convert to uppercase for case-insensitive search
-//     const searchCode = tileCode.trim().toUpperCase();
-//     console.log('🔍 Normalized search code:', searchCode);
-
-//     // ═══════════════════════════════════════════════════════════
-//     // STEP 2: QUERY FIRESTORE (Try both field naming conventions)
-//     // ═══════════════════════════════════════════════════════════
-    
-//     let tiles: any[] = [];
-
-//     // Try camelCase field first (tileCode)
-//     try {
-//       const q1 = query(
-//         collection(db, 'tiles'),
-//         where('tileCode', '==', searchCode)
-//       );
-//       const snapshot1 = await getDocs(q1);
-//       tiles = snapshot1.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//       console.log(`✅ Found ${tiles.length} tiles with tileCode field`);
-//     } catch (err: any) {
-//       console.warn('⚠️ tileCode query failed:', err.message);
-//     }
-
-//     // If no results, try snake_case field (tile_code)
-//     if (tiles.length === 0) {
-//       try {
-//         const q2 = query(
-//           collection(db, 'tiles'),
-//           where('tile_code', '==', searchCode)
-//         );
-//         const snapshot2 = await getDocs(q2);
-//         tiles = snapshot2.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//         console.log(`✅ Found ${tiles.length} tiles with tile_code field`);
-//       } catch (err: any) {
-//         console.warn('⚠️ tile_code query failed:', err.message);
-//       }
-//     }
-
-//     // No tiles found with exact code
-//     if (tiles.length === 0) {
-//       console.log('❌ No tile found with code:', searchCode);
-      
-//       // Log failed search for analytics
-//       try {
-//         await addDoc(collection(db, 'analytics'), {
-//           action_type: 'manual_search_failed',
-//           search_code: searchCode,
-//           worker_id: workerId || null,
-//           timestamp: new Date().toISOString()
-//         });
-//       } catch (logErr) {
-//         console.warn('⚠️ Could not log failed search');
-//       }
-      
-//       return { 
-//         success: false, 
-//         error: `No tile found with code "${searchCode}".\n\nPlease check:\n• Code spelling\n• Try with/without spaces\n• Ask staff for correct code` 
-//       };
-//     }
-
-//     console.log(`✅ Found ${tiles.length} matching tile(s)`);
-
-//     // ═══════════════════════════════════════════════════════════
-//     // STEP 3: WORKER AUTHORIZATION CHECK (Security)
-//     // ═══════════════════════════════════════════════════════════
-    
-//     if (workerId) {
-//       console.log('🔒 Worker authorization check starting...');
-      
-//       // Get worker's seller ID
-//       const workerDoc = await getDoc(doc(db, 'users', workerId));
-      
-//       if (!workerDoc.exists()) {
-//         console.error('❌ Worker document not found:', workerId);
-//         return { success: false, error: 'Worker account not found. Please login again.' };
-//       }
-
-//       const workerData = workerDoc.data();
-      
-//       // Verify worker role
-//       if (workerData.role !== 'worker') {
-//         console.error('❌ User is not a worker:', workerData.role);
-//         return { success: false, error: 'Only workers can use manual search.' };
-//       }
-
-//       // Verify worker is active
-//       if (workerData.is_active === false || workerData.account_status === 'deleted') {
-//         console.error('❌ Worker account inactive');
-//         return { success: false, error: 'Your worker account is inactive. Please contact administrator.' };
-//       }
-
-//       const workerSellerId = workerData.seller_id;
-      
-//       if (!workerSellerId) {
-//         console.error('❌ Worker has no seller assigned');
-//         return { success: false, error: 'Worker has no seller assigned. Please contact administrator.' };
-//       }
-
-//       console.log('✅ Worker verified:', workerData.email, '| Seller:', workerSellerId);
-
-//       // Filter tiles by worker's seller
-//       const authorizedTiles = tiles.filter(tile => {
-//         const tileSellerId = tile.sellerId || tile.seller_id;
-//         return tileSellerId === workerSellerId;
-//       });
-
-//       console.log(`🔒 Authorization check: ${tiles.length} total, ${authorizedTiles.length} authorized`);
-
-//       if (authorizedTiles.length === 0) {
-//         // Get seller names for better error message
-//         let workerSellerName = 'your showroom';
-//         let tileSellerName = 'another showroom';
-
-//         try {
-//           const tileSellerId = tiles[0].sellerId || tiles[0].seller_id;
-          
-//           const [workerSellerDoc, tileSellerDoc] = await Promise.all([
-//             getDoc(doc(db, 'sellers', workerSellerId)),
-//             getDoc(doc(db, 'sellers', tileSellerId))
-//           ]);
-
-//           if (workerSellerDoc.exists()) {
-//             workerSellerName = workerSellerDoc.data().business_name || workerSellerName;
-//           }
-
-//           if (tileSellerDoc.exists()) {
-//             tileSellerName = tileSellerDoc.data().business_name || tileSellerName;
-//           }
-//         } catch (nameErr) {
-//           console.warn('⚠️ Could not fetch seller names:', nameErr);
-//         }
-
-//         // Log unauthorized attempt
-//         try {
-//           await addDoc(collection(db, 'securityLogs'), {
-//             event: 'unauthorized_manual_search',
-//             worker_id: workerId,
-//             worker_email: workerData.email,
-//             worker_seller_id: workerSellerId,
-//             search_code: searchCode,
-//             found_tiles: tiles.length,
-//             authorized_tiles: 0,
-//             attempted_tile_ids: tiles.map(t => t.id),
-//             timestamp: new Date().toISOString(),
-//             blocked: true
-//           });
-//         } catch (logErr) {
-//           console.warn('⚠️ Could not log security event');
-//         }
-
-//         console.error('🚫 UNAUTHORIZED ACCESS BLOCKED');
-
-//         return {
-//           success: false,
-//           error: `🚫 UNAUTHORIZED TILE\n\nTile "${searchCode}" belongs to "${tileSellerName}".\n\nYou can only search tiles from "${workerSellerName}".\n\n⚠️ This attempt has been logged.`
-//         };
-//       }
-
-//       // Use only authorized tiles
-//       tiles = authorizedTiles;
-//       console.log(`✅ Worker authorized for ${tiles.length} tile(s)`);
-//     }
-
-//     // ═══════════════════════════════════════════════════════════
-//     // STEP 4: HANDLE MULTIPLE MATCHES
-//     // ═══════════════════════════════════════════════════════════
-    
-//     let selectedTile = tiles[0];
-
-//     if (tiles.length > 1) {
-//       console.warn(`⚠️ Multiple tiles found with code "${searchCode}":`, tiles.length);
-      
-//       // Log duplicate code warning
-//       try {
-//         await addDoc(collection(db, 'adminLogs'), {
-//           action: 'duplicate_tile_codes_detected',
-//           tile_code: searchCode,
-//           count: tiles.length,
-//           tile_ids: tiles.map(t => t.id),
-//           tile_names: tiles.map(t => t.name || 'Unknown'),
-//           timestamp: new Date().toISOString()
-//         });
-//       } catch (logErr) {
-//         console.warn('⚠️ Could not log duplicate warning');
-//       }
-
-//       // For now, return first match
-//       // TODO: Future enhancement - show selection UI
-//       console.log('📌 Returning first match:', selectedTile.name);
-//     }
-
-//     // ═══════════════════════════════════════════════════════════
-//     // STEP 5: LOG SUCCESSFUL SEARCH (Analytics)
-//     // ═══════════════════════════════════════════════════════════
-    
-//     try {
-//       await addDoc(collection(db, 'analytics'), {
-//         tile_id: selectedTile.id,
-//         action_type: 'manual_search',
-//         search_code: searchCode,
-//         worker_id: workerId || null,
-//         seller_id: selectedTile.sellerId || selectedTile.seller_id,
-//         multiple_matches: tiles.length > 1,
-//         match_count: tiles.length,
-//         timestamp: new Date().toISOString(),
-//         device_type: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-//         user_agent: navigator.userAgent.substring(0, 200)
-//       });
-//       console.log('📊 Manual search logged in analytics');
-//     } catch (logErr) {
-//       console.warn('⚠️ Could not log manual search analytics:', logErr);
-//       // Don't fail if logging fails
-//     }
-
-//     // ═══════════════════════════════════════════════════════════
-//     // STEP 6: RETURN SUCCESS
-//     // ═══════════════════════════════════════════════════════════
-    
-//     console.log('✅ Manual search successful:', {
-//       code: searchCode,
-//       tileName: selectedTile.name,
-//       tileId: selectedTile.id,
-//       matches: tiles.length
-//     });
-
-//     return {
-//       success: true,
-//       tile: selectedTile
-//     };
-
-//   } catch (error: any) {
-//     console.error('❌ Error in getTileByCode:', error);
-
-//     // Log error for debugging
-//     try {
-//       await addDoc(collection(db, 'errorLogs'), {
-//         function: 'getTileByCode',
-//         tile_code: tileCode,
-//         worker_id: workerId || null,
-//         error_message: error.message,
-//         error_code: error.code || 'unknown',
-//         error_stack: error.stack?.substring(0, 500) || null,
-//         timestamp: new Date().toISOString()
-//       });
-//     } catch (logErr) {
-//       console.warn('⚠️ Could not log error:', logErr);
-//     }
-
-//     return {
-//       success: false,
-//       error: 'Search failed due to technical error. Please try again or use QR scan mode.'
-//     };
-//   }
-// };
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ END OF NEW FUNCTION - Resume original code below
-// ═══════════════════════════════════════════════════════════════
 const waitForAuthUser = (timeoutMs: number = 5000): Promise<User | null> => {
   return new Promise((resolve) => {
     if (auth.currentUser) {
@@ -1064,86 +778,6 @@ export const signUpSeller = async (
   }
 };
 
-// export const signIn = async (email: string, password: string): Promise<any> => {
-//   if (!isFirebaseConfigured()) {
-//     throw new Error('Firebase not configured. Please check environment variables.');
-//   }
-
-//   try {
-//     console.log('🔄 Attempting sign in for:', email.trim());
-
-//     if (!validateEmail(email)) {
-//       throw new Error('Please provide a valid email address.');
-//     }
-
-//     if (!password.trim()) {
-//       throw new Error('Password is required.');
-//     }
-
-//     const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-
-//     if (!userCredential?.user) {
-//       throw new Error('Authentication failed - no user data returned.');
-//     }
-
-//     // ✅ CHECK ACCOUNT STATUS ON LOGIN
-//     const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-    
-//     if (userDoc.exists()) {
-//       const userData = userDoc.data();
-      
-//       if (userData.account_status === 'deleted') {
-//         await firebaseSignOut(auth);
-//         throw new Error('Your account has been deactivated. Please contact support.');
-//       }
-      
-//       if (userData.account_status === 'suspended') {
-//         await firebaseSignOut(auth);
-//         throw new Error('Your account has been suspended. Please contact support.');
-//       }
-//     }
-
-//     try {
-//       await updateDoc(doc(db, 'users', userCredential.user.uid), {
-//         last_login: new Date().toISOString(),
-//         updated_at: new Date().toISOString()
-//       });
-//     } catch (updateError) {
-//       console.warn('⚠️ Could not update last login:', updateError);
-//     }
-
-//     console.log('✅ Sign in successful for user:', userCredential.user.uid);
-//     return { user: userCredential.user, session: null };
-    
-//   } catch (error: any) {
-//     console.error('❌ Sign in error:', error);
-    
-//     let errorMessage = 'Authentication failed: ';
-    
-//     switch (error.code) {
-//       case 'auth/invalid-credential':
-//       case 'auth/wrong-password':
-//         errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-//         break;
-//       case 'auth/user-not-found':
-//         errorMessage = 'No account found with this email address.';
-//         break;
-//       case 'auth/invalid-email':
-//         errorMessage = 'Invalid email format.';
-//         break;
-//       case 'auth/user-disabled':
-//         errorMessage = 'This account has been disabled. Please contact support.';
-//         break;
-//       case 'auth/too-many-requests':
-//         errorMessage = 'Too many failed login attempts. Please wait a few minutes and try again.';
-//         break;
-//       default:
-//         errorMessage += error.message;
-//     }
-    
-//     throw new Error(errorMessage);
-//   }
-// };
 
 export const signIn = async (email: string, password: string): Promise<any> => {
   if (!isFirebaseConfigured()) {
@@ -1346,70 +980,11 @@ export const signOut = async (): Promise<void> => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════
-// ✅ ADMIN DASHBOARD FUNCTIONS
-// ═══════════════════════════════════════════════════════════════
-
-// export const getAdminDashboardStats = async (): Promise<any> => {
-  
-//   try {
-//     console.log('📊 Fetching admin dashboard statistics...');
-    
-//     const [sellersSnapshot, requestsSnapshot] = await Promise.all([
-//       getDocs(collection(db, 'sellers')),
-//       getDocs(collection(db, 'sellerRequests'))
-//     ]);
-//      const allSellers = sellersSnapshot.docs.map(doc => doc.data());
-
-//     const sellers = sellersSnapshot.docs.map(doc => doc.data());
-//     const requests = requestsSnapshot.docs.map(doc => doc.data());
-    
-
-//      const activeSellersOnly = sellers.filter(s => s.account_status !== 'deleted');
-
-//     const stats = {
-//       totalSellers: activeSellersOnly.length,
-//       activeSellers: sellers.filter(s => s.account_status === 'active' || s.subscription_status === 'active').length,
-//       inactiveSellers: sellers.filter(s => s.account_status === 'inactive' || s.subscription_status === 'inactive').length,
-//       deletedSellers: sellers.filter(s => s.account_status === 'deleted').length,
-//       suspendedSellers: sellers.filter(s => s.account_status === 'suspended').length,
-      
-//       pendingRequests: requests.filter(r => r.status === 'pending').length,
-//       approvedRequests: requests.filter(r => r.status === 'approved').length,
-//       rejectedRequests: requests.filter(r => r.status === 'rejected').length,
-      
-//       totalRequests: requests.length,
-      
-//       thisMonthSellers:activeSellersOnly.filter(s => {
-//         const createdDate = new Date(s.created_at);
-//         const now = new Date();
-//         return createdDate.getMonth() === now.getMonth() && 
-//                createdDate.getFullYear() === now.getFullYear();
-//       }).length
-//     };
-    
-//     console.log('✅ Dashboard stats calculated:', stats);
-//     return stats;
-    
-//   } catch (error) {
-//     console.error('❌ Error fetching dashboard stats:', error);
-//     return {
-//       totalSellers: 0,
-//       activeSellers: 0,
-//       inactiveSellers: 0,
-//       deletedSellers: 0,
-//       suspendedSellers: 0,
-//       pendingRequests: 0,
-//       approvedRequests: 0,
-//       rejectedRequests: 0,
-//       totalRequests: 0,
-//       thisMonthSellers: 0
-//     };
-//   }
-// };
 
 export const getAdminDashboardStats = async (): Promise<any> => {
   try {
+    
+    
     console.log('📊 Fetching admin dashboard statistics...');
     
     const [sellersSnapshot, requestsSnapshot] = await Promise.all([
@@ -1471,549 +1046,6 @@ export const getAdminDashboardStats = async (): Promise<any> => {
   }
 };
 
-// export const getAdminDashboardStats = async (): Promise<any> => {
-//   try {
-//     console.log('📊 Fetching admin dashboard statistics...');
-    
-//     const [sellersSnapshot, requestsSnapshot] = await Promise.all([
-//       getDocs(collection(db, 'sellers')),
-//       getDocs(collection(db, 'sellerRequests'))
-//     ]);
-//        const activeSellersOnly = allSellers.filter(s => s.account_status !== 'deleted');
-    
-//     // ✅ FIX: Filter deleted sellers from the start
-//     const allSellers = sellersSnapshot.docs.map(doc => doc.data());
-//     const sellers = allSellers.filter(s => s.account_status !== 'deleted');
-    
-//     const requests = requestsSnapshot.docs.map(doc => doc.data());
-    
-//     const stats = {
-//       totalSellers: sellers.length,  // ✅ Only non-deleted
-//       activeSellers: sellers.filter(s => 
-//         s.account_status === 'active' || s.subscription_status === 'active'
-//       ).length,
-//       inactiveSellers: sellers.filter(s => 
-//         s.account_status === 'inactive' || s.subscription_status === 'inactive'
-//       ).length,
-//       deletedSellers: allSellers.filter(s => s.account_status === 'deleted').length,  // ✅ Count deleted separately
-//       suspendedSellers: sellers.filter(s => s.account_status === 'suspended').length,
-      
-//       pendingRequests: requests.filter(r => r.status === 'pending').length,
-//       approvedRequests: requests.filter(r => r.status === 'approved').length,
-//       rejectedRequests: requests.filter(r => r.status === 'rejected').length,
-      
-//       totalRequests: requests.length,
-      
-//       thisMonthSellers: sellers.filter(s => {
-//         const createdDate = new Date(s.created_at);
-//         const now = new Date();
-//         return createdDate.getMonth() === now.getMonth() && 
-//                createdDate.getFullYear() === now.getFullYear();
-//       }).length
-//     };
-    
-//     console.log('✅ Dashboard stats calculated:', stats);
-//     return stats;
-    
-//   } catch (error) {
-//     console.error('❌ Error fetching dashboard stats:', error);
-//     return {
-//       totalSellers: 0,
-//       activeSellers: 0,
-//       inactiveSellers: 0,
-//       deletedSellers: 0,
-//       suspendedSellers: 0,
-//       pendingRequests: 0,
-//       approvedRequests: 0,
-//       rejectedRequests: 0,
-//       totalRequests: 0,
-//       thisMonthSellers: 0
-//     };
-//   }
-//
-
-// export const getSellersWithFullData = async (): Promise<any[]> => {
-//   try {
-//     console.log('🔄 Fetching sellers with complete data...');
-    
-//     const [sellersSnapshot, requestsSnapshot, usersSnapshot] = await Promise.all([
-//       getDocs(collection(db, 'sellers')),
-//       getDocs(collection(db, 'sellerRequests')),
-//       getDocs(collection(db, 'users'))
-//     ]);
-    
-//     const sellers: any[] = [];
-//     sellersSnapshot.forEach(doc => {
-//       const data = doc.data();
-//       if (data.account_status !== 'deleted') {
-//         sellers.push({ id: doc.id, ...data });
-//       }
-//     });
-    
-//     const requests: any[] = [];
-//     requestsSnapshot.forEach(doc => {
-//       requests.push({ id: doc.id, ...doc.data() });
-//     });
-    
-//     const users: any[] = [];
-//     usersSnapshot.forEach(doc => {
-//       users.push({ id: doc.id, ...doc.data() });
-//     });
-    
-//     console.log('📊 Fetched:', { sellers: sellers.length, requests: requests.length, users: users.length });
-    
-//     const mergedData: any[] = [];
-    
-//     for (const seller of sellers) {
-//       if (!seller || !seller.id) {
-//         console.warn('⚠️ Skipping invalid seller');
-//         continue;
-//       }
-      
-//       let matchingRequest: any = null;
-      
-//       for (const r of requests) {
-//         if (!r) continue;
-        
-//         if (r.email && seller.email) {
-//           const rEmail = String(r.email).toLowerCase().trim();
-//           const sEmail = String(seller.email).toLowerCase().trim();
-//           if (rEmail === sEmail) {
-//             matchingRequest = r;
-//             break;
-//           }
-//         }
-        
-//         if (r.id && seller.request_id && r.id === seller.request_id) {
-//           matchingRequest = r;
-//           break;
-//         }
-        
-//         if (r.seller_id && seller.id && r.seller_id === seller.id) {
-//           matchingRequest = r;
-//           break;
-//         }
-//       }
-      
-//       let matchingUser: any = null;
-      
-//       for (const u of users) {
-//         if (!u) continue;
-        
-//         if (u.id && seller.user_id && u.id === seller.user_id) {
-//           matchingUser = u;
-//           break;
-//         }
-        
-//         if (u.email && seller.email) {
-//           const uEmail = String(u.email).toLowerCase().trim();
-//           const sEmail = String(seller.email).toLowerCase().trim();
-//           if (uEmail === sEmail) {
-//             matchingUser = u;
-//             break;
-//           }
-//         }
-//       }
-      
-//       const mergedSeller: any = {
-//         id: seller.id || '',
-//         user_id: seller.user_id || seller.userId || null,
-//         businessName: seller.business_name || seller.businessName || 'Unknown',
-//         ownerName: seller.owner_name || seller.ownerName || 'Unknown',
-//         email: seller.email || '',
-//         phone: seller.phone || seller.phoneNumber || '',
-//         businessAddress: seller.business_address || seller.businessAddress || '',
-//         requestedDate: '',
-//         approvalDate: null,
-//         rejectedDate: null,
-//         requestStatus: 'approved',
-//         accountStatus: 'active',
-//         subscriptionStatus: 'active',
-//         createdAt: '',
-//         updatedAt: '',
-//         lastLogin: null,
-//         deleted: false,
-//         deletedAt: null,
-//         deletedBy: null,
-//         deletionReason: null,
-//         passwordResetSent: null,
-//         passwordResetBy: null,
-//         isActive: true,
-//         daysSinceRequest: 0
-//       };
-      
-//       if (matchingRequest && matchingRequest.requestedAt) {
-//         mergedSeller.requestedDate = matchingRequest.requestedAt;
-//       } else if (matchingRequest && matchingRequest.requested_date) {
-//         mergedSeller.requestedDate = matchingRequest.requested_date;
-//       } else if (seller.created_at) {
-//         mergedSeller.requestedDate = seller.created_at;
-//       } else {
-//         mergedSeller.requestedDate = new Date().toISOString();
-//       }
-      
-//       if (matchingRequest && matchingRequest.reviewedAt) {
-//         mergedSeller.approvalDate = matchingRequest.reviewedAt;
-//       } else if (matchingRequest && matchingRequest.approval_date) {
-//         mergedSeller.approvalDate = matchingRequest.approval_date;
-//       }
-      
-//       if (matchingRequest && matchingRequest.rejectedAt) {
-//         mergedSeller.rejectedDate = matchingRequest.rejectedAt;
-//       } else if (matchingRequest && matchingRequest.rejected_date) {
-//         mergedSeller.rejectedDate = matchingRequest.rejected_date;
-//       }
-      
-//       if (matchingRequest && matchingRequest.status) {
-//         mergedSeller.requestStatus = matchingRequest.status;
-//       }
-      
-//       if (seller.account_status) {
-//         mergedSeller.accountStatus = seller.account_status;
-//       } else if (matchingUser && matchingUser.account_status) {
-//         mergedSeller.accountStatus = matchingUser.account_status;
-//       }
-      
-//       if (seller.subscription_status) {
-//         mergedSeller.subscriptionStatus = seller.subscription_status;
-//       }
-      
-//       if (seller.created_at) {
-//         mergedSeller.createdAt = seller.created_at;
-//       } else {
-//         mergedSeller.createdAt = new Date().toISOString();
-//       }
-      
-//       if (seller.updated_at) {
-//         mergedSeller.updatedAt = seller.updated_at;
-//       } else {
-//         mergedSeller.updatedAt = new Date().toISOString();
-//       }
-      
-//       if (matchingUser && matchingUser.last_login) {
-//         mergedSeller.lastLogin = matchingUser.last_login;
-//       } else if (seller.last_login) {
-//         mergedSeller.lastLogin = seller.last_login;
-//       }
-      
-//       if (seller.account_status === 'deleted') {
-//         mergedSeller.deleted = true;
-//       }
-      
-//       if (seller.deleted_at) {
-//         mergedSeller.deletedAt = seller.deleted_at;
-//       }
-      
-//       if (seller.deleted_by) {
-//         mergedSeller.deletedBy = seller.deleted_by;
-//       }
-      
-//       if (seller.deletion_reason) {
-//         mergedSeller.deletionReason = seller.deletion_reason;
-//       }
-      
-//       if (seller.password_reset_sent) {
-//         mergedSeller.passwordResetSent = seller.password_reset_sent;
-//       }
-      
-//       if (seller.password_reset_by) {
-//         mergedSeller.passwordResetBy = seller.password_reset_by;
-//       }
-      
-//       const accountActive = (
-//         mergedSeller.accountStatus === 'active' || 
-//         !seller.account_status
-//       );
-      
-//       const subscriptionActive = (
-//         mergedSeller.subscriptionStatus === 'active' || 
-//         !seller.subscription_status
-//       );
-      
-//       mergedSeller.isActive = accountActive && subscriptionActive;
-      
-//       try {
-//         let requestDateStr = '';
-        
-//         if (matchingRequest && matchingRequest.requestedAt) {
-//           requestDateStr = matchingRequest.requestedAt;
-//         } else if (matchingRequest && matchingRequest.requested_date) {
-//           requestDateStr = matchingRequest.requested_date;
-//         }
-        
-//         if (requestDateStr) {
-//           const requestDate = new Date(requestDateStr);
-//           if (!isNaN(requestDate.getTime())) {
-//             const diffMs = Date.now() - requestDate.getTime();
-//             const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-//             mergedSeller.daysSinceRequest = days >= 0 ? days : 0;
-//           }
-//         }
-//       } catch (error) {
-//         console.warn('Error calculating days:', error);
-//         mergedSeller.daysSinceRequest = 0;
-//       }
-      
-//       mergedData.push(mergedSeller);
-//     }
-    
-//    const validData = mergedData.filter(s => {
-//       return s.id && 
-//              s.email && 
-//              s.businessName && 
-//              s.businessName !== 'Unknown' &&
-//              s.accountStatus !== 'deleted';  // ← ADD THIS
-//     });
-    
-//     console.log('✅ Merge complete:', {
-//       total: mergedData.length,
-//       valid: validData.length
-//     });
-    
-//     return validData;
-    
-//   } catch (error) {
-//     console.error('❌ Error in getSellersWithFullData:', error);
-//     return [];
-//   }
-// };
-
-// export const getSellersWithFullData = async (): Promise<any[]> => {
-//   try {
-//     console.log('🔄 Fetching sellers with complete data...');
-    
-//     const [sellersSnapshot, requestsSnapshot, usersSnapshot] = await Promise.all([
-//       getDocs(collection(db, 'sellers')),
-//       getDocs(collection(db, 'sellerRequests')),
-//       getDocs(collection(db, 'users'))
-//     ]);
-    
-//     // ✅ FIX: Filter deleted sellers immediately
-//     const sellers: any[] = [];
-//     sellersSnapshot.forEach(doc => {
-//       const data = doc.data();
-//       if (data.account_status !== 'deleted') {  // ✅ Skip deleted
-//         sellers.push({ id: doc.id, ...data });
-//       }
-//     });
-    
-//     const requests: any[] = [];
-//     requestsSnapshot.forEach(doc => {
-//       requests.push({ id: doc.id, ...doc.data() });
-//     });
-    
-//     const users: any[] = [];
-//     usersSnapshot.forEach(doc => {
-//       users.push({ id: doc.id, ...doc.data() });
-//     });
-    
-//     console.log('📊 Fetched:', { sellers: sellers.length, requests: requests.length, users: users.length });
-    
-//     const mergedData: any[] = [];
-    
-//     for (const seller of sellers) {
-//       if (!seller || !seller.id) {
-//         console.warn('⚠️ Skipping invalid seller');
-//         continue;
-//       }
-      
-//       // Find matching request
-//       let matchingRequest: any = null;
-//       for (const r of requests) {
-//         if (!r) continue;
-        
-//         if (r.email && seller.email) {
-//           const rEmail = String(r.email).toLowerCase().trim();
-//           const sEmail = String(seller.email).toLowerCase().trim();
-//           if (rEmail === sEmail) {
-//             matchingRequest = r;
-//             break;
-//           }
-//         }
-        
-//         if (r.id && seller.request_id && r.id === seller.request_id) {
-//           matchingRequest = r;
-//           break;
-//         }
-        
-//         if (r.seller_id && seller.id && r.seller_id === seller.id) {
-//           matchingRequest = r;
-//           break;
-//         }
-//       }
-      
-//       // Find matching user
-//       let matchingUser: any = null;
-//       for (const u of users) {
-//         if (!u) continue;
-        
-//         if (u.id && seller.user_id && u.id === seller.user_id) {
-//           matchingUser = u;
-//           break;
-//         }
-        
-//         if (u.email && seller.email) {
-//           const uEmail = String(u.email).toLowerCase().trim();
-//           const sEmail = String(seller.email).toLowerCase().trim();
-//           if (uEmail === sEmail) {
-//             matchingUser = u;
-//             break;
-//           }
-//         }
-//       }
-      
-//       const mergedSeller: any = {
-//         id: seller.id || '',
-//         user_id: seller.user_id || seller.userId || null,
-//         businessName: seller.business_name || seller.businessName || 'Unknown',
-//         ownerName: seller.owner_name || seller.ownerName || 'Unknown',
-//         email: seller.email || '',
-//         phone: seller.phone || seller.phoneNumber || '',
-//         businessAddress: seller.business_address || seller.businessAddress || '',
-//         requestedDate: '',
-//         approvalDate: null,
-//         rejectedDate: null,
-//         requestStatus: 'approved',
-//         accountStatus: 'active',
-//         subscriptionStatus: 'active',
-//         createdAt: '',
-//         updatedAt: '',
-//         lastLogin: null,
-//         deleted: false,
-//         deletedAt: null,
-//         deletedBy: null,
-//         deletionReason: null,
-//         passwordResetSent: null,
-//         passwordResetBy: null,
-//         isActive: true,
-//         daysSinceRequest: 0
-//       };
-      
-//       // Date mapping
-//       if (matchingRequest && matchingRequest.requestedAt) {
-//         mergedSeller.requestedDate = matchingRequest.requestedAt;
-//       } else if (matchingRequest && matchingRequest.requested_date) {
-//         mergedSeller.requestedDate = matchingRequest.requested_date;
-//       } else if (seller.created_at) {
-//         mergedSeller.requestedDate = seller.created_at;
-//       } else {
-//         mergedSeller.requestedDate = new Date().toISOString();
-//       }
-      
-//       if (matchingRequest && matchingRequest.reviewedAt) {
-//         mergedSeller.approvalDate = matchingRequest.reviewedAt;
-//       } else if (matchingRequest && matchingRequest.approval_date) {
-//         mergedSeller.approvalDate = matchingRequest.approval_date;
-//       }
-      
-//       if (matchingRequest && matchingRequest.rejectedAt) {
-//         mergedSeller.rejectedDate = matchingRequest.rejectedAt;
-//       } else if (matchingRequest && matchingRequest.rejected_date) {
-//         mergedSeller.rejectedDate = matchingRequest.rejected_date;
-//       }
-      
-//       if (matchingRequest && matchingRequest.status) {
-//         mergedSeller.requestStatus = matchingRequest.status;
-//       }
-      
-//       if (seller.account_status) {
-//         mergedSeller.accountStatus = seller.account_status;
-//       } else if (matchingUser && matchingUser.account_status) {
-//         mergedSeller.accountStatus = matchingUser.account_status;
-//       }
-      
-//       if (seller.subscription_status) {
-//         mergedSeller.subscriptionStatus = seller.subscription_status;
-//       }
-      
-//       if (seller.created_at) {
-//         mergedSeller.createdAt = seller.created_at;
-//       } else {
-//         mergedSeller.createdAt = new Date().toISOString();
-//       }
-      
-//       if (seller.updated_at) {
-//         mergedSeller.updatedAt = seller.updated_at;
-//       } else {
-//         mergedSeller.updatedAt = new Date().toISOString();
-//       }
-      
-//       if (matchingUser && matchingUser.last_login) {
-//         mergedSeller.lastLogin = matchingUser.last_login;
-//       } else if (seller.last_login) {
-//         mergedSeller.lastLogin = seller.last_login;
-//       }
-      
-//       // ✅ Already filtered deleted, so deleted should always be false here
-//       mergedSeller.deleted = false;
-      
-//       if (seller.password_reset_sent) {
-//         mergedSeller.passwordResetSent = seller.password_reset_sent;
-//       }
-      
-//       if (seller.password_reset_by) {
-//         mergedSeller.passwordResetBy = seller.password_reset_by;
-//       }
-      
-//       const accountActive = (
-//         mergedSeller.accountStatus === 'active' || 
-//         !seller.account_status
-//       );
-      
-//       const subscriptionActive = (
-//         mergedSeller.subscriptionStatus === 'active' || 
-//         !seller.subscription_status
-//       );
-      
-//       mergedSeller.isActive = accountActive && subscriptionActive;
-      
-//       // Calculate days since request
-//       try {
-//         let requestDateStr = '';
-        
-//         if (matchingRequest && matchingRequest.requestedAt) {
-//           requestDateStr = matchingRequest.requestedAt;
-//         } else if (matchingRequest && matchingRequest.requested_date) {
-//           requestDateStr = matchingRequest.requested_date;
-//         }
-        
-//         if (requestDateStr) {
-//           const requestDate = new Date(requestDateStr);
-//           if (!isNaN(requestDate.getTime())) {
-//             const diffMs = Date.now() - requestDate.getTime();
-//             const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-//             mergedSeller.daysSinceRequest = days >= 0 ? days : 0;
-//           }
-//         }
-//       } catch (error) {
-//         console.warn('Error calculating days:', error);
-//         mergedSeller.daysSinceRequest = 0;
-//       }
-      
-//       mergedData.push(mergedSeller);
-//     }
-    
-//     // ✅ Final validation - ensure no deleted sellers
-//     const validData = mergedData.filter(s => {
-//       return s.id && 
-//              s.email && 
-//              s.businessName && 
-//              s.businessName !== 'Unknown' &&
-//              s.accountStatus !== 'deleted';  // ✅ Double check
-//     });
-    
-//     console.log('✅ Merge complete:', {
-//       total: mergedData.length,
-//       valid: validData.length
-//     });
-    
-//     return validData;
-    
-//   } catch (error) {
-//     console.error('❌ Error in getSellersWithFullData:', error);
-//     return [];
-//   }
-// };  
 
 export const getSellersWithFullData = async (): Promise<any[]> => {
   try {
@@ -2257,44 +1289,6 @@ export const getSellersWithFullData = async (): Promise<any[]> => {
   }
 };
 
-// export const filterSellers = (
-//   sellers: any[], 
-//   filterOptions: {
-//     status?: 'all' | 'approved' | 'rejected' | 'pending' | 'active' | 'deleted';
-//     dateRange?: { start: Date; end: Date };
-//   }
-// ): any[] => {
-//   try {
-//     let filtered = [...sellers];
-    
-//     if (filterOptions.status && filterOptions.status !== 'all') {
-//       if (filterOptions.status === 'approved') {
-//         filtered = filtered.filter(s => s.requestStatus === 'approved');
-//       } else if (filterOptions.status === 'rejected') {
-//         filtered = filtered.filter(s => s.requestStatus === 'rejected');
-//       } else if (filterOptions.status === 'pending') {
-//         filtered = filtered.filter(s => s.requestStatus === 'pending');
-//       } else if (filterOptions.status === 'active') {
-//         filtered = filtered.filter(s => s.isActive);
-//       } else if (filterOptions.status === 'deleted') {
-//         filtered = filtered.filter(s => s.deleted);
-//       }
-//     }
-    
-//     if (filterOptions.dateRange) {
-//       const { start, end } = filterOptions.dateRange;
-//       filtered = filtered.filter(s => {
-//         const requestDate = new Date(s.requestedDate);
-//         return requestDate >= start && requestDate <= end;
-//       });
-//     }
-    
-//     return filtered;
-//   } catch (error) {
-//     console.error('❌ Error filtering sellers:', error);
-//     return sellers;
-//   }
-// };
 
 export const filterSellers = (
   sellers: any[], 
@@ -8466,6 +7460,81 @@ if (typeof window !== 'undefined') {
 // ✅ DISABLE ALL WORKERS FOR SELLER (PLAN EXPIRY)
 // ═══════════════════════════════════════════════════════════════
 
+// export const disableAllSellersWorkers = async (
+//   sellerId: string
+// ): Promise<{ success: boolean; count: number; error?: string }> => {
+//   try {
+//     console.log('🔒 Disabling all workers for seller:', sellerId);
+
+//     if (!sellerId || sellerId.trim() === '') {
+//       throw new Error('Invalid seller ID');
+//     }
+
+//     // ✅ FIXED: Query 'users' collection, not 'workers'
+//     // Workers are stored in 'users' with role='worker'
+//     const usersRef = collection(db, 'users');
+//     const workersQuery = query(
+//       usersRef,
+//       where('seller_id', '==', sellerId),
+//       where('role', '==', 'worker') // ✅ Critical: Filter by role
+//     );
+
+//     const workersSnapshot = await getDocs(workersQuery);
+
+//     if (workersSnapshot.empty) {
+//       console.log('ℹ️ No workers found to disable');
+//       return { success: true, count: 0 };
+//     }
+
+//     // ✅ Batch update for atomic operation
+//     const batch = writeBatch(db);
+//     let count = 0;
+
+//     workersSnapshot.docs.forEach((workerDoc) => {
+//       const workerData = workerDoc.data();
+
+//       // ✅ Only disable if currently active
+//       if (workerData.is_active !== false) {
+//         batch.update(workerDoc.ref, {
+//           is_active: false,
+//           disabled_reason: 'seller_plan_expired',
+//           disabled_at: new Date().toISOString(),
+//           seller_plan_active: false,
+//           updated_at: new Date().toISOString()
+//         });
+//         count++;
+//       }
+//     });
+
+//     if (count === 0) {
+//       console.log('ℹ️ All workers already disabled');
+//       return { success: true, count: 0 };
+//     }
+
+//     await batch.commit();
+
+//     console.log(`✅ Disabled ${count} worker(s) for seller:`, sellerId);
+
+//     // ✅ Log activity
+//     try {
+//       await addDoc(collection(db, 'adminLogs'), {
+//         action: 'bulk_workers_disabled',
+//         seller_id: sellerId,
+//         workers_count: count,
+//         reason: 'seller_plan_expired',
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log activity:', logError);
+//     }
+
+//     return { success: true, count };
+
+//   } catch (error: any) {
+//     console.error('❌ Error disabling workers:', error);
+//     return { success: false, count: 0, error: error.message };
+//   }
+// };  
 export const disableAllSellersWorkers = async (
   sellerId: string
 ): Promise<{ success: boolean; count: number; error?: string }> => {
@@ -8476,13 +7545,11 @@ export const disableAllSellersWorkers = async (
       throw new Error('Invalid seller ID');
     }
 
-    // ✅ FIXED: Query 'users' collection, not 'workers'
-    // Workers are stored in 'users' with role='worker'
     const usersRef = collection(db, 'users');
     const workersQuery = query(
       usersRef,
       where('seller_id', '==', sellerId),
-      where('role', '==', 'worker') // ✅ Critical: Filter by role
+      where('role', '==', 'worker')
     );
 
     const workersSnapshot = await getDocs(workersQuery);
@@ -8492,17 +7559,16 @@ export const disableAllSellersWorkers = async (
       return { success: true, count: 0 };
     }
 
-    // ✅ Batch update for atomic operation
     const batch = writeBatch(db);
     let count = 0;
 
     workersSnapshot.docs.forEach((workerDoc) => {
       const workerData = workerDoc.data();
 
-      // ✅ Only disable if currently active
       if (workerData.is_active !== false) {
         batch.update(workerDoc.ref, {
           is_active: false,
+          account_status: 'suspended_by_subscription', // 🔴 Suspension flag added
           disabled_reason: 'seller_plan_expired',
           disabled_at: new Date().toISOString(),
           seller_plan_active: false,
@@ -8512,41 +7578,188 @@ export const disableAllSellersWorkers = async (
       }
     });
 
-    if (count === 0) {
-      console.log('ℹ️ All workers already disabled');
-      return { success: true, count: 0 };
-    }
-
-    await batch.commit();
-
-    console.log(`✅ Disabled ${count} worker(s) for seller:`, sellerId);
-
-    // ✅ Log activity
-    try {
-      await addDoc(collection(db, 'adminLogs'), {
-        action: 'bulk_workers_disabled',
-        seller_id: sellerId,
-        workers_count: count,
-        reason: 'seller_plan_expired',
-        timestamp: new Date().toISOString()
-      });
-    } catch (logError) {
-      console.warn('⚠️ Could not log activity:', logError);
+    if (count > 0) {
+      await batch.commit();
+      console.log(`✅ Disabled ${count} worker(s) for seller:`, sellerId);
     }
 
     return { success: true, count };
-
   } catch (error: any) {
     console.error('❌ Error disabling workers:', error);
     return { success: false, count: 0, error: error.message };
   }
-}; 
+};
 // ═══════════════════════════════════════════════════════════════
 // ✅ ENABLE ALL WORKERS FOR SELLER (PLAN RENEWAL)
 // ═══════════════════════════════════════════════════════════════
 /**
  * Enable all workers for a seller (when plan is renewed)
  */
+// export const enableAllSellersWorkers = async (
+//   sellerId: string
+// ): Promise<{ success: boolean; count: number; error?: string }> => {
+//   try {
+//     console.log('🔓 Enabling all workers for seller:', sellerId);
+
+//     if (!sellerId || sellerId.trim() === '') {
+//       throw new Error('Invalid seller ID');
+//     }
+
+//     // Query workers
+//     const usersRef = collection(db, 'users');
+//     const workersQuery = query(
+//       usersRef,
+//       where('seller_id', '==', sellerId),
+//       where('role', '==', 'worker')
+//     );
+
+//     const workersSnapshot = await getDocs(workersQuery);
+
+//     if (workersSnapshot.empty) {
+//       console.log('ℹ️ No workers found');
+//       return { success: true, count: 0 };
+//     }
+
+//     console.log(`📋 Found ${workersSnapshot.size} worker(s)`);
+
+//     // Use batch for atomic update
+//     const batch = writeBatch(db);
+//     let count = 0;
+
+//     workersSnapshot.docs.forEach((workerDoc) => {
+//       const workerData = workerDoc.data();
+
+//       // Enable if disabled or plan was inactive
+//       const shouldEnable =
+//         workerData.is_active === false ||
+//         workerData.disabled_reason === 'seller_plan_expired' ||
+//         workerData.seller_plan_active === false;
+
+//       if (shouldEnable) {
+//         batch.update(workerDoc.ref, {
+//           is_active: true,
+//           disabled_reason: null,
+//           disabled_at: null,
+//           seller_plan_active: true,
+//           plan_reactivated_at: new Date().toISOString(),
+//           updated_at: new Date().toISOString()
+//         });
+//         count++;
+        
+//         console.log(`  ✅ Enabling: ${workerData.email || workerDoc.id}`);
+//       } else {
+//         console.log(`  ⏭️ Already active: ${workerData.email || workerDoc.id}`);
+//       }
+//     });
+
+//     if (count === 0) {
+//       console.log('ℹ️ All workers already enabled');
+//       return { success: true, count: 0 };
+//     }
+
+//     // Commit batch
+//     await batch.commit();
+
+//     console.log(`✅ Successfully enabled ${count} worker(s)`);
+
+//     // Verify
+//     const verifySnapshot = await getDocs(workersQuery);
+//     const activeCount = verifySnapshot.docs.filter(doc => doc.data().is_active === true).length;
+//     console.log(`🔍 Verification: ${activeCount}/${verifySnapshot.size} active`);
+
+//     // Log activity
+//     try {
+//       await addDoc(collection(db, 'adminLogs'), {
+//         action: 'bulk_workers_enabled',
+//         seller_id: sellerId,
+//         workers_count: count,
+//         reason: 'seller_plan_renewed',
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log activity');
+//     }
+
+//     return { success: true, count };
+
+//   } catch (error: any) {
+//     console.error('❌ Error enabling workers:', error);
+//     return { success: false, count: 0, error: error.message };
+//   }
+// }; 
+
+// export const enableAllSellersWorkers = async (
+//   sellerId: string
+// ): Promise<{ success: boolean; count: number; error?: string }> => {
+//   try {
+//     console.log('🔓 Enabling all workers for seller:', sellerId);
+
+//     if (!sellerId || sellerId.trim() === '') {
+//       throw new Error('Invalid seller ID');
+//     }
+
+//     const usersRef = collection(db, 'users');
+//     const workersQuery = query(
+//       usersRef,
+//       where('seller_id', '==', sellerId),
+//       where('role', '==', 'worker')
+//     );
+
+//     const workersSnapshot = await getDocs(workersQuery);
+
+//     if (workersSnapshot.empty) {
+//       console.log('ℹ️ No workers found');
+//       return { success: true, count: 0 };
+//     }
+
+//     console.log(`📋 Found ${workersSnapshot.size} worker(s)`);
+
+//     const batch = writeBatch(db);
+//     let count = 0;
+
+//     workersSnapshot.docs.forEach((workerDoc) => {
+//       const workerData = workerDoc.data();
+
+//       // ✅ CRITICAL FIX: Hataya complex conditions ko!
+//       // Jab plan renew ya upgrade hua hai, toh hum bina kisi condition ke 
+//       // worker ko FORCE ENABLE karenge taaki auth block bypass ho sake.
+//       batch.update(workerDoc.ref, {
+//         is_active: true,
+//         account_status: 'active',
+//         disabled_reason: null,
+//         disabled_at: null,
+//         seller_plan_active: true,
+//         plan_reactivated_at: new Date().toISOString(),
+//         updated_at: new Date().toISOString()
+//       });
+//       count++;
+      
+//       console.log(`  ✅ Force Enabling: ${workerData.email || workerDoc.id}`);
+//     });
+
+//     await batch.commit();
+//     console.log(`✅ Successfully force-enabled ${count} worker(s)`);
+
+//     // Log activity
+//     try {
+//       await addDoc(collection(db, 'adminLogs'), {
+//         action: 'bulk_workers_enabled',
+//         seller_id: sellerId,
+//         workers_count: count,
+//         reason: 'seller_plan_renewed',
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (logError) {
+//       console.warn('⚠️ Could not log activity');
+//     }
+
+//     return { success: true, count };
+
+//   } catch (error: any) {
+//     console.error('❌ Error enabling workers:', error);
+//     return { success: false, error: error.message };
+//   }
+// }; 
 export const enableAllSellersWorkers = async (
   sellerId: string
 ): Promise<{ success: boolean; count: number; error?: string }> => {
@@ -8557,7 +7770,6 @@ export const enableAllSellersWorkers = async (
       throw new Error('Invalid seller ID');
     }
 
-    // Query workers
     const usersRef = collection(db, 'users');
     const workersQuery = query(
       usersRef,
@@ -8572,68 +7784,30 @@ export const enableAllSellersWorkers = async (
       return { success: true, count: 0 };
     }
 
-    console.log(`📋 Found ${workersSnapshot.size} worker(s)`);
-
-    // Use batch for atomic update
     const batch = writeBatch(db);
     let count = 0;
 
     workersSnapshot.docs.forEach((workerDoc) => {
       const workerData = workerDoc.data();
 
-      // Enable if disabled or plan was inactive
-      const shouldEnable =
-        workerData.is_active === false ||
-        workerData.disabled_reason === 'seller_plan_expired' ||
-        workerData.seller_plan_active === false;
-
-      if (shouldEnable) {
-        batch.update(workerDoc.ref, {
-          is_active: true,
-          disabled_reason: null,
-          disabled_at: null,
-          seller_plan_active: true,
-          plan_reactivated_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        count++;
-        
-        console.log(`  ✅ Enabling: ${workerData.email || workerDoc.id}`);
-      } else {
-        console.log(`  ⏭️ Already active: ${workerData.email || workerDoc.id}`);
-      }
+      // 🟢 ALL NEGATIVE FLAGS CLEARED HERE
+      batch.update(workerDoc.ref, {
+        is_active: true,
+        account_status: 'active', // ✅ CRITICAL: Status set to active
+        disabled_reason: null,    // ✅ Cleared
+        disabled_at: null,        // ✅ Cleared
+        seller_plan_active: true, // ✅ Set to true
+        plan_reactivated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      count++;
+      console.log(`  ✅ Force Enabling & Cleaning flags for: ${workerData.email || workerDoc.id}`);
     });
 
-    if (count === 0) {
-      console.log('ℹ️ All workers already enabled');
-      return { success: true, count: 0 };
-    }
-
-    // Commit batch
     await batch.commit();
-
-    console.log(`✅ Successfully enabled ${count} worker(s)`);
-
-    // Verify
-    const verifySnapshot = await getDocs(workersQuery);
-    const activeCount = verifySnapshot.docs.filter(doc => doc.data().is_active === true).length;
-    console.log(`🔍 Verification: ${activeCount}/${verifySnapshot.size} active`);
-
-    // Log activity
-    try {
-      await addDoc(collection(db, 'adminLogs'), {
-        action: 'bulk_workers_enabled',
-        seller_id: sellerId,
-        workers_count: count,
-        reason: 'seller_plan_renewed',
-        timestamp: new Date().toISOString()
-      });
-    } catch (logError) {
-      console.warn('⚠️ Could not log activity');
-    }
+    console.log(`✅ Successfully enabled and cleaned ${count} worker(s)`);
 
     return { success: true, count };
-
   } catch (error: any) {
     console.error('❌ Error enabling workers:', error);
     return { success: false, count: 0, error: error.message };
