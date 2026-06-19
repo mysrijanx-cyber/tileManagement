@@ -186,7 +186,7 @@ interface Enhanced3DViewerProps {
   triggerAddHighlighter?: boolean;
   triggerRandomPattern?: boolean;
   triggerShufflePattern?: boolean;
-  
+   triggerClearHighlighter?: boolean;
 }
 interface CameraPreset {
   position: [number, number, number];
@@ -1683,7 +1683,7 @@ const IndividualTile: React.FC<{
       </mesh>
 
       {/* HIGHLIGHTER CUSTOM BLACK BORDERS */}
-      {highlightBorders && !isGridMode && customTileData && (
+      {/* {highlightBorders && !isGridMode && customTileData && (
         <>
           <mesh position={[0, tileSizeM.height / 2, zPosition + 0.001]}>
             <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
@@ -1702,8 +1702,29 @@ const IndividualTile: React.FC<{
             <meshBasicMaterial color="#000000" />
           </mesh>
         </>
-      )}
+      )} */}
 
+{/* HIGHLIGHTER CUSTOM BLACK BORDERS */}
+      {highlightBorders && !isGridMode && customTileData && (
+        <>
+          <mesh position={[0, tileSizeM.height / 2, zPosition + 0.003]}>
+            <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+            <meshBasicMaterial color="#000000" polygonOffset={true} polygonOffsetFactor={-6} polygonOffsetUnits={-6} />
+          </mesh>
+          <mesh position={[0, -tileSizeM.height / 2, zPosition + 0.003]}>
+            <boxGeometry args={[tileSizeM.width, 0.005, 0.002]} />
+            <meshBasicMaterial color="#000000" polygonOffset={true} polygonOffsetFactor={-6} polygonOffsetUnits={-6} />
+          </mesh>
+          <mesh position={[-tileSizeM.width / 2, 0, zPosition + 0.003]}>
+            <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+            <meshBasicMaterial color="#000000" polygonOffset={true} polygonOffsetFactor={-6} polygonOffsetUnits={-6} />
+          </mesh>
+          <mesh position={[tileSizeM.width / 2, 0, zPosition + 0.003]}>
+            <boxGeometry args={[0.005, tileSizeM.height, 0.002]} />
+            <meshBasicMaterial color="#000000" polygonOffset={true} polygonOffsetFactor={-6} polygonOffsetUnits={-6} />
+          </mesh>
+        </>
+      )}
       {/* GRID MODE UI */}
       {isGridMode && (
         <Text
@@ -2310,7 +2331,7 @@ const GridWall: React.FC<{
 
       {/* GRID LINES */}
       {/* ✅ FIX 3: Added '&& baseTexture' yahan bhi add kiya gaya hai */}
-      {highlightBorders && baseGridLines && baseTexture && (
+      {/* {highlightBorders && baseGridLines && baseTexture && (
         <lineSegments position={[0, 0, 0.001]}>
           <primitive object={baseGridLines} attach="geometry" />
           <lineBasicMaterial 
@@ -2318,6 +2339,23 @@ const GridWall: React.FC<{
             linewidth={2} 
             opacity={0.6}
             transparent={true} 
+          />
+        </lineSegments>
+      )} */} 
+
+      {/* GRID LINES */}
+      {/* ✅ FIX 3: Added '&& baseTexture' yahan bhi add kiya gaya hai */}
+      {highlightBorders && baseGridLines && baseTexture && (
+        <lineSegments position={[0, 0, 0.002]}>
+          <primitive object={baseGridLines} attach="geometry" />
+          <lineBasicMaterial 
+            color="#000000"
+            linewidth={2} 
+            opacity={0.6}
+            transparent={true} 
+            polygonOffset={true}
+            polygonOffsetFactor={-5}
+            polygonOffsetUnits={-5}
           />
         </lineSegments>
       )}
@@ -6790,12 +6828,39 @@ export const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
    // 🆕 DESTRUCTURE TRIGGER PROPS
   triggerAddHighlighter,
   triggerRandomPattern,
-  triggerShufflePattern
+  triggerShufflePattern,
+  triggerClearHighlighter
 }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // 🆕 SIDEBAR TRIGGER HANDLERS
 // ═══════════════════════════════════════════════════════════════
+ useEffect(() => {
+    if (triggerClearHighlighter) {
+      console.log('🧹 Sidebar triggered: Clear Highlighter');
+
+      // 1. Reset Custom Tiles (Removes from 3D View instantly)
+      setCustomTiles({
+        back: new Map(),
+        front: new Map(),
+        left: new Map(),
+        right: new Map()
+      });
+
+      // 2. Reset Local Indices
+      setAllCustomTileIndices({ back: [], front: [], left: [], right: [] });
+
+      // 3. Sync with Parent State (This instantly updates the Calculator & removes the UI button)
+      if (onHighlighterUpdate) {
+        onHighlighterUpdate('back', []);
+        onHighlighterUpdate('front', []);
+        onHighlighterUpdate('left', []);
+        onHighlighterUpdate('right', []);
+      }
+
+      setSuccess('✅ All highlighter tiles removed!');
+    }
+  }, [triggerClearHighlighter]);
 
 // ✅ CRITICAL: Cleanup cloned textures on unmount
 useEffect(() => {
@@ -7276,19 +7341,37 @@ const handleTileSelected = (tileData: TileUploadData) => {
       });
 
       // 3. Update Indices for Highlighter/Calculator
+      // setAllCustomTileIndices(prev => {
+      //   const current = new Set([...prev[activeWall], ...selectedTiles]);
+      //   const updated = {
+      //     ...prev,
+      //     [activeWall]: Array.from(current).sort((a, b) => a - b)
+      //   };
+        
+      //   if (onHighlighterUpdate) {
+      //     onHighlighterUpdate(activeWall, updated[activeWall]);
+      //     console.log('📤 Sent highlighter update:', activeWall, updated[activeWall].length);
+      //   }
+        
+      //   return updated;
+      // }); 
+      // 3. Update Indices for Highlighter/Calculator
       setAllCustomTileIndices(prev => {
         const current = new Set([...prev[activeWall], ...selectedTiles]);
-        const updated = {
+        const newIndicesArray = Array.from(current).sort((a, b) => a - b);
+        
+        // ✅ CHANGED: State updater ke bahar (next tick mein) parent ko signal bhej rahe hain
+        setTimeout(() => {
+          if (onHighlighterUpdate) {
+            onHighlighterUpdate(activeWall, newIndicesArray);
+            console.log('📤 Sent highlighter update:', activeWall, newIndicesArray.length);
+          }
+        }, 0);
+        
+        return {
           ...prev,
-          [activeWall]: Array.from(current).sort((a, b) => a - b)
+          [activeWall]: newIndicesArray
         };
-        
-        if (onHighlighterUpdate) {
-          onHighlighterUpdate(activeWall, updated[activeWall]);
-          console.log('📤 Sent highlighter update:', activeWall, updated[activeWall].length);
-        }
-        
-        return updated;
       });
 
       // 4. Reset Grid Mode States
@@ -7427,20 +7510,38 @@ const handleApplyRandomPattern = async (
       return newCustomTiles;
     });
 
-    setAllCustomTileIndices(prev => {
-      const updated = { ...prev };
+    // setAllCustomTileIndices(prev => {
+    //   const updated = { ...prev };
       
+    //   wallsToApply.forEach(wall => {
+    //     updated[wall] = newIndices[wall];
+        
+    //     if (onHighlighterUpdate) {
+    //       onHighlighterUpdate(wall, newIndices[wall]);
+    //       console.log(`   📤 Sent update for ${wall}: ${newIndices[wall].length} indices`);
+    //     }
+    //   });
+      
+    //   return updated;
+    // }); 
+setAllCustomTileIndices(prev => {
+      const updated = { ...prev };
       wallsToApply.forEach(wall => {
         updated[wall] = newIndices[wall];
-        
+      });
+      return updated;
+    });
+
+    // ✅ CHANGED: Loop aur parent update ko setState ke bahar rakha hai
+    setTimeout(() => {
+      wallsToApply.forEach(wall => {
         if (onHighlighterUpdate) {
           onHighlighterUpdate(wall, newIndices[wall]);
           console.log(`   📤 Sent update for ${wall}: ${newIndices[wall].length} indices`);
         }
       });
-      
-      return updated;
-    });
+    }, 0);
+    
 
     setShowRandomPattern(false);
     
@@ -7645,19 +7746,36 @@ const handleShuffleExistingPattern = useCallback(() => {
       return newCustomTiles;
     });
   
+    // setAllCustomTileIndices(prev => {
+    //   const updated = { ...prev };
+      
+    //   wallsToShuffle.forEach(wall => {
+    //     updated[wall] = newIndices[wall];
+        
+    //     if (onHighlighterUpdate) {
+    //       onHighlighterUpdate(wall, newIndices[wall]);
+    //     }
+    //   });
+      
+    //   return updated;
+    // }); 
+
     setAllCustomTileIndices(prev => {
       const updated = { ...prev };
-      
       wallsToShuffle.forEach(wall => {
         updated[wall] = newIndices[wall];
-        
+      });
+      return updated;
+    });
+
+    // ✅ CHANGED: Parent update ko setState se bahar nikal diya gaya hai
+    setTimeout(() => {
+      wallsToShuffle.forEach(wall => {
         if (onHighlighterUpdate) {
           onHighlighterUpdate(wall, newIndices[wall]);
         }
       });
-      
-      return updated;
-    });
+    }, 0);
     
     setCurrentPatternType(nextPattern);
     setIsPatternShuffling(false);

@@ -1184,7 +1184,7 @@ export const BillingTab: React.FC<BillingTabProps> = ({
         },
         {
           label: 'Transaction ID:',
-          value: payment.transaction_id || 'N/A'
+          value: payment.transaction_id || payment.id || 'N/A'
         },
         {
           label: 'Receipt Number:',
@@ -1282,7 +1282,7 @@ export const BillingTab: React.FC<BillingTabProps> = ({
       doc.text('For support, contact: support@srijanxtile.com', pageWidth / 2, yPos, { align: 'center' });
       
       yPos += 8;
-      doc.text('Website: www.srijanxtile.com', pageWidth / 2, yPos, { align: 'center' });
+      doc.text('Website: https://tilesview360.in', pageWidth / 2, yPos, { align: 'center' });
       
       // Bottom Border
       yPos = pageHeight - 30;

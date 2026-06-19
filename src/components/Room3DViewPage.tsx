@@ -239,7 +239,7 @@ export const Room3DViewPage: React.FC = () => {
   const [triggerAddHighlighter, setTriggerAddHighlighter] = useState(false);
   const [triggerRandomPattern, setTriggerRandomPattern] = useState(false);
   const [triggerShufflePattern, setTriggerShufflePattern] = useState(false);
-
+ const [triggerClearHighlighter, setTriggerClearHighlighter] = useState(false);
   // Tile states
   const [floorTile, setFloorTile] = useState<TileState>({
     texture: '',
@@ -1346,6 +1346,7 @@ export const Room3DViewPage: React.FC = () => {
             triggerAddHighlighter={triggerAddHighlighter}
             triggerRandomPattern={triggerRandomPattern}
             triggerShufflePattern={triggerShufflePattern}
+            triggerClearHighlighter={triggerClearHighlighter}
           />
 
           {/* Mobile Controls Toggle */}
@@ -1722,7 +1723,38 @@ export const Room3DViewPage: React.FC = () => {
                         Shuffle Pattern
                       </button>
                     )}
-
+{(highlighterTileIndices.back.size > 0 || 
+                      highlighterTileIndices.front.size > 0 || 
+                      highlighterTileIndices.left.size > 0 || 
+                      highlighterTileIndices.right.size > 0) && (
+                      <>
+                        {/* EXISTING: Shuffle Pattern Button */}
+                        <button
+                          onClick={() => {
+                            setTriggerShufflePattern(true);
+                            setTimeout(() => setTriggerShufflePattern(false), 100);
+                            if (isMobile) setExpandedSection(null);
+                          }}
+                          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95"
+                        >
+                          <Shuffle className="w-4 h-4" />
+                          Shuffle Pattern
+                        </button>
+                        
+                        {/* ✅ NEW: Remove Highlighter Button */}
+                        <button
+                          onClick={() => {
+                            setTriggerClearHighlighter(true);
+                            setTimeout(() => setTriggerClearHighlighter(false), 100);
+                            if (isMobile) setExpandedSection(null);
+                          }}
+                          className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95 mt-2"
+                        >
+                          <X className="w-4 h-4" />
+                          Remove Highlighter
+                        </button>
+                      </>
+                    )}
                     <div className="bg-purple-900/30 rounded-lg p-2 border border-purple-500/30">
                       <p className="text-purple-200 text-[10px] leading-relaxed flex items-start gap-1">
                         <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />

@@ -1,14 +1,14 @@
 
 // import React, { useState } from 'react';
-// import { Check, X, Crown, Zap, Loader } from 'lucide-react';
+// import { Check, X, Crown, Zap, Loader, CheckCircle } from 'lucide-react';
 // import type { Plan } from '../../types/plan.types';
 // import { createPaymentOrder } from '../../lib/backendAPI';
 // import { PaymentCheckout } from '../Payment/PaymentCheckout';
 
 // interface PlanCardProps {
 //   plan: Plan;
-//   sellerId: string;           // ✅ Required
-//   userToken: string;          // ✅ Required
+//   sellerId: string;
+//   userToken: string;
 //   isLoggedIn?: boolean;
 //   onSelect?: (planId: string) => void;
 //   isSelected?: boolean;
@@ -26,21 +26,19 @@
 //   const [loading, setLoading] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
 //   const [checkoutData, setCheckoutData] = useState<any>(null);
+//   const [showSuccess, setShowSuccess] = useState(false); // ✅ NEW
 
 //   const handleSelectPlan = async () => {
-//     // ✅ VALIDATION 1: Login check
 //     if (!isLoggedIn) {
 //       alert('🔐 Please login to purchase a plan');
 //       return;
 //     }
 
-//     // ✅ VALIDATION 2: Token check
 //     if (!userToken) {
 //       alert('⚠️ Authentication token not found. Please refresh and try again.');
 //       return;
 //     }
 
-//     // ✅ VALIDATION 3: Seller ID check
 //     if (!sellerId) {
 //       alert('⚠️ User ID not found. Please login again.');
 //       return;
@@ -50,27 +48,29 @@
 //     setError(null);
 
 //     try {
-//       console.log('🛒 Creating payment order:', {
+//       console.log('═══════════════════════════════════════════════════════');
+//       console.log('🛒 CREATING PAYMENT ORDER');
+//       console.log('═══════════════════════════════════════════════════════');
+//       console.log('📋 Order Details:', {
 //         planId: plan.id,
 //         planName: plan.plan_name,
 //         price: plan.price,
-//         sellerId: sellerId.substring(0, 8) + '...' // Partial log for security
+//         sellerId: sellerId.substring(0, 8) + '...'
 //       });
 
-//       // ✅ BACKEND CALL - Token from props
 //       const response = await createPaymentOrder(
 //         plan.id, 
 //         plan.billing_cycle, 
-//         userToken  // ✅ Props se token
+//         userToken
 //       );
 
 //       if (response.success) {
-//         console.log('✅ Payment order created:', {
+//         console.log('✅ Payment order created successfully');
+//         console.log('📋 Order Info:', {
 //           paymentId: response.data.paymentId,
 //           orderId: response.data.checkoutOptions.order_id
 //         });
         
-//         // ✅ SET CHECKOUT DATA
 //         setCheckoutData({
 //           checkoutOptions: response.data.checkoutOptions,
 //           paymentId: response.data.paymentId,
@@ -78,7 +78,7 @@
 //           sellerId: sellerId,
 //         });
 //       } else {
-//         throw new Error(response.error || 'Failed to create payment order');
+//         throw new Error('Failed to create payment order');
 //       }
 //     } catch (err: any) {
 //       console.error('❌ Error creating payment order:', err);
@@ -90,11 +90,25 @@
 //     }
 //   };
 
+//   // ✅ NEW: Success Handler - No Redirect, Just Close Modal
 //   const handlePaymentSuccess = () => {
-//     console.log('✅ Payment successful - Redirecting...');
+//     console.log('═══════════════════════════════════════════════════════');
+//     console.log('✅ PAYMENT SUCCESS - CLOSING CHECKOUT MODAL');
+//     console.log('═══════════════════════════════════════════════════════');
+//     console.log('🔔 Firestore listeners will auto-update banner in 3-5 seconds');
+    
+//     // Close checkout modal
 //     setCheckoutData(null);
-//     // ✅ REDIRECT WITH SUCCESS FLAG
-//     window.location.href = '/seller-dashboard?plan_activated=true';
+    
+//     // ✅ Show success notification
+//     setShowSuccess(true);
+    
+//     // ✅ Auto-hide success notification after 6 seconds
+//     setTimeout(() => {
+//       setShowSuccess(false);
+//     }, 6000);
+    
+//     console.log('✅ Modal closed - Waiting for banner auto-update...');
 //   };
 
 //   const handlePaymentError = (error: string) => {
@@ -106,6 +120,22 @@
 
 //   return (
 //     <>
+//       {/* ✅ NEW: Success Notification Toast */}
+//       {showSuccess && (
+//         <div className="fixed top-4 right-4 z-[10000] animate-slide-in-right">
+//           <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 max-w-md">
+//             <CheckCircle className="w-6 h-6 flex-shrink-0 animate-bounce" />
+//             <div>
+//               <p className="font-bold text-lg">Payment Successful! 🎉</p>
+//               <p className="text-sm text-green-100">Your plan is being activated...</p>
+//               <p className="text-xs text-green-200 mt-1">
+//                 Dashboard will update in a few seconds
+//               </p>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
 //       <div className={`bg-white rounded-2xl shadow-xl overflow-hidden border-2 transition-all transform hover:scale-105 ${
 //         plan.is_popular 
 //           ? 'border-yellow-400 ring-4 ring-yellow-400 ring-opacity-50' 
@@ -161,7 +191,7 @@
 //           <div className="p-6 pt-0">
 //             <button
 //               onClick={handleSelectPlan}
-//               disabled={loading || !plan.is_active || !userToken}  // ✅ Token check
+//               disabled={loading || !plan.is_active || !userToken}
 //               className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
 //                 plan.is_popular
 //                   ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600'
@@ -194,7 +224,7 @@
 //         )}
 //       </div>
 
-//       {/* ✅ PAYMENT CHECKOUT MODAL */}
+//       {/* Payment Checkout Modal */}
 //       {checkoutData && (
 //         <PaymentCheckout
 //           checkoutOptions={checkoutData.checkoutOptions}
@@ -210,7 +240,7 @@
 //   );
 // };
 
-// console.log('✅ PlanCard - v4.0 (Props-based, No useAuth)'); 
+// console.log('✅ PlanCard - PRODUCTION v5.0 (No Redirect + Success Toast)'); 
 import React, { useState } from 'react';
 import { Check, X, Crown, Zap, Loader, CheckCircle } from 'lucide-react';
 import type { Plan } from '../../types/plan.types';
@@ -378,6 +408,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
         <div className="p-6">
           <ul className="space-y-3">
+            {/* Existing dynamic features mapping */}
             {plan.features.map((feature, idx) => (
               <li key={idx} className="flex items-start gap-3">
                 {feature.included ? (
@@ -396,6 +427,20 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 </div>
               </li>
             ))}
+
+            {/* ✅ ADDED FIX: Rendering Max Scans from Limits using existing UI styling */}
+            {plan.limits && plan.limits.max_scans !== undefined && plan.limits.max_scans !== null && (
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <span className="text-gray-700">
+                    <span className="mr-2">📱</span>
+                    Max Scans: {plan.limits.max_scans === -1 ? 'Unlimited ∞' : plan.limits.max_scans.toLocaleString('en-IN')}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">Maximum QR code scans allowed per cycle</p>
+                </div>
+              </li>
+            )}
           </ul>
         </div>
 
@@ -452,4 +497,4 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   );
 };
 
-console.log('✅ PlanCard - PRODUCTION v5.0 (No Redirect + Success Toast)');
+console.log('✅ PlanCard - PRODUCTION v5.1 (Fixed Limits Display Issue)');
