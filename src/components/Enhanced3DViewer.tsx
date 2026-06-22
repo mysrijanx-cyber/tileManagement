@@ -8106,19 +8106,8 @@ const renderScene = () => {
         </p>
       </div>
 
-      <div className="space-y-1.5 text-[10px] text-gray-600">
-        <p>• Tap tiles to select</p>
-        <p>• Green = selected</p>
-        <p>• Use buttons below</p>
-      </div>
+     
 
-      <button
-        onClick={handleClearSelection}
-        disabled={selectedTiles.length === 0}
-        className="w-full mt-2 px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-[10px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Clear All
-      </button>
     </div>
 
     {/* ✅ FIX: BOTTOM CONTROL BAR - OK & CANCEL BUTTONS */}

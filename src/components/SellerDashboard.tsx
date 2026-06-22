@@ -788,14 +788,45 @@ export const SellerDashboard: React.FC = () => {
     }
   };
 
-  const validateTileForm = (): string | null => {
+  // const validateTileForm = (): string | null => {
+  //   if (!newTile.name?.trim()) {
+  //     return "❌ Tile Name is required. Please enter a tile name.";
+  //   }
+
+  //   if (!newTile.size?.trim()) {
+  //     return "❌ Tile Size is required. Please enter or select a size (e.g., 60x60 cm).";
+  //   }
+
+  //   if (!newTile.price || newTile.price <= 0) {
+  //     return "❌ Valid Price is required. Please enter a price greater than 0.";
+  //   }
+
+  //   if (newTile.stock === undefined || newTile.stock < 0) {
+  //     return "❌ Valid Stock Quantity is required. Please enter stock (0 or more).";
+  //   }
+
+  //   if (!newTile.imageUrl?.trim()) {
+  //     return "❌ Tile Image is required. Please upload an image before saving.";
+  //   }
+
+  //   return null;
+  // }; 
+
+
+const validateTileForm = (): string | null => {
     if (!newTile.name?.trim()) {
       return "❌ Tile Name is required. Please enter a tile name.";
     }
 
-    if (!newTile.size?.trim()) {
-      return "❌ Tile Size is required. Please enter or select a size (e.g., 60x60 cm).";
+    // --- UPDATED SIZE VALIDATION ---
+    if (!newTile.size || newTile.size.trim() === "" || newTile.size === "manual_trigger") {
+      return "❌ Tile Size is required. Please select or enter a size.";
     }
+    // Check if user left Width or Height blank in manual mode
+    if (newTile.size.includes('x') && !newTile.size.match(/^\d+x\d+ cm$/)) {
+      return "❌ Invalid Manual Size. Please enter BOTH Width and Height properly.";
+    }
+    // ---------------------------------
 
     if (!newTile.price || newTile.price <= 0) {
       return "❌ Valid Price is required. Please enter a price greater than 0.";
@@ -811,7 +842,6 @@ export const SellerDashboard: React.FC = () => {
 
     return null;
   };
-
   const handleAddTile = async () => {
     try {
       setError(null);
@@ -836,11 +866,12 @@ export const SellerDashboard: React.FC = () => {
 
       const tileCode = newTile.tileCode || generateTileCode();
 
+      // ✅ PROPER BACKEND SAFETY APPLIED HERE
       const baseTileData = {
         ...newTile,
         size: newTile.size?.trim(),
-  tileSurface: newTile.tileSurface?.trim() || "",
-  tileMaterial: newTile.tileMaterial?.trim() || "",
+        tileSurface: newTile.tileSurface === "manual_trigger" ? "" : (newTile.tileSurface?.trim() || ""),
+        tileMaterial: newTile.tileMaterial === "manual_trigger" ? "" : (newTile.tileMaterial?.trim() || ""),
         sellerId: currentUser.user_id,
         showroomId: currentUser.user_id,
         tileCode: tileCode,
@@ -889,6 +920,84 @@ export const SellerDashboard: React.FC = () => {
       setError(`Failed to add tile: ${error.message}`);
     }
   };
+  // const handleAddTile = async () => {
+  //   try {
+  //     setError(null);
+
+  //     const validationError = validateTileForm();
+  //     if (validationError) {
+  //       setError(validationError);
+  //       window.scrollTo({ top: 0, behavior: "smooth" });
+  //       setTimeout(() => {
+  //         setError((prev) => (prev === validationError ? null : prev));
+  //       }, 8000);
+  //       return;
+  //     }
+
+  //     if (!currentUser) {
+  //       setError("User not authenticated");
+  //       window.scrollTo({ top: 0, behavior: "smooth" });
+  //       return;
+  //     }
+
+  //     console.log("🔄 Step 1/4: Preparing tile data...");
+
+  //     const tileCode = newTile.tileCode || generateTileCode();
+
+  //     const baseTileData = {
+  //       ...newTile,
+  //       size: newTile.size?.trim(),
+  // tileSurface: newTile.tileSurface?.trim() || "",
+  // tileMaterial: newTile.tileMaterial?.trim() || "",
+  //       sellerId: currentUser.user_id,
+  //       showroomId: currentUser.user_id,
+  //       tileCode: tileCode,
+  //       inStock: (newTile.stock || 0) > 0,
+  //       createdAt: new Date().toISOString(),
+  //       updatedAt: new Date().toISOString(),
+  //     };
+
+  //     console.log("💾 Step 2/4: Saving tile to database...");
+
+  //     const savedTile = await uploadTile(baseTileData);
+
+  //     if (!savedTile || !savedTile.id) {
+  //       throw new Error("Tile saved but ID not returned");
+  //     }
+
+  //     console.log("✅ Tile saved with ID:", savedTile.id);
+  //     console.log("📱 Step 3/4: Generating QR code...");
+
+  //     let qrCodeGenerated = false;
+  //     try {
+  //       const qrCodeDataUrl = await generateTileQRCode(savedTile);
+  //       console.log("✅ QR code generated successfully");
+  //       console.log("🔄 Step 4/4: Updating tile with QR code...");
+  //       await updateTileQRCode(savedTile.id, qrCodeDataUrl);
+  //       console.log("✅ Tile updated with QR code");
+  //       qrCodeGenerated = true;
+  //     } catch (qrError: any) {
+  //       console.warn("⚠️ QR code generation failed:", qrError.message);
+  //     }
+
+  //     await loadData();
+
+  //     setIsAddingTile(false);
+  //     resetNewTile();
+
+  //     if (qrCodeGenerated) {
+  //       setSuccess("✅ Tile added successfully with QR code!");
+  //     } else {
+  //       setSuccess("✅ Tile added! QR code can be generated from QR Codes tab.");
+  //     }
+
+  //     console.log("🎉 Tile creation completed!");
+  //   } catch (error: any) {
+  //     console.error("❌ Tile creation failed:", error);
+  //     setError(`Failed to add tile: ${error.message}`);
+  //   }
+  // };
+
 
   const handleEditTile = async (tile: Tile) => {
     console.log("🔄 Editing tile:", tile.name);
@@ -902,6 +1011,106 @@ export const SellerDashboard: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // const handleUpdateTile = async () => {
+  //   try {
+  //     setError(null);
+
+  //     const validationError = validateTileForm();
+  //     if (validationError) {
+  //       setError(validationError);
+  //       return;
+  //     }
+
+  //     if (!editingTile) {
+  //       setError("No tile selected for editing");
+  //       return;
+  //     }
+
+  //     console.log("🔄 Starting tile update:", editingTile.name);
+
+  //     const updates = {
+  //       ...newTile,
+  //       size: newTile.size?.trim(),
+  // tileSurface: newTile.tileSurface?.trim() || "",
+  // tileMaterial: newTile.tileMaterial?.trim() || "",
+  //       inStock: (newTile.stock || 0) > 0,
+  //       updatedAt: new Date().toISOString(),
+  //     };
+
+  //     console.log("💾 Updating tile in database...");
+  //     await updateTile(editingTile.id, updates);
+  //     console.log("✅ Tile updated in database");
+
+  //     const criticalFieldsChanged =
+  //       editingTile.name !== newTile.name ||
+  //       editingTile.tileCode !== newTile.tileCode ||
+  //       editingTile.price !== newTile.price ||
+  //       editingTile.size !== newTile.size ||
+  //       editingTile.category !== newTile.category;
+
+  //     if (criticalFieldsChanged) {
+  //       console.log("🔄 Critical fields changed, attempting QR regeneration...");
+
+  //       setTimeout(async () => {
+  //         try {
+  //           if (typeof getTileById !== "function") {
+  //             console.warn("⚠️ getTileById not available, skipping QR regeneration");
+  //             return;
+  //           }
+
+  //           if (typeof generateTileQRCode !== "function") {
+  //             console.warn("⚠️ generateTileQRCode not available, skipping QR regeneration");
+  //             return;
+  //           }
+
+  //           if (typeof updateTileQRCode !== "function") {
+  //             console.warn("⚠️ updateTileQRCode not available, skipping QR regeneration");
+  //             return;
+  //           }
+
+  //           console.log("📱 Fetching updated tile data...");
+  //           const updatedTileData = await getTileById(editingTile.id);
+
+  //           if (!updatedTileData) {
+  //             console.warn("⚠️ Could not fetch updated tile, skipping QR regeneration");
+  //             return;
+  //           }
+
+  //           console.log("📱 Generating new QR code...");
+  //           const newQRCode = await generateTileQRCode(updatedTileData);
+
+  //           if (!newQRCode || !newQRCode.startsWith("data:image")) {
+  //             console.warn("⚠️ Invalid QR code generated, skipping update");
+  //             return;
+  //           }
+
+  //           console.log("💾 Updating QR code in database...");
+  //           await updateTileQRCode(editingTile.id, newQRCode);
+
+  //           console.log("✅ QR code regenerated successfully");
+
+  //           await loadData();
+  //         } catch (qrError: any) {
+  //           console.error("⚠️ QR regeneration failed (non-critical):", qrError.message);
+  //         }
+  //       }, 0);
+  //     } else {
+  //       console.log("ℹ️ No critical fields changed, keeping existing QR code");
+  //     }
+
+  //     console.log("🔄 Reloading tiles list...");
+  //     await loadData();
+
+  //     setEditingTile(null);
+  //     resetNewTile();
+
+  //     setSuccess("Tile updated successfully!");
+  //     console.log("✅ Tile update complete");
+  //   } catch (error: any) {
+  //     console.error("❌ Error updating tile:", error);
+  //     setError(`Failed to update tile: ${error.message}`);
+  //   }
+  // };
   const handleUpdateTile = async () => {
     try {
       setError(null);
@@ -919,11 +1128,12 @@ export const SellerDashboard: React.FC = () => {
 
       console.log("🔄 Starting tile update:", editingTile.name);
 
+      // ✅ PROPER BACKEND SAFETY APPLIED HERE
       const updates = {
         ...newTile,
         size: newTile.size?.trim(),
-  tileSurface: newTile.tileSurface?.trim() || "",
-  tileMaterial: newTile.tileMaterial?.trim() || "",
+        tileSurface: newTile.tileSurface === "manual_trigger" ? "" : (newTile.tileSurface?.trim() || ""),
+        tileMaterial: newTile.tileMaterial === "manual_trigger" ? "" : (newTile.tileMaterial?.trim() || ""),
         inStock: (newTile.stock || 0) > 0,
         updatedAt: new Date().toISOString(),
       };
@@ -1798,6 +2008,7 @@ export const SellerDashboard: React.FC = () => {
                   )}
                 </div> */} 
 {/* Size */}
+{/* Size */}
 <div className="space-y-2">
   <label
     htmlFor="tile-size-select"
@@ -1807,7 +2018,7 @@ export const SellerDashboard: React.FC = () => {
   </label>
   
   {(() => {
-    // Standard sizes ki list
+    // 1. Standard sizes ki list
     const standardSizes = [
       "30x30 cm", "30x60 cm", "60x60 cm", "60x120 cm", "80x80 cm", 
       "40x40 cm", "40x60 cm", "50x50 cm", "20x120 cm", "15x90 cm", 
@@ -1815,131 +2026,117 @@ export const SellerDashboard: React.FC = () => {
       "75x75 cm", "100x100 cm", "45x45 cm", "7.5x15 cm", "6x25 cm"
     ];
     
-    // Check mode: Agar size standard list mein nahi hai, toh matab user Custom mode mein hai.
-    // Hum " " (single space) ko as a trigger use kar rahe hain taaki empty box par bhi input open rahe.
-    const isCustomMode = 
-      newTile.size === " " || 
-      (newTile.size !== "" && newTile.size !== undefined && !standardSizes.includes(newTile.size));
+    const currentSize = newTile.size || "";
+    
+    // Check if user clicked the manual button OR if an existing custom size is loaded
+    const isManualMode = currentSize === "manual_trigger" || (currentSize !== "" && !standardSizes.includes(currentSize));
+
+    // Extract Width and Height if in manual mode
+    let parsedWidth = "";
+    let parsedHeight = "";
+
+    if (isManualMode && currentSize !== "manual_trigger") {
+      const parts = currentSize.replace(" cm", "").split("x");
+      if (parts.length === 2) {
+        parsedWidth = parts[0];
+        parsedHeight = parts[1];
+      }
+    }
+
+    // Auto-merge logic: Automatically adds 'x' and 'cm' in the background
+    const handleManualChange = (w: string, h: string) => {
+      setNewTile({ ...newTile, size: `${w}x${h} cm` });
+    };
 
     return (
-      <div className="relative space-y-2">
-        <select
-          id="tile-size-select"
-          name="size"
-          value={isCustomMode ? "custom" : (newTile.size || "")}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "custom") {
-              // Custom trigger karne ke liye ek space set karte hain,
-              // isse UI jump nahi karega aur required validation bhi fail ho jayega agar user kuch type nahi karta.
-              setNewTile({ ...newTile, size: " " }); 
-            } else {
-              setNewTile({ ...newTile, size: val });
-            }
-          }}
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
-        >
-          <option value="">Select Tile Size</option>
-          {standardSizes.map((sizeOption) => (
-             <option key={sizeOption} value={sizeOption}>{sizeOption}</option>
-          ))}
-          <option value="custom" className="font-bold text-green-600 bg-green-50">
-            + Add Manual / Custom Size
-          </option>
-        </select>
-
-        <div className="absolute right-3 top-2.5 pointer-events-none">
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </div>
-
-        {/* Custom Text Input */}
-        {isCustomMode && (
-          <div className="animate-slide-down mt-3">
-            <input
-              type="text"
-              placeholder="Enter size manually (e.g., 55x55 cm)"
-              value={newTile.size === " " ? "" : newTile.size}
-              onChange={(e) => {
-                const val = e.target.value;
-                // Agar user backspace karke clear kar de, toh fallback " " par jaye
-                // taaki input box turant gayab na ho jaye.
-                setNewTile({ ...newTile, size: val === "" ? " " : val });
-              }}
-              className="w-full px-3 py-2.5 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm shadow-sm transition-shadow outline-none"
-              autoFocus
-            />
+      <div className="space-y-3">
+        {!isManualMode ? (
+          // --- STANDARD DROPDOWN VIEW ---
+          <div>
+            <div className="relative">
+              <select
+                id="tile-size-select"
+                name="size"
+                value={currentSize}
+                onChange={(e) => setNewTile({ ...newTile, size: e.target.value })}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer pr-10"
+              >
+                <option value="">Select Tile Size</option>
+                {standardSizes.map((sizeOption) => (
+                  <option key={sizeOption} value={sizeOption}>{sizeOption}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-2.5 pointer-events-none">
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+            
+            {/* Button to toggle Manual Input */}
+            <button
+              type="button"
+              onClick={() => setNewTile({ ...newTile, size: "manual_trigger" })}
+              className="mt-2 text-xs sm:text-sm text-green-600 font-semibold hover:text-green-700 flex items-center gap-1 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Manual Size
+            </button>
+          </div>
+        ) : (
+          // --- MANUAL ENTRY VIEW (2 BOXES) ---
+          <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg space-y-3 animate-slide-down">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs sm:text-sm font-semibold text-green-800">
+                Enter Custom Size (in cm)
+              </span>
+              <button
+                type="button"
+                onClick={() => setNewTile({ ...newTile, size: "" })}
+                className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 hover:bg-red-50 rounded transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="block text-[10px] sm:text-xs font-medium text-green-700 mb-1">
+                  Width
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 300"
+                  value={parsedWidth}
+                  onChange={(e) => handleManualChange(e.target.value, parsedHeight)}
+                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white outline-none transition-shadow shadow-sm"
+                  min="1"
+                />
+              </div>
+              
+              <div className="text-green-600 font-bold text-lg mt-5">×</div>
+              
+              <div className="flex-1">
+                <label className="block text-[10px] sm:text-xs font-medium text-green-700 mb-1">
+                  Height
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 600"
+                  value={parsedHeight}
+                  onChange={(e) => handleManualChange(parsedWidth, e.target.value)}
+                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white outline-none transition-shadow shadow-sm"
+                  min="1"
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
     );
   })()}
-
-  {/* Success Check for Selected Size */}
-  {newTile.size && newTile.size.trim() !== "" && (
-    <div className="flex items-center gap-2 text-xs text-green-600 mt-1.5">
-      <CheckCircle className="w-3 h-3" />
-      <span>Selected: {newTile.size}</span>
-    </div>
-  )}
 </div>
 
 
-                {/* Tile Surface */}
-                {/* <div className="space-y-2">
-                  <label
-                    htmlFor="tile-surface-select"
-                    className="block text-xs sm:text-sm font-medium text-gray-700"
-                  >
-                    Tile Surface
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="tile-surface-select"
-                      name="tileSurface"
-                      value={newTile.tileSurface || ""}
-                      onChange={(e) => {
-                        console.log("Surface selected:", e.target.value);
-                        setNewTile({
-                          ...newTile,
-                          tileSurface: e.target.value || undefined,
-                        });
-                      }}
-                      onFocus={(e) => {
-                        e.target.click();
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
-                      style={{
-                        WebkitAppearance: "none",
-                        MozAppearance: "none",
-                        touchAction: "manipulation",
-                      }}
-                    >
-                      <option value="">Select Surface Finish</option>
-                      <option value="Polished">Polished</option>
-                      <option value="Step Side">Step Side</option>
-                      <option value="Matt">Matt</option>
-                      <option value="Carving">Carving</option>
-                      <option value="High Gloss">High Gloss</option>
-                      <option value="Metallic">Metallic</option>
-                      <option value="Sugar">Sugar</option>
-                      <option value="Glue">Glue</option>
-                      <option value="Punch">Punch</option>
-                    </select>
-
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  {newTile.tileSurface && (
-                    <div className="flex items-center gap-2 text-xs text-green-600">
-                      <CheckCircle className="w-3 h-3" />
-                      <span>Selected: {newTile.tileSurface}</span>
-                    </div>
-                  )}
-                </div> */} 
-
-                {/* Tile Surface */}
+{/* Tile Surface */}
 <div className="space-y-2">
   <label
     htmlFor="tile-surface-select"
@@ -1954,51 +2151,64 @@ export const SellerDashboard: React.FC = () => {
       "Metallic", "Sugar", "Glue", "Punch"
     ];
     
-    const currentValue = newTile.tileSurface || "";
-    const isCustomMode = 
-      currentValue === " " || 
-      (currentValue !== "" && !standardSurfaces.includes(currentValue));
+    const currentSurface = newTile.tileSurface || "";
+    // Trigger manual mode if button is clicked OR if existing custom data is present
+    const isManualMode = currentSurface === "manual_trigger" || (currentSurface !== "" && !standardSurfaces.includes(currentSurface));
 
     return (
-      <div className="relative space-y-2">
-        <select
-          id="tile-surface-select"
-          name="tileSurface"
-          value={isCustomMode ? "custom" : currentValue}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "custom") {
-              setNewTile({ ...newTile, tileSurface: " " });
-            } else {
-              setNewTile({ ...newTile, tileSurface: val || undefined });
-            }
-          }}
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
-        >
-          <option value="">Select Surface Finish</option>
-          {standardSurfaces.map((surface) => (
-            <option key={surface} value={surface}>{surface}</option>
-          ))}
-          <option value="custom" className="font-bold text-green-600 bg-green-50">
-            + Add Custom Surface
-          </option>
-        </select>
-
-        <div className="absolute right-3 top-2.5 pointer-events-none">
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </div>
-
-        {isCustomMode && (
-          <div className="animate-slide-down mt-3">
+      <div className="space-y-3">
+        {!isManualMode ? (
+          // --- STANDARD DROPDOWN VIEW ---
+          <div>
+            <div className="relative">
+              <select
+                id="tile-surface-select"
+                name="tileSurface"
+                value={currentSurface}
+                onChange={(e) => setNewTile({ ...newTile, tileSurface: e.target.value || undefined })}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer pr-10 transition-shadow"
+              >
+                <option value="">Select Surface Finish</option>
+                {standardSurfaces.map((surface) => (
+                  <option key={surface} value={surface}>{surface}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-2.5 pointer-events-none">
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setNewTile({ ...newTile, tileSurface: "manual_trigger" })}
+              className="mt-2 text-xs sm:text-sm text-green-600 font-semibold hover:text-green-700 flex items-center gap-1 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Manual Surface
+            </button>
+          </div>
+        ) : (
+          // --- MANUAL ENTRY VIEW ---
+          <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg space-y-3 animate-slide-down">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs sm:text-sm font-semibold text-green-800">
+                Enter Custom Surface
+              </span>
+              <button
+                type="button"
+                onClick={() => setNewTile({ ...newTile, tileSurface: "" })}
+                className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 hover:bg-red-50 rounded transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            
             <input
               type="text"
-              placeholder="Enter surface manually (e.g., Rustic, Satin)"
-              value={currentValue === " " ? "" : currentValue}
-              onChange={(e) => {
-                const val = e.target.value;
-                setNewTile({ ...newTile, tileSurface: val === "" ? " " : val });
-              }}
-              className="w-full px-3 py-2.5 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm shadow-sm transition-shadow outline-none"
+              placeholder="e.g. Rustic, Satin, 3D Print"
+              value={currentSurface === "manual_trigger" ? "" : currentSurface}
+              onChange={(e) => setNewTile({ ...newTile, tileSurface: e.target.value })}
+              className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white outline-none transition-shadow shadow-sm"
               autoFocus
             />
           </div>
@@ -2007,10 +2217,10 @@ export const SellerDashboard: React.FC = () => {
     );
   })()}
 
-  {newTile.tileSurface && newTile.tileSurface.trim() !== "" && (
+  {newTile.tileSurface && newTile.tileSurface !== "manual_trigger" && newTile.tileSurface.trim() !== "" && (
     <div className="flex items-center gap-2 text-xs text-green-600 mt-1.5">
       <CheckCircle className="w-3 h-3" />
-      <span>Selected: {newTile.tileSurface}</span>
+      <span>Selected: <strong className="font-medium">{newTile.tileSurface}</strong></span>
     </div>
   )}
 </div>
@@ -2069,7 +2279,7 @@ export const SellerDashboard: React.FC = () => {
                   )}
                 </div> */} 
 
-                {/* Tile Material */}
+             {/* Tile Material */}
 <div className="space-y-2">
   <label
     htmlFor="tile-material-select"
@@ -2084,51 +2294,64 @@ export const SellerDashboard: React.FC = () => {
       "Full Body", "Ceramic", "Mosaic", "Subway"
     ];
     
-    const currentValue = newTile.tileMaterial || "";
-    const isCustomMode = 
-      currentValue === " " || 
-      (currentValue !== "" && !standardMaterials.includes(currentValue));
+    const currentMaterial = newTile.tileMaterial || "";
+    // Trigger manual mode if button is clicked OR if existing custom data is present
+    const isManualMode = currentMaterial === "manual_trigger" || (currentMaterial !== "" && !standardMaterials.includes(currentMaterial));
 
     return (
-      <div className="relative space-y-2">
-        <select
-          id="tile-material-select"
-          name="tileMaterial"
-          value={isCustomMode ? "custom" : currentValue}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "custom") {
-              setNewTile({ ...newTile, tileMaterial: " " });
-            } else {
-              setNewTile({ ...newTile, tileMaterial: val || undefined });
-            }
-          }}
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
-        >
-          <option value="">Select Material Type</option>
-          {standardMaterials.map((material) => (
-            <option key={material} value={material}>{material}</option>
-          ))}
-          <option value="custom" className="font-bold text-green-600 bg-green-50">
-            + Add Custom Material
-          </option>
-        </select>
-
-        <div className="absolute right-3 top-2.5 pointer-events-none">
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </div>
-
-        {isCustomMode && (
-          <div className="animate-slide-down mt-3">
+      <div className="space-y-3">
+        {!isManualMode ? (
+          // --- STANDARD DROPDOWN VIEW ---
+          <div>
+            <div className="relative">
+              <select
+                id="tile-material-select"
+                name="tileMaterial"
+                value={currentMaterial}
+                onChange={(e) => setNewTile({ ...newTile, tileMaterial: e.target.value || undefined })}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer pr-10 transition-shadow"
+              >
+                <option value="">Select Material Type</option>
+                {standardMaterials.map((material) => (
+                  <option key={material} value={material}>{material}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-2.5 pointer-events-none">
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setNewTile({ ...newTile, tileMaterial: "manual_trigger" })}
+              className="mt-2 text-xs sm:text-sm text-green-600 font-semibold hover:text-green-700 flex items-center gap-1 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Manual Material
+            </button>
+          </div>
+        ) : (
+          // --- MANUAL ENTRY VIEW ---
+          <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg space-y-3 animate-slide-down">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs sm:text-sm font-semibold text-green-800">
+                Enter Custom Material
+              </span>
+              <button
+                type="button"
+                onClick={() => setNewTile({ ...newTile, tileMaterial: "" })}
+                className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 hover:bg-red-50 rounded transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            
             <input
               type="text"
-              placeholder="Enter material manually (e.g., Porcelain, Glass)"
-              value={currentValue === " " ? "" : currentValue}
-              onChange={(e) => {
-                const val = e.target.value;
-                setNewTile({ ...newTile, tileMaterial: val === "" ? " " : val });
-              }}
-              className="w-full px-3 py-2.5 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm shadow-sm transition-shadow outline-none"
+              placeholder="e.g. Porcelain, Natural Stone, Glass"
+              value={currentMaterial === "manual_trigger" ? "" : currentMaterial}
+              onChange={(e) => setNewTile({ ...newTile, tileMaterial: e.target.value })}
+              className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white outline-none transition-shadow shadow-sm"
               autoFocus
             />
           </div>
@@ -2137,13 +2360,14 @@ export const SellerDashboard: React.FC = () => {
     );
   })()}
 
-  {newTile.tileMaterial && newTile.tileMaterial.trim() !== "" && (
+  {newTile.tileMaterial && newTile.tileMaterial !== "manual_trigger" && newTile.tileMaterial.trim() !== "" && (
     <div className="flex items-center gap-2 text-xs text-green-600 mt-1.5">
       <CheckCircle className="w-3 h-3" />
-      <span>Selected: {newTile.tileMaterial}</span>
+      <span>Selected: <strong className="font-medium">{newTile.tileMaterial}</strong></span>
     </div>
   )}
 </div>
+
 
                 {/* Price */}
                 <div className="space-y-2">

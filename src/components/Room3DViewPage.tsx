@@ -1518,7 +1518,7 @@ export const Room3DViewPage: React.FC = () => {
                           onClick={() => setShowWallScanner(true)}
                           className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
                         >
-                          Change Wall Tile
+                          Select Wall Tile
                         </button>
                       </div>
                     ) : (
