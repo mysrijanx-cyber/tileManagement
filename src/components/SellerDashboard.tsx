@@ -838,6 +838,9 @@ export const SellerDashboard: React.FC = () => {
 
       const baseTileData = {
         ...newTile,
+        size: newTile.size?.trim(),
+  tileSurface: newTile.tileSurface?.trim() || "",
+  tileMaterial: newTile.tileMaterial?.trim() || "",
         sellerId: currentUser.user_id,
         showroomId: currentUser.user_id,
         tileCode: tileCode,
@@ -918,6 +921,9 @@ export const SellerDashboard: React.FC = () => {
 
       const updates = {
         ...newTile,
+        size: newTile.size?.trim(),
+  tileSurface: newTile.tileSurface?.trim() || "",
+  tileMaterial: newTile.tileMaterial?.trim() || "",
         inStock: (newTile.stock || 0) > 0,
         updatedAt: new Date().toISOString(),
       };
@@ -1730,7 +1736,7 @@ export const SellerDashboard: React.FC = () => {
                 </div>
 
                 {/* Size */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <label
                     htmlFor="tile-size-select"
                     className="block text-xs sm:text-sm font-medium text-gray-700"
@@ -1790,10 +1796,96 @@ export const SellerDashboard: React.FC = () => {
                       <span>Selected: {newTile.size}</span>
                     </div>
                   )}
-                </div>
+                </div> */} 
+{/* Size */}
+<div className="space-y-2">
+  <label
+    htmlFor="tile-size-select"
+    className="block text-xs sm:text-sm font-medium text-gray-700"
+  >
+    Size *
+  </label>
+  
+  {(() => {
+    // Standard sizes ki list
+    const standardSizes = [
+      "30x30 cm", "30x60 cm", "60x60 cm", "60x120 cm", "80x80 cm", 
+      "40x40 cm", "40x60 cm", "50x50 cm", "20x120 cm", "15x90 cm", 
+      "10x30 cm", "20x20 cm", "25x40 cm", "61x122 cm", "122x122 cm", 
+      "75x75 cm", "100x100 cm", "45x45 cm", "7.5x15 cm", "6x25 cm"
+    ];
+    
+    // Check mode: Agar size standard list mein nahi hai, toh matab user Custom mode mein hai.
+    // Hum " " (single space) ko as a trigger use kar rahe hain taaki empty box par bhi input open rahe.
+    const isCustomMode = 
+      newTile.size === " " || 
+      (newTile.size !== "" && newTile.size !== undefined && !standardSizes.includes(newTile.size));
+
+    return (
+      <div className="relative space-y-2">
+        <select
+          id="tile-size-select"
+          name="size"
+          value={isCustomMode ? "custom" : (newTile.size || "")}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "custom") {
+              // Custom trigger karne ke liye ek space set karte hain,
+              // isse UI jump nahi karega aur required validation bhi fail ho jayega agar user kuch type nahi karta.
+              setNewTile({ ...newTile, size: " " }); 
+            } else {
+              setNewTile({ ...newTile, size: val });
+            }
+          }}
+          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
+        >
+          <option value="">Select Tile Size</option>
+          {standardSizes.map((sizeOption) => (
+             <option key={sizeOption} value={sizeOption}>{sizeOption}</option>
+          ))}
+          <option value="custom" className="font-bold text-green-600 bg-green-50">
+            + Add Manual / Custom Size
+          </option>
+        </select>
+
+        <div className="absolute right-3 top-2.5 pointer-events-none">
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </div>
+
+        {/* Custom Text Input */}
+        {isCustomMode && (
+          <div className="animate-slide-down mt-3">
+            <input
+              type="text"
+              placeholder="Enter size manually (e.g., 55x55 cm)"
+              value={newTile.size === " " ? "" : newTile.size}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Agar user backspace karke clear kar de, toh fallback " " par jaye
+                // taaki input box turant gayab na ho jaye.
+                setNewTile({ ...newTile, size: val === "" ? " " : val });
+              }}
+              className="w-full px-3 py-2.5 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm shadow-sm transition-shadow outline-none"
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
+    );
+  })()}
+
+  {/* Success Check for Selected Size */}
+  {newTile.size && newTile.size.trim() !== "" && (
+    <div className="flex items-center gap-2 text-xs text-green-600 mt-1.5">
+      <CheckCircle className="w-3 h-3" />
+      <span>Selected: {newTile.size}</span>
+    </div>
+  )}
+</div>
+
 
                 {/* Tile Surface */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <label
                     htmlFor="tile-surface-select"
                     className="block text-xs sm:text-sm font-medium text-gray-700"
@@ -1845,10 +1937,86 @@ export const SellerDashboard: React.FC = () => {
                       <span>Selected: {newTile.tileSurface}</span>
                     </div>
                   )}
-                </div>
+                </div> */} 
+
+                {/* Tile Surface */}
+<div className="space-y-2">
+  <label
+    htmlFor="tile-surface-select"
+    className="block text-xs sm:text-sm font-medium text-gray-700"
+  >
+    Tile Surface
+  </label>
+  
+  {(() => {
+    const standardSurfaces = [
+      "Polished", "Step Side", "Matt", "Carving", "High Gloss", 
+      "Metallic", "Sugar", "Glue", "Punch"
+    ];
+    
+    const currentValue = newTile.tileSurface || "";
+    const isCustomMode = 
+      currentValue === " " || 
+      (currentValue !== "" && !standardSurfaces.includes(currentValue));
+
+    return (
+      <div className="relative space-y-2">
+        <select
+          id="tile-surface-select"
+          name="tileSurface"
+          value={isCustomMode ? "custom" : currentValue}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "custom") {
+              setNewTile({ ...newTile, tileSurface: " " });
+            } else {
+              setNewTile({ ...newTile, tileSurface: val || undefined });
+            }
+          }}
+          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
+        >
+          <option value="">Select Surface Finish</option>
+          {standardSurfaces.map((surface) => (
+            <option key={surface} value={surface}>{surface}</option>
+          ))}
+          <option value="custom" className="font-bold text-green-600 bg-green-50">
+            + Add Custom Surface
+          </option>
+        </select>
+
+        <div className="absolute right-3 top-2.5 pointer-events-none">
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </div>
+
+        {isCustomMode && (
+          <div className="animate-slide-down mt-3">
+            <input
+              type="text"
+              placeholder="Enter surface manually (e.g., Rustic, Satin)"
+              value={currentValue === " " ? "" : currentValue}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNewTile({ ...newTile, tileSurface: val === "" ? " " : val });
+              }}
+              className="w-full px-3 py-2.5 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm shadow-sm transition-shadow outline-none"
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
+    );
+  })()}
+
+  {newTile.tileSurface && newTile.tileSurface.trim() !== "" && (
+    <div className="flex items-center gap-2 text-xs text-green-600 mt-1.5">
+      <CheckCircle className="w-3 h-3" />
+      <span>Selected: {newTile.tileSurface}</span>
+    </div>
+  )}
+</div>
 
                 {/* Tile Material */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <label
                     htmlFor="tile-material-select"
                     className="block text-xs sm:text-sm font-medium text-gray-700"
@@ -1899,7 +2067,83 @@ export const SellerDashboard: React.FC = () => {
                       <span>Selected: {newTile.tileMaterial}</span>
                     </div>
                   )}
-                </div>
+                </div> */} 
+
+                {/* Tile Material */}
+<div className="space-y-2">
+  <label
+    htmlFor="tile-material-select"
+    className="block text-xs sm:text-sm font-medium text-gray-700"
+  >
+    Tile Material
+  </label>
+  
+  {(() => {
+    const standardMaterials = [
+      "Slabs", "GVT & PGVT", "Double Charge", "Counter Tops", 
+      "Full Body", "Ceramic", "Mosaic", "Subway"
+    ];
+    
+    const currentValue = newTile.tileMaterial || "";
+    const isCustomMode = 
+      currentValue === " " || 
+      (currentValue !== "" && !standardMaterials.includes(currentValue));
+
+    return (
+      <div className="relative space-y-2">
+        <select
+          id="tile-material-select"
+          name="tileMaterial"
+          value={isCustomMode ? "custom" : currentValue}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "custom") {
+              setNewTile({ ...newTile, tileMaterial: " " });
+            } else {
+              setNewTile({ ...newTile, tileMaterial: val || undefined });
+            }
+          }}
+          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
+        >
+          <option value="">Select Material Type</option>
+          {standardMaterials.map((material) => (
+            <option key={material} value={material}>{material}</option>
+          ))}
+          <option value="custom" className="font-bold text-green-600 bg-green-50">
+            + Add Custom Material
+          </option>
+        </select>
+
+        <div className="absolute right-3 top-2.5 pointer-events-none">
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </div>
+
+        {isCustomMode && (
+          <div className="animate-slide-down mt-3">
+            <input
+              type="text"
+              placeholder="Enter material manually (e.g., Porcelain, Glass)"
+              value={currentValue === " " ? "" : currentValue}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNewTile({ ...newTile, tileMaterial: val === "" ? " " : val });
+              }}
+              className="w-full px-3 py-2.5 border-2 border-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm shadow-sm transition-shadow outline-none"
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
+    );
+  })()}
+
+  {newTile.tileMaterial && newTile.tileMaterial.trim() !== "" && (
+    <div className="flex items-center gap-2 text-xs text-green-600 mt-1.5">
+      <CheckCircle className="w-3 h-3" />
+      <span>Selected: {newTile.tileMaterial}</span>
+    </div>
+  )}
+</div>
 
                 {/* Price */}
                 <div className="space-y-2">
