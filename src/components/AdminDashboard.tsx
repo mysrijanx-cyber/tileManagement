@@ -187,7 +187,9 @@ const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
   const [rejectedRequests, setRejectedRequests] = useState<SellerRequest[]>([]);
   // const [tilesData, setTilesData] = useState<TileData[]>([]);
   // const [top5Tiles, setTop5Tiles] = useState<TileData[]>([]);
-
+const [currentPageSellers, setCurrentPageSellers] = useState(1);
+  const [currentPageAnalytics, setCurrentPageAnalytics] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   // ✅ AFTER
 const [tilesData, setTilesData] = useState<TileData[]>([]);
 const [top5Tiles, setTop5Tiles] = useState<TileData[]>([]);
@@ -255,6 +257,14 @@ const [_analyticsError, _setAnalyticsError] = useState<string | null>(null);
   const [selectedSellerForAnalytics, setSelectedSellerForAnalytics] = useState<any>(null);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [approvedSellers, setApprovedSellers] = useState<any[]>([]);
+
+  useEffect(() => {
+    setCurrentPageSellers(1);
+  }, [searchQuery, filterStatus]);
+
+  useEffect(() => {
+    setCurrentPageAnalytics(1);
+  }, [searchQuery]);
 
 useEffect(() => {
   loadData();
@@ -2424,206 +2434,295 @@ setErrors({
 {/* ✅ SELLER ANALYTICS TAB - RESPONSIVE */}
 {/* ═══════════════════════════════════════════════════════════════ */}
 
-{activeTab === 'seller-analytics' && (
-  <div className="space-y-4 sm:space-y-6">
-    <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 sm:p-6">
-      <h3 className="text-lg sm:text-xl font-bold text-purple-800 mb-2">📊 Seller Performance Analytics</h3>
-      <p className="text-purple-700 text-xs sm:text-sm">
-        View detailed analytics for each seller including tile uploads, customer engagement, 
-        QR code scans, and daily activity patterns.
-      </p>
-    </div>
-
-    {/* Sellers Analytics - Mobile Cards / Desktop Table */}
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="p-3 sm:p-4 bg-gray-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h4 className="font-semibold text-gray-800 text-sm sm:text-base">All Sellers ({sellersAnalyticsList.length})</h4>
-        <button
-          onClick={loadData}
-          className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm w-full sm:w-auto"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
-      </div>
-      
-      {/* Mobile Card View */}
-      <div className="block lg:hidden p-3 space-y-3">
-        {sellersAnalyticsList.length > 0 ? (
-          sellersAnalyticsList.map((seller) => (
-            <div key={seller.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Store className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-gray-800 text-sm truncate">{seller.businessName}</h4>
-                    <p className="text-xs text-gray-600 truncate">{seller.ownerName}</p>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${
-                  seller.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {seller.isActive ? '🟢 Active' : '🔴 Inactive'}
-                </span>
-              </div>
-              
-              <a href={`mailto:${seller.email}`} className="text-xs text-blue-600 hover:underline block mb-3 break-all">
-                {seller.email}
-              </a>
-              
-              <div className="space-y-2 text-xs mb-3 pb-3 border-b">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Tiles:</span>
-                  <span className={`px-2 py-1 rounded-full font-semibold ${
-                    seller.tileCount > 100 ? 'bg-green-100 text-green-800' :
-                    seller.tileCount > 50 ? 'bg-blue-100 text-blue-800' :
-                    seller.tileCount > 0 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {seller.tileCount}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Last Login:</span>
-                  <span className="font-medium text-gray-800">
-                    {seller.lastLogin 
-                      ? new Date(seller.lastLogin).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Never'}
-                  </span>
-                </div>
-              </div>
-              
-              <button
-                onClick={() => {
-                  setSelectedSellerForAnalytics(seller);
-                  setShowAnalyticsModal(true);
-                }}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                View Analytics
-              </button>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <Package className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No sellers found</p>
-          </div>
-        )}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Business Name</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Owner</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Email</th>
-              <th className="text-center p-4 font-semibold text-gray-700 text-sm">Total Tiles</th>
-              <th className="text-center p-4 font-semibold text-gray-700 text-sm">Status</th>
-              <th className="text-left p-4 font-semibold text-gray-700 text-sm">Last Login</th>
-              <th className="text-center p-4 font-semibold text-gray-700 text-sm">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sellersAnalyticsList.length > 0 ? (
-              sellersAnalyticsList.map((seller) => (
-                <tr key={seller.id} className="border-t hover:bg-gray-50 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Store className="w-5 h-5 text-purple-600" />
-                      <span className="font-medium text-gray-800 text-sm">{seller.businessName}</span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-gray-700 text-sm">{seller.ownerName}</td>
-                  <td className="p-4">
-                    <a 
-                      href={`mailto:${seller.email}`}
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      {seller.email}
-                    </a>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
-                      seller.tileCount > 100 ? 'bg-green-100 text-green-800' :
-                      seller.tileCount > 50 ? 'bg-blue-100 text-blue-800' :
-                      seller.tileCount > 0 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {seller.tileCount}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      seller.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {seller.isActive ? '🟢 Active' : '🔴 Inactive'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-600 text-sm">
-                    {seller.lastLogin 
-                      ? new Date(seller.lastLogin).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : 'Never'}
-                  </td>
-                  <td className="p-4 text-center">
-                    <button
-                      onClick={() => {
-                        setSelectedSellerForAnalytics(seller);
-                        setShowAnalyticsModal(true);
-                      }}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm flex items-center gap-2 mx-auto"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View Analytics
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  No sellers found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-)}
 
 {/* Continue to Part 4 for remaining tabs (Sellers, Analytics, Create Seller, Account Access, Email Config, Modals)... */}
 
 {/* ═══════════════════════════════════════════════════════════════ */}
-{/* ✅ SELLERS TAB - RESPONSIVE */}
+{/* ✅ SELLER ANALYTICS TAB - RESPONSIVE WITH SEARCH & PAGINATION */}
 {/* ═══════════════════════════════════════════════════════════════ */}
 
-{activeTab === 'sellers' && (
-  <div className="space-y-4">
-    {/* Search & Filter - Responsive */}
-    <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 sm:p-4 rounded-lg border border-gray-200">
-      <div className="flex flex-col gap-3 sm:gap-4">
-        {/* Search Bar */}
-        <div className="flex-1">
-          <div className="relative">
+{activeTab === 'seller-analytics' && (() => {
+  // ✅ SEARCH FILTERING & PAGINATION LOGIC
+  const filteredAnalyticsList = sellersAnalyticsList.filter(seller => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      (seller.businessName?.toLowerCase() || '').includes(query) ||
+      (seller.ownerName?.toLowerCase() || '').includes(query) ||
+      (seller.email?.toLowerCase() || '').includes(query)
+    );
+  });
+
+  const totalPagesAnalytics = Math.ceil(filteredAnalyticsList.length / ITEMS_PER_PAGE);
+  const paginatedAnalytics = filteredAnalyticsList.slice(
+    (currentPageAnalytics - 1) * ITEMS_PER_PAGE,
+    currentPageAnalytics * ITEMS_PER_PAGE
+  );
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-bold text-purple-800 mb-2">📊 Seller Performance Analytics</h3>
+        <p className="text-purple-700 text-xs sm:text-sm">
+          View detailed analytics for each seller including tile uploads, customer engagement, 
+          QR code scans, and daily activity patterns.
+        </p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+        
+        {/* ✅ HEADER WITH RESPONSIVE SEARCH BAR */}
+        <div className="p-3 sm:p-4 bg-gray-50 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex-1 w-full lg:max-w-md relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by Business, Owner, or Email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 sm:pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base transition-shadow"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between lg:justify-end gap-3 w-full lg:w-auto">
+            <div className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+              Total: {filteredAnalyticsList.length} Seller{filteredAnalyticsList.length !== 1 ? 's' : ''}
+            </div>
+            <button
+              onClick={loadData}
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span className="hidden xs:inline">Refresh</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Mobile Card View */}
+        <div className="block lg:hidden p-3 space-y-3">
+          {paginatedAnalytics.length > 0 ? (
+            paginatedAnalytics.map((seller) => (
+              <div key={seller.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Store className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-gray-800 text-sm truncate">{seller.businessName}</h4>
+                      <p className="text-xs text-gray-600 truncate">{seller.ownerName}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${
+                    seller.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {seller.isActive ? '🟢 Active' : '🔴 Inactive'}
+                  </span>
+                </div>
+                
+                <a href={`mailto:${seller.email}`} className="text-xs text-blue-600 hover:underline block mb-3 break-all">
+                  {seller.email}
+                </a>
+                
+                <div className="space-y-2 text-xs mb-3 pb-3 border-b">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Tiles:</span>
+                    <span className={`px-2 py-1 rounded-full font-semibold ${
+                      seller.tileCount > 100 ? 'bg-green-100 text-green-800' :
+                      seller.tileCount > 50 ? 'bg-blue-100 text-blue-800' :
+                      seller.tileCount > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {seller.tileCount}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-600">Last Login:</span>
+                    <span className="font-medium text-gray-800">
+                      {seller.lastLogin 
+                        ? new Date(seller.lastLogin).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : 'Never'}
+                    </span>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setSelectedSellerForAnalytics(seller);
+                    setShowAnalyticsModal(true);
+                  }}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Analytics
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 bg-gray-50 rounded-lg">
+              <Search className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+              <h3 className="text-sm font-medium text-gray-900">No sellers found</h3>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto flex-1">
+          <table className="w-full h-full">
+            <thead className="bg-gray-100 border-b">
+              <tr>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Business Name</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Owner</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Email</th>
+                <th className="text-center p-4 font-semibold text-gray-700 text-sm">Total Tiles</th>
+                <th className="text-center p-4 font-semibold text-gray-700 text-sm">Status</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Last Login</th>
+                <th className="text-center p-4 font-semibold text-gray-700 text-sm">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedAnalytics.length > 0 ? (
+                paginatedAnalytics.map((seller) => (
+                  <tr key={seller.id} className="border-t hover:bg-gray-50 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Store className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                        <span className="font-medium text-gray-800 text-sm">{seller.businessName}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-gray-700 text-sm">{seller.ownerName}</td>
+                    <td className="p-4">
+                      <a href={`mailto:${seller.email}`} className="text-blue-600 hover:underline text-sm">{seller.email}</a>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
+                        seller.tileCount > 100 ? 'bg-green-100 text-green-800' :
+                        seller.tileCount > 50 ? 'bg-blue-100 text-blue-800' :
+                        seller.tileCount > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {seller.tileCount}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        seller.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {seller.isActive ? '🟢 Active' : '🔴 Inactive'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-600 text-sm">
+                      {seller.lastLogin 
+                        ? new Date(seller.lastLogin).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : 'Never'}
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => {
+                          setSelectedSellerForAnalytics(seller);
+                          setShowAnalyticsModal(true);
+                        }}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm flex items-center gap-2 mx-auto"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Analytics
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center">
+                    <div className="flex flex-col items-center justify-center text-gray-500">
+                      <Search className="w-10 h-10 mb-3 text-gray-300" />
+                      <p className="text-base font-medium text-gray-900">No matching sellers found</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ✅ RESPONSIVE PAGINATION FOOTER */}
+        {totalPagesAnalytics > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 mt-auto">
+            <div className="flex justify-between flex-1 sm:hidden">
+              <button
+                onClick={() => setCurrentPageAnalytics(prev => Math.max(prev - 1, 1))}
+                disabled={currentPageAnalytics === 1}
+                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPageAnalytics(prev => Math.min(prev + 1, totalPagesAnalytics))}
+                disabled={currentPageAnalytics === totalPagesAnalytics}
+                className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{((currentPageAnalytics - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="font-medium">{Math.min(currentPageAnalytics * ITEMS_PER_PAGE, filteredAnalyticsList.length)}</span> of <span className="font-medium">{filteredAnalyticsList.length}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPageAnalytics(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPageAnalytics === 1}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border-t border-b border-gray-300">
+                    Page {currentPageAnalytics} of {totalPagesAnalytics}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPageAnalytics(prev => Math.min(prev + 1, totalPagesAnalytics))}
+                    disabled={currentPageAnalytics === totalPagesAnalytics}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+})()}
+
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ SELLERS TAB - RESPONSIVE */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+{/* ✅ SELLERS TAB - RESPONSIVE WITH PAGINATION */}
+{/* ═══════════════════════════════════════════════════════════════ */}
+
+{activeTab === 'sellers' && (() => {
+  // ✅ PAGINATION LOGIC FOR SELLERS
+  const totalPagesSellers = Math.ceil(filteredSellers.length / ITEMS_PER_PAGE);
+  const paginatedSellers = filteredSellers.slice(
+    (currentPageSellers - 1) * ITEMS_PER_PAGE,
+    currentPageSellers * ITEMS_PER_PAGE
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Search & Filter - Responsive */}
+      <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             <input
               type="text"
@@ -2641,636 +2740,291 @@ setErrors({
               </button>
             )}
           </div>
+          
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+                filterStatus === 'all' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              All ({sellers.length})
+            </button>
+            <button
+              onClick={() => setFilterStatus('approved')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+                filterStatus === 'approved' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              ✅ Approved
+            </button>
+            <button
+              onClick={() => setFilterStatus('active')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+                filterStatus === 'active' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              🟢 Active
+            </button>
+            <button
+              onClick={() => setFilterStatus('inactive')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+                filterStatus === 'inactive' ? 'bg-orange-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              🔴 Inactive
+            </button>
+            <button
+              onClick={() => setFilterStatus('deleted')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
+                filterStatus === 'deleted' ? 'bg-gray-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              🗑️ Deleted
+            </button>
+          </div>
         </div>
-        
-        {/* Filter Buttons - Responsive Grid */}
-        {/* <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-          <button
-            onClick={() => setFilterStatus('all')}
-            className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-              filterStatus === 'all'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            All ({sellers.length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('approved')}
-            className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-              filterStatus === 'approved'
-                ? 'bg-green-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            ✅ Approved
-          </button>
-          <button
-            onClick={() => setFilterStatus('active')}
-            className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-              filterStatus === 'active'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            🟢 Active
-          </button>
-          <button
-            onClick={() => setFilterStatus('deleted')}
-            className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-              filterStatus === 'deleted'
-                ? 'bg-gray-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            🗑️ Deleted
-          </button>
-        </div> */}
-
-        {/* Filter Buttons - UPDATED with Inactive filter */}
-<div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-  <button
-    onClick={() => setFilterStatus('all')}
-    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-      filterStatus === 'all'
-        ? 'bg-purple-600 text-white'
-        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-    }`}
-  >
-    All ({sellers.length})
-  </button>
-  <button
-    onClick={() => setFilterStatus('approved')}
-    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-      filterStatus === 'approved'
-        ? 'bg-green-600 text-white'
-        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-    }`}
-  >
-    ✅ Approved
-  </button>
-  <button
-    onClick={() => setFilterStatus('active')}
-    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-      filterStatus === 'active'
-        ? 'bg-blue-600 text-white'
-        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-    }`}
-  >
-    🟢 Active
-  </button>
-  {/* ✅ NEW: Inactive Filter Button */}
-  <button
-    onClick={() => setFilterStatus('inactive')}
-    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-      filterStatus === 'inactive'
-        ? 'bg-orange-600 text-white'
-        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-    }`}
-  >
-    🔴 Inactive
-  </button>
-  <button
-    onClick={() => setFilterStatus('deleted')}
-    className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-      filterStatus === 'deleted'
-        ? 'bg-gray-600 text-white'
-        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-    }`}
-  >
-    🗑️ Deleted
-  </button>
-</div>
       </div>
-      
-      <div className="mt-3 text-xs sm:text-sm text-gray-600">
-        Showing {filteredSellers.length} of {sellers.length} sellers
-      </div>
-    </div>
 
-    {/* Mobile Card View */}
-    {/* <div className="block lg:hidden space-y-3">
-      {filteredSellers.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-500 font-medium">No sellers found</p>
-        </div>
-      ) : (
-        filteredSellers.map((seller) => (
-          <div 
-            key={seller.id} 
-            className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
-              seller.deleted ? 'opacity-60 border-gray-300' : 'border-gray-200'
-            }`}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0">
-                <h4 className={`font-bold text-gray-800 text-sm mb-1 ${seller.deleted ? 'line-through' : ''}`}>
-                  {seller.businessName}
-                </h4>
-                <p className="text-xs text-gray-600 truncate">{seller.ownerName}</p>
-              </div>
-              <div className="flex flex-col gap-1 ml-2">
-                <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                  seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                  seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {seller.requestStatus === 'approved' && '✅'}
-                  {seller.requestStatus === 'pending' && '⏳'}
-                  {seller.requestStatus === 'rejected' && '❌'}
-                  {!seller.requestStatus && '?'}
-                </span>
-                <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                  seller.deleted ? 'bg-gray-100 text-gray-800' :
-                  seller.isActive ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {seller.deleted ? '🗑️' : seller.isActive ? '🟢' : '🔴'}
-                </span>
-              </div>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+        {/* Mobile Card View */}
+        <div className="block lg:hidden space-y-3 p-3 bg-gray-50">
+          {paginatedSellers.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500 font-medium">No sellers found</p>
             </div>
-            
-            <a href={`mailto:${seller.email}`} className="text-xs text-blue-600 hover:underline block mb-2 break-all">
-              {seller.email}
-            </a>
-            
-            <p className="text-xs text-gray-600 mb-3">{seller.phone || 'No phone'}</p>
-            
-            {!seller.deleted && (
-              <div className="flex gap-2 pt-3 border-t">
-                <button
-                  onClick={() => handlePasswordReset(seller)}
-                  disabled={processingAction === seller.id}
-                  className="flex-1 flex items-center justify-center gap-1 p-2 text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 text-xs"
-                  title="Send Password Reset"
-                >
-                  {processingAction === seller.id ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-600"></div>
-                  ) : (
-                    <>
-                      <Key className="w-3 h-3" />
-                      <span className="hidden sm:inline">Reset</span>
-                    </>
-                  )}
-                </button>
-                
-                <button
-                  onClick={() => handleViewDetails(seller)}
-                  className="flex-1 flex items-center justify-center gap-1 p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-xs"
-                  title="View Details"
-                >
-                  <Eye className="w-3 h-3" />
-                  <span className="hidden sm:inline">Details</span>
-                </button>
-                
-                <button
-                  onClick={() => handleDeleteSeller(seller)}
-                  disabled={processingAction === seller.id}
-                  className="flex-1 flex items-center justify-center gap-1 p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 text-xs"
-                  title="Delete Account"
-                >
-                  {processingAction === seller.id ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-                  ) : (
-                    <>
-                      <Trash2 className="w-3 h-3" />
-                      <span className="hidden sm:inline">Delete</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        ))
-      )}
-    </div> */}
-
-{/* Mobile Card View - UPDATED with Toggle Button */}
-<div className="block lg:hidden space-y-3">
-  {filteredSellers.length === 0 ? (
-    <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-      <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-      <p className="text-gray-500 font-medium">No sellers found</p>
-    </div>
-  ) : (
-    filteredSellers.map((seller) => (
-      <div 
-        key={seller.id} 
-        className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
-          seller.deleted ? 'opacity-60 border-gray-300' : 'border-gray-200'
-        }`}
-      >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h4 className={`font-bold text-gray-800 text-sm mb-1 ${seller.deleted ? 'line-through' : ''}`}>
-              {seller.businessName}
-            </h4>
-            <p className="text-xs text-gray-600 truncate">{seller.ownerName}</p>
-          </div>
-          <div className="flex flex-col gap-1 ml-2">
-            <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
-              seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
-              seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-              seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {seller.requestStatus === 'approved' && '✅'}
-              {seller.requestStatus === 'pending' && '⏳'}
-              {seller.requestStatus === 'rejected' && '❌'}
-              {!seller.requestStatus && '?'}
-            </span>
-            <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
-              seller.deleted ? 'bg-gray-100 text-gray-800' :
-              seller.accountStatus === 'inactive' ? 'bg-orange-100 text-orange-800' :
-              seller.isActive ? 'bg-green-100 text-green-800' :
-              'bg-red-100 text-red-800'
-            }`}>
-              {seller.deleted ? '🗑️' : 
-               seller.accountStatus === 'inactive' ? '🔴' :
-               seller.isActive ? '🟢' : '⚪'}
-            </span>
-          </div>
-        </div>
-        
-        <a href={`mailto:${seller.email}`} className="text-xs text-blue-600 hover:underline block mb-2 break-all">
-          {seller.email}
-        </a>
-        
-        <p className="text-xs text-gray-600 mb-3">{seller.phone || 'No phone'}</p>
-        
-        {!seller.deleted && (
-          <div className="grid grid-cols-2 gap-2 pt-3 border-t">
-            {/* ✅ NEW: Toggle Button for Mobile */}
-            {seller.accountStatus === 'inactive' || !seller.isActive ? (
-              <button
-                onClick={() => handleToggleSellerStatus(seller, 'active')}
-                disabled={togglingStatus === seller.id}
-                className="col-span-2 flex items-center justify-center gap-2 p-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 text-xs font-medium"
-              >
-                {togglingStatus === seller.id ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
-                ) : (
-                  <>
-                    <Activity className="w-3 h-3" />
-                    Reactivate Account
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={() => handleToggleSellerStatus(seller, 'inactive')}
-                disabled={togglingStatus === seller.id}
-                className="col-span-2 flex items-center justify-center gap-2 p-2 text-orange-700 bg-orange-100 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50 text-xs font-medium"
-              >
-                {togglingStatus === seller.id ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-700"></div>
-                ) : (
-                  <>
-                    <UserX className="w-3 h-3" />
-                    Mark Inactive
-                  </>
-                )}
-              </button>
-            )}
-            
-            {/* Existing buttons */}
-            <button
-              onClick={() => handlePasswordReset(seller)}
-              disabled={processingAction === seller.id}
-              className="flex items-center justify-center gap-1 p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 text-xs"
-            >
-              {processingAction === seller.id ? (
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-              ) : (
-                <>
-                  <Key className="w-3 h-3" />
-                  Reset
-                </>
-              )}
-            </button>
-            
-            <button
-              onClick={() => handleViewDetails(seller)}
-              className="flex items-center justify-center gap-1 p-2 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-xs"
-            >
-              <Eye className="w-3 h-3" />
-              Details
-            </button>
-            
-            <button
-              onClick={() => handleDeleteSeller(seller)}
-              disabled={processingAction === seller.id}
-              className="col-span-2 flex items-center justify-center gap-1 p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 text-xs"
-            >
-              {processingAction === seller.id ? (
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-              ) : (
-                <>
-                  <Trash2 className="w-3 h-3" />
-                  Delete
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </div>
-    ))
-  )}
-</div>
-
-    {/* Desktop Table View */}
-    {/* <div className="hidden lg:block overflow-x-auto bg-white rounded-lg border border-gray-200">
-      <table className="w-full">
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Business Name</th>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Owner</th>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Email</th>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Phone</th>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Status</th>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Account</th>
-            <th className="text-left p-4 font-semibold text-gray-700 text-sm">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredSellers.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="p-8 text-center text-gray-500">
-                <div className="flex flex-col items-center gap-2">
-                  <AlertCircle className="w-8 h-8 text-gray-400" />
-                  <p className="font-medium">No sellers found</p>
-                </div>
-              </td>
-            </tr>
           ) : (
-            filteredSellers.map((seller) => (
-              <tr 
-                key={seller.id} 
-                className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${
-                  seller.deleted ? 'opacity-60 bg-gray-50' : ''
-                }`}
-              >
-                <td className="p-4">
-                  <div className={`font-medium text-gray-800 text-sm ${seller.deleted ? 'line-through' : ''}`}>
-                    {seller.businessName}
+            paginatedSellers.map((seller) => (
+              <div key={seller.id} className={`bg-white border rounded-lg p-4 shadow-sm ${seller.deleted ? 'opacity-60 border-gray-300' : 'border-gray-200'}`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h4 className={`font-bold text-gray-800 text-sm mb-1 ${seller.deleted ? 'line-through' : ''}`}>
+                      {seller.businessName}
+                    </h4>
+                    <p className="text-xs text-gray-600 truncate">{seller.ownerName}</p>
                   </div>
-                </td>
-                <td className="p-4 text-gray-700 text-sm">{seller.ownerName}</td>
-                <td className="p-4">
-                  <a 
-                    href={`mailto:${seller.email}`}
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    {seller.email}
-                  </a>
-                </td>
-                <td className="p-4 text-gray-600 text-sm">{seller.phone || 'N/A'}</td>
-                <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                    seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {seller.requestStatus === 'approved' && '✅ Approved'}
-                    {seller.requestStatus === 'pending' && '⏳ Pending'}
-                    {seller.requestStatus === 'rejected' && '❌ Rejected'}
-                    {!seller.requestStatus && 'Unknown'}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    seller.deleted ? 'bg-gray-100 text-gray-800' :
-                    seller.isActive ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {seller.deleted && '🗑️ Deleted'}
-                    {!seller.deleted && seller.isActive && '🟢 Active'}
-                    {!seller.deleted && !seller.isActive && '🔴 Inactive'}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <div className="flex gap-2">
-                    {!seller.deleted && (
-                      <>
-                        <button
-                          onClick={() => handlePasswordReset(seller)}
-                          disabled={processingAction === seller.id}
-                          className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Send Password Reset Link"
-                        >
-                          {processingAction === seller.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                          ) : (
-                            <Key className="w-4 h-4" />
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={() => handleViewDetails(seller)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDeleteSeller(seller)}
-                          disabled={processingAction === seller.id}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Delete Account"
-                        >
-                          {processingAction === seller.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </>
-                    )}
+                  <div className="flex flex-col gap-1 ml-2">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                      seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                      seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {seller.requestStatus === 'approved' && '✅'}
+                      {seller.requestStatus === 'pending' && '⏳'}
+                      {seller.requestStatus === 'rejected' && '❌'}
+                      {!seller.requestStatus && '?'}
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                      seller.deleted ? 'bg-gray-100 text-gray-800' :
+                      seller.accountStatus === 'inactive' ? 'bg-orange-100 text-orange-800' :
+                      seller.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {seller.deleted ? '🗑️' : seller.accountStatus === 'inactive' ? '🔴' : seller.isActive ? '🟢' : '⚪'}
+                    </span>
                   </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div> */}
-
-{/* Desktop Table View - UPDATED with Toggle Button */}
-<div className="hidden lg:block overflow-x-auto bg-white rounded-lg border border-gray-200">
-  <table className="w-full">
-    <thead className="bg-gray-50 border-b border-gray-200">
-      <tr>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Business Name</th>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Owner</th>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Email</th>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Phone</th>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Status</th>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Account</th>
-        <th className="text-left p-4 font-semibold text-gray-700 text-sm">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {filteredSellers.length === 0 ? (
-        <tr>
-          <td colSpan={7} className="p-8 text-center text-gray-500">
-            <div className="flex flex-col items-center gap-2">
-              <AlertCircle className="w-8 h-8 text-gray-400" />
-              <p className="font-medium">No sellers found</p>
-            </div>
-          </td>
-        </tr>
-      ) : (
-        filteredSellers.map((seller) => (
-          <tr 
-            key={seller.id} 
-            className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${
-              seller.deleted ? 'opacity-60 bg-gray-50' : ''
-            }`}
-          >
-            <td className="p-4">
-              <div className={`font-medium text-gray-800 text-sm ${seller.deleted ? 'line-through' : ''}`}>
-                {seller.businessName}
-              </div>
-            </td>
-            <td className="p-4 text-gray-700 text-sm">{seller.ownerName}</td>
-            <td className="p-4">
-              <a 
-                href={`mailto:${seller.email}`}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                {seller.email}
-              </a>
-            </td>
-            <td className="p-4 text-gray-600 text-sm">{seller.phone || 'N/A'}</td>
-            <td className="p-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {seller.requestStatus === 'approved' && '✅ Approved'}
-                {seller.requestStatus === 'pending' && '⏳ Pending'}
-                {seller.requestStatus === 'rejected' && '❌ Rejected'}
-                {!seller.requestStatus && 'Unknown'}
-              </span>
-            </td>
-            <td className="p-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                seller.deleted ? 'bg-gray-100 text-gray-800' :
-                seller.accountStatus === 'inactive' ? 'bg-orange-100 text-orange-800' :
-                seller.isActive ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {seller.deleted && '🗑️ Deleted'}
-                {!seller.deleted && seller.accountStatus === 'inactive' && '🔴 Inactive'}
-                {!seller.deleted && seller.accountStatus !== 'inactive' && seller.isActive && '🟢 Active'}
-                {!seller.deleted && seller.accountStatus !== 'inactive' && !seller.isActive && '⚪ Inactive'}
-              </span>
-            </td>
-            <td className="p-4">
-              <div className="flex gap-2 flex-wrap">
+                </div>
+                
+                <a href={`mailto:${seller.email}`} className="text-xs text-blue-600 hover:underline block mb-2 break-all">
+                  {seller.email}
+                </a>
+                <p className="text-xs text-gray-600 mb-3">{seller.phone || 'No phone'}</p>
+                
                 {!seller.deleted && (
-                  <>
-                    {/* ✅ NEW: Toggle Active/Inactive Button */}
+                  <div className="grid grid-cols-2 gap-2 pt-3 border-t">
                     {seller.accountStatus === 'inactive' || !seller.isActive ? (
                       <button
                         onClick={() => handleToggleSellerStatus(seller, 'active')}
                         disabled={togglingStatus === seller.id}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
-                        title="Reactivate Account"
+                        className="col-span-2 flex items-center justify-center gap-2 p-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 text-xs font-medium"
                       >
                         {togglingStatus === seller.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-                        ) : (
-                          <>
-                            <Activity className="w-4 h-4" />
-                            <span className="text-xs hidden xl:inline">Activate</span>
-                          </>
-                        )}
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                        ) : (<><Activity className="w-3 h-3" /> Reactivate Account</>)}
                       </button>
                     ) : (
                       <button
                         onClick={() => handleToggleSellerStatus(seller, 'inactive')}
                         disabled={togglingStatus === seller.id}
-                        className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
-                        title="Deactivate Account"
+                        className="col-span-2 flex items-center justify-center gap-2 p-2 text-orange-700 bg-orange-100 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50 text-xs font-medium"
                       >
                         {togglingStatus === seller.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                        ) : (
-                          <>
-                            <UserX className="w-4 h-4" />
-                            <span className="text-xs hidden xl:inline">Deactivate</span>
-                          </>
-                        )}
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-700"></div>
+                        ) : (<><UserX className="w-3 h-3" /> Mark Inactive</>)}
                       </button>
                     )}
                     
-                    {/* Existing buttons */}
                     <button
                       onClick={() => handlePasswordReset(seller)}
                       disabled={processingAction === seller.id}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-                      title="Send Password Reset Link"
+                      className="flex items-center justify-center gap-1 p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 text-xs"
                     >
-                      {processingAction === seller.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Key className="w-4 h-4" />
-                      )}
+                      {processingAction === seller.id ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div> : <><Key className="w-3 h-3" /> Reset</>}
                     </button>
                     
-                    <button
-                      onClick={() => handleViewDetails(seller)}
-                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                      title="View Details"
-                    >
-                      <Eye className="w-4 h-4" />
+                    <button onClick={() => handleViewDetails(seller)} className="flex items-center justify-center gap-1 p-2 text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-xs">
+                      <Eye className="w-3 h-3" /> Details
                     </button>
                     
                     <button
                       onClick={() => handleDeleteSeller(seller)}
                       disabled={processingAction === seller.id}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                      title="Delete Account"
+                      className="col-span-2 flex items-center justify-center gap-1 p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 text-xs"
                     >
-                      {processingAction === seller.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
+                      {processingAction === seller.id ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div> : <><Trash2 className="w-3 h-3" /> Delete</>}
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
-            </td>
-          </tr>
-        ))
-      )}
-    </tbody>
-  </table>
-</div>
+            ))
+          )}
+        </div>
 
-    {/* Footer - Responsive */}
-    <div className="flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200 gap-3">
-      <div className="text-xs sm:text-sm text-gray-600">
-        Total: {filteredSellers.length} seller{filteredSellers.length !== 1 ? 's' : ''}
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Business Name</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Owner</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Email</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Phone</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Status</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Account</th>
+                <th className="text-left p-4 font-semibold text-gray-700 text-sm">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedSellers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <AlertCircle className="w-8 h-8 text-gray-400" />
+                      <p className="font-medium">No sellers found</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedSellers.map((seller) => (
+                  <tr key={seller.id} className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${seller.deleted ? 'opacity-60 bg-gray-50' : ''}`}>
+                    <td className="p-4">
+                      <div className={`font-medium text-gray-800 text-sm ${seller.deleted ? 'line-through' : ''}`}>
+                        {seller.businessName}
+                      </div>
+                    </td>
+                    <td className="p-4 text-gray-700 text-sm">{seller.ownerName}</td>
+                    <td className="p-4"><a href={`mailto:${seller.email}`} className="text-blue-600 hover:underline text-sm">{seller.email}</a></td>
+                    <td className="p-4 text-gray-600 text-sm">{seller.phone || 'N/A'}</td>
+                    <td className="p-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        seller.requestStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                        seller.requestStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        seller.requestStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {seller.requestStatus === 'approved' && '✅ Approved'}
+                        {seller.requestStatus === 'pending' && '⏳ Pending'}
+                        {seller.requestStatus === 'rejected' && '❌ Rejected'}
+                        {!seller.requestStatus && 'Unknown'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        seller.deleted ? 'bg-gray-100 text-gray-800' :
+                        seller.accountStatus === 'inactive' ? 'bg-orange-100 text-orange-800' :
+                        seller.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {seller.deleted && '🗑️ Deleted'}
+                        {!seller.deleted && seller.accountStatus === 'inactive' && '🔴 Inactive'}
+                        {!seller.deleted && seller.accountStatus !== 'inactive' && seller.isActive && '🟢 Active'}
+                        {!seller.deleted && seller.accountStatus !== 'inactive' && !seller.isActive && '⚪ Inactive'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2 flex-wrap">
+                        {!seller.deleted && (
+                          <>
+                            {seller.accountStatus === 'inactive' || !seller.isActive ? (
+                              <button onClick={() => handleToggleSellerStatus(seller, 'active')} disabled={togglingStatus === seller.id} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1" title="Reactivate Account">
+                                {togglingStatus === seller.id ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div> : <><Activity className="w-4 h-4" /><span className="text-xs hidden xl:inline">Activate</span></>}
+                              </button>
+                            ) : (
+                              <button onClick={() => handleToggleSellerStatus(seller, 'inactive')} disabled={togglingStatus === seller.id} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1" title="Deactivate Account">
+                                {togglingStatus === seller.id ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div> : <><UserX className="w-4 h-4" /><span className="text-xs hidden xl:inline">Deactivate</span></>}
+                              </button>
+                            )}
+                            <button onClick={() => handlePasswordReset(seller)} disabled={processingAction === seller.id} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50" title="Send Password Reset Link">
+                              {processingAction === seller.id ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div> : <Key className="w-4 h-4" />}
+                            </button>
+                            <button onClick={() => handleViewDetails(seller)} className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="View Details">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeleteSeller(seller)} disabled={processingAction === seller.id} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title="Delete Account">
+                              {processingAction === seller.id ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div> : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ✅ RESPONSIVE PAGINATION FOOTER */}
+        {totalPagesSellers > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+            <div className="flex justify-between flex-1 sm:hidden">
+              <button
+                onClick={() => setCurrentPageSellers(prev => Math.max(prev - 1, 1))}
+                disabled={currentPageSellers === 1}
+                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPageSellers(prev => Math.min(prev + 1, totalPagesSellers))}
+                disabled={currentPageSellers === totalPagesSellers}
+                className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{((currentPageSellers - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="font-medium">{Math.min(currentPageSellers * ITEMS_PER_PAGE, filteredSellers.length)}</span> of <span className="font-medium">{filteredSellers.length}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPageSellers(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPageSellers === 1}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border-t border-b border-gray-300">
+                    Page {currentPageSellers} of {totalPagesSellers}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPageSellers(prev => Math.min(prev + 1, totalPagesSellers))}
+                    disabled={currentPageSellers === totalPagesSellers}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <button
-        onClick={loadData}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-      >
-        <RefreshCw className="w-4 h-4" />
-        Refresh Data
-      </button>
     </div>
-  </div>
-)}
+  );
+})()}
 
 {/* ═══════════════════════════════════════════════════════════════ */}
 {/* ✅ ANALYTICS TAB - RESPONSIVE */}
