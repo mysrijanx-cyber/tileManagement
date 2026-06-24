@@ -1462,6 +1462,9 @@ export const Room3DViewPage: React.FC = () => {
             {/* ═══════════════════════════════════════════════════════ */}
             {/* WALL TILE SECTION */}
             {/* ═══════════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════════════════ */}
+            {/* WALL TILE & CONTROLS SECTION (MERGED) */}
+            {/* ═══════════════════════════════════════════════════════ */}
             {isKitchenOrBathroom && (
               <section className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-xl p-3 border-2 border-purple-500/40 shadow-lg">
                 <button
@@ -1470,7 +1473,7 @@ export const Room3DViewPage: React.FC = () => {
                 >
                   <h3 className="text-white font-bold text-sm flex items-center gap-2">
                     <Package className="w-4 h-4 text-purple-400" />
-                    Wall Tile
+                    Wall Tile {wallTile.texture && viewMode === 'highlighter' ? '& Controls' : ''}
                   </h3>
                   {isMobile && (
                     expandedSection === 'wall' ? 
@@ -1491,7 +1494,7 @@ export const Room3DViewPage: React.FC = () => {
                     </div>
                   )}
                   
-                  {/* Wall Tile Display/Scanner */}
+                  {/* Wall Tile Display & Merged Controls */}
                   <div className="space-y-2">
                     {wallTile.texture ? (
                       <div className="bg-gray-800/70 rounded-lg p-2 border border-gray-700">
@@ -1516,10 +1519,72 @@ export const Room3DViewPage: React.FC = () => {
                         
                         <button
                           onClick={() => setShowWallScanner(true)}
-                          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg text-xs font-medium transition-colors"
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg text-xs font-medium transition-colors mb-2"
                         >
-                          Select Wall Tile
+                          Change Wall Tile
                         </button>
+
+                        {/* ⬇️ MERGED HIGHLIGHTER CONTROLS (Only visible after Wall Tile is added) ⬇️ */}
+                        {viewMode === 'highlighter' && (
+                          <div className="space-y-2 pt-3 mt-1 border-t border-purple-500/30">
+                            <button
+                              onClick={() => {
+                                setTriggerAddHighlighter(true);
+                                setTimeout(() => setTriggerAddHighlighter(false), 100);
+                                if (isMobile) setExpandedSection(null);
+                              }}
+                              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs font-semibold hover:scale-[1.02] active:scale-95"
+                            >
+                              <Highlighter className="w-4 h-4" />
+                              Add Highlighter Tiles
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setTriggerRandomPattern(true);
+                                setTimeout(() => setTriggerRandomPattern(false), 100);
+                                if (isMobile) setExpandedSection(null);
+                              }}
+                              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs font-semibold hover:scale-[1.02] active:scale-95"
+                            >
+                              <Shuffle className="w-4 h-4" />
+                              Apply Random Pattern
+                            </button>
+
+                            {(highlighterTileIndices.back.size > 0 || 
+                              highlighterTileIndices.front.size > 0 || 
+                              highlighterTileIndices.left.size > 0 || 
+                              highlighterTileIndices.right.size > 0) && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setTriggerShufflePattern(true);
+                                    setTimeout(() => setTriggerShufflePattern(false), 100);
+                                    if (isMobile) setExpandedSection(null);
+                                  }}
+                                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs font-semibold hover:scale-[1.02] active:scale-95"
+                                >
+                                  <Shuffle className="w-4 h-4" />
+                                  Shuffle Pattern
+                                </button>
+                                
+                                <button
+                                  onClick={() => {
+                                    setTriggerClearHighlighter(true);
+                                    setTimeout(() => setTriggerClearHighlighter(false), 100);
+                                    if (isMobile) setExpandedSection(null);
+                                  }}
+                                  className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs font-semibold hover:scale-[1.02] active:scale-95"
+                                >
+                                  <X className="w-4 h-4" />
+                                  Remove Highlighter
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {/* ⬆️ END OF CONTROLS ⬆️ */}
+
                       </div>
                     ) : (
                       <button
@@ -1535,7 +1600,7 @@ export const Room3DViewPage: React.FC = () => {
                         ) : (
                           <>
                             <Scan className="w-4 h-4" />
-                            Change Wall Tile
+                            Select Wall Tile
                           </>
                         )}
                       </button>
@@ -1546,10 +1611,15 @@ export const Room3DViewPage: React.FC = () => {
                       <p className="text-purple-200 text-[10px] leading-relaxed flex items-start gap-1">
                         <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
                         <span>
-                          Scan QR code from wall tile. {floorTile.sellerId && <>Must be from same showroom.</>}
+                          {viewMode === 'highlighter' && wallTile.texture ? (
+                            <><strong>Highlighter Mode:</strong> Click wall tiles to highlight them.</>
+                          ) : (
+                            <>Scan QR code from wall tile. {floorTile.sellerId && <>Must be from same showroom.</>}</>
+                          )}
                         </span>
                       </p>
                     </div>
+
                   </div>
                 </div>
               </section>
@@ -1660,126 +1730,10 @@ export const Room3DViewPage: React.FC = () => {
             {/* ═══════════════════════════════════════════════════════ */}
             {/* ACTIONS & CONTROLS SECTION */}
             {/* ═══════════════════════════════════════════════════════ */}
-            <section className="bg-gradient-to-br from-indigo-900/50 to-blue-900/50 rounded-xl p-3 border-2 border-indigo-500/40 shadow-lg">
-              <button
-                onClick={() => toggleSection('actions')}
-                className="w-full flex items-center justify-between mb-3 lg:cursor-default"
-              >
-                <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-indigo-400" />
-                  Actions & Controls
-                </h3>
-                {isMobile && (
-                  expandedSection === 'actions' ? 
-                  <ChevronUp className="w-4 h-4 text-gray-400" /> : 
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                )}
-              </button>
+           {/* ═══════════════════════════════════════════════════════ */}
+{/* ACTIONS & CONTROLS SECTION */}
+{/* ═══════════════════════════════════════════════════════ */}
 
-              <div className={`space-y-2 ${isMobile && expandedSection !== 'actions' ? 'hidden' : 'block'}`}>
-                
-                {/* Highlighter Mode Actions */}
-                {viewMode === 'highlighter' && isKitchenOrBathroom && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setTriggerAddHighlighter(true);
-                        setTimeout(() => setTriggerAddHighlighter(false), 100);
-                        if (isMobile) setExpandedSection(null);
-                      }}
-                      disabled={!wallTile.texture}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <Highlighter className="w-4 h-4" />
-                      Add Highlighter Tiles
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setTriggerRandomPattern(true);
-                        setTimeout(() => setTriggerRandomPattern(false), 100);
-                        if (isMobile) setExpandedSection(null);
-                      }}
-                      disabled={!wallTile.texture}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <Shuffle className="w-4 h-4" />
-                      Apply Random Pattern
-                    </button>
-
-                    {(highlighterTileIndices.back.size > 0 || 
-                      highlighterTileIndices.front.size > 0 || 
-                      highlighterTileIndices.left.size > 0 || 
-                      highlighterTileIndices.right.size > 0) && (
-                      <button
-                        onClick={() => {
-                          setTriggerShufflePattern(true);
-                          setTimeout(() => setTriggerShufflePattern(false), 100);
-                          if (isMobile) setExpandedSection(null);
-                        }}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95"
-                      >
-                        <Shuffle className="w-4 h-4" />
-                        Shuffle Pattern
-                      </button>
-                    )}
-{(highlighterTileIndices.back.size > 0 || 
-                      highlighterTileIndices.front.size > 0 || 
-                      highlighterTileIndices.left.size > 0 || 
-                      highlighterTileIndices.right.size > 0) && (
-                      <>
-                        {/* EXISTING: Shuffle Pattern Button */}
-                        <button
-                          onClick={() => {
-                            setTriggerShufflePattern(true);
-                            setTimeout(() => setTriggerShufflePattern(false), 100);
-                            if (isMobile) setExpandedSection(null);
-                          }}
-                          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95"
-                        >
-                          <Shuffle className="w-4 h-4" />
-                          Shuffle Pattern
-                        </button>
-                        
-                        {/* ✅ NEW: Remove Highlighter Button */}
-                        <button
-                          onClick={() => {
-                            setTriggerClearHighlighter(true);
-                            setTimeout(() => setTriggerClearHighlighter(false), 100);
-                            if (isMobile) setExpandedSection(null);
-                          }}
-                          className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white px-4 py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold hover:scale-[1.02] active:scale-95 mt-2"
-                        >
-                          <X className="w-4 h-4" />
-                          Remove Highlighter
-                        </button>
-                      </>
-                    )}
-                    <div className="bg-purple-900/30 rounded-lg p-2 border border-purple-500/30">
-                      <p className="text-purple-200 text-[10px] leading-relaxed flex items-start gap-1">
-                        <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                        <span>
-                          <strong>Highlighter Mode:</strong> Click wall tiles to highlight them
-                          {!wallTile.texture && <><br/>⚠️ Scan wall tile first!</>}
-                        </span>
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* View Mode Info */}
-                {viewMode === 'view' && (
-                  <div className="bg-blue-900/30 rounded-lg p-2 border border-blue-500/30">
-                    <p className="text-blue-200 text-[10px] leading-relaxed flex items-start gap-1">
-                      <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                      <span>
-                        <strong>View Mode:</strong> Rotate and zoom the 3D view. Use calculator for tile counts and estimates.
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            </section>
           </div>
         </aside>
       </div>

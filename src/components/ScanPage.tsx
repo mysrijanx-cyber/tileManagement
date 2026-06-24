@@ -30,7 +30,6 @@ import { useWorkerStatus } from '../hooks/useWorkerStatus';
 import { 
   trackTileScanEnhanced, 
   getTileById, 
-  trackQRScan, 
   trackWorkerActivity,
   verifyWorkerTileAccess,
   getTileByCode
@@ -813,15 +812,16 @@ export const ScanPage: React.FC = () => {
           console.warn('⚠️ Main tracking failed:', err);
         }),
         
-        trackQRScan(tileId, {
-          sellerId: tileSellerId,
-          showroomId: tileData.showroomId,
-          scannedBy: currentUser?.user_id ?? 'anonymous',
-          userRole: currentUser?.role ?? 'visitor',
-          scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
-        }).catch(err => {
-          console.warn('⚠️ Legacy tracking failed:', err);
-        }),
+        // trackQRScan(tileId, {
+        //   sellerId: tileSellerId,
+        //   showroomId: tileData.showroomId,
+        //   scannedBy: currentUser?.user_id ?? 'anonymous',
+        //   userRole: currentUser?.role ?? 'visitor',
+        //   scanContext: currentUser?.role === 'worker' ? 'worker_showroom_scan' : 'public_scan'
+        // }).catch(err => {
+        //   console.warn('⚠️ Legacy tracking failed:', err);
+        // }), 
+
         
         currentUser?.role === 'worker' && currentUser?.user_id
           ? trackWorkerActivity(currentUser.user_id, 'scan', { 
