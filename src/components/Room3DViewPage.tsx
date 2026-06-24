@@ -1619,9 +1619,96 @@ export const Room3DViewPage: React.FC = () => {
                         </span>
                       </p>
                     </div>
+<section className="bg-gradient-to-br from-orange-900/50 to-red-900/50 rounded-xl p-3 border-2 border-orange-500/40 shadow-lg">
+                
+                {/* Accordion Header (Same as your original code to keep mobile view working) */}
+                <button
+                  onClick={() => toggleSection('borders')}
+                  className="w-full flex items-center justify-between mb-3 lg:cursor-default"
+                >
+                  <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                    <Grid3x3 className="w-4 h-4 text-orange-400" />
+                    Tile Spacing
+                  </h3>
+                  {isMobile && (
+                    expandedSection === 'borders' ? 
+                    <ChevronUp className="w-4 h-4 text-gray-400" /> : 
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </button>
 
+                {/* Collapsible Content */}
+                <div className={`flex flex-col gap-4 ${isMobile && expandedSection !== 'borders' ? 'hidden' : 'block'}`}>
+                  
+                  {/* Custom Toggle UI */}
+                  <button
+                    onClick={() => {
+                      setHighlightTileBorders(!highlightTileBorders);
+                      if (!highlightTileBorders) {
+                        setSuccess('✅ Realistic tile spacing enabled!');
+                        if (navigator.vibrate) navigator.vibrate([30]);
+                      } else {
+                        setSuccess('Tile spacing disabled');
+                      }
+                    }}
+                    className="group flex items-center gap-4 cursor-pointer outline-none w-max mt-1 ml-1"
+                  >
+                    {/* OFF Text */}
+                    <span 
+                      className={`text-[11px] font-bold tracking-widest transition-colors duration-300 ${
+                        !highlightTileBorders ? 'text-white' : 'text-gray-500'
+                      }`}
+                    >
+                      OFF
+                    </span>
+
+                    {/* Slider Track & Knob */}
+                    <div className="relative w-14 h-4 flex items-center">
+                      {/* Thin Horizontal Line */}
+                      <div className="absolute w-full h-[1.5px] bg-gray-600"></div>
+
+                      {/* Moving Circular Knob */}
+                      <div 
+                        className={`absolute w-3.5 h-3.5 bg-gray-300 border-[1.5px] border-gray-600 rounded-full flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                          highlightTileBorders ? 'left-[calc(100%-14px)]' : 'left-0'
+                        }`}
+                      >
+                        {/* Inner dot that appears when ON */}
+                        <div 
+                          className={`w-[5px] h-[5px] rounded-full bg-orange-500 transition-all duration-300 ${
+                            highlightTileBorders ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                          }`}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* ON Text */}
+                    <span 
+                      className={`text-[11px] font-bold tracking-widest transition-colors duration-300 ${
+                        highlightTileBorders ? 'text-orange-400' : 'text-gray-500'
+                      }`}
+                    >
+                      ON
+                    </span>
+                  </button>
+
+                  {/* Dynamic Info Box */}
+                  <div className="bg-orange-900/30 rounded-lg p-2 border border-orange-500/30">
+                    <p className="text-orange-200 text-[10px] leading-relaxed flex items-start gap-1">
+                      <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                      <span className="transition-all duration-300">
+                        {highlightTileBorders
+                          ? 'Realistic installation view enabled. Spacers/Grout lines are now visible in the 3D view.'
+                          : 'Toggle to preview realistic grout lines between tiles in the 3D view.'}
+                      </span>
+                    </p>
+                  </div>
+
+                </div>
+              </section>
                   </div>
                 </div>
+               
               </section>
             )}
 

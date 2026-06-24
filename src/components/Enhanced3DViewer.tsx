@@ -7904,7 +7904,7 @@ const renderScene = () => {
           roomDimensions={scaledRoomConfig}
           furnitureScale={furnitureScale}
            wallTileHeight={wallTileHeight} 
-   highlightTileBorders={viewMode === 'highlighter' && showTileBorders}
+   highlightTileBorders={highlightTileBorders}
           //  highlightTileBorders={autoEnableBorders || highlightTileBorders} 
         />
       );
@@ -7926,7 +7926,7 @@ const renderScene = () => {
           furnitureScale={furnitureScale}
            wallTileHeight={wallTileHeight} 
           //  highlightTileBorders={autoEnableBorders || highlightTileBorders} 
-            highlightTileBorders={viewMode === 'highlighter' && showTileBorders}
+            highlightTileBorders={highlightTileBorders}
         />
       );
   }
@@ -8220,39 +8220,33 @@ const renderScene = () => {
     if (!shouldShowButton) return null;
     
     return (
-      <button
-        onClick={() => {
-          console.log('🔄 Border Toggle Clicked - BEFORE:', showTileBorders);
-          setShowTileBorders(!showTileBorders);
-          console.log('🔄 Border Toggle Clicked - AFTER:', !showTileBorders);
-        }}
-        className={`${
-          showTileBorders 
-            ? 'bg-green-600/90 hover:bg-green-700' 
-            : 'bg-red-600/90 hover:bg-red-700'
-        } text-white p-2 sm:p-2.5 rounded-lg transition-all backdrop-blur-sm shadow-xl border-2 ${
-          showTileBorders ? 'border-green-400' : 'border-red-400'
-        } hover:scale-110 active:scale-95`}
-        title={showTileBorders ? 'Hide Tile Borders' : 'Show Tile Borders'}
-      >
-        {showTileBorders ? (
-          <Eye className="w-4 h-4" />
-        ) : (
-          <X className="w-4 h-4" />
-        )}
-      </button>
+      // <button
+      //   onClick={() => {
+      //     console.log('🔄 Border Toggle Clicked - BEFORE:', showTileBorders);
+      //     setShowTileBorders(!showTileBorders);
+      //     console.log('🔄 Border Toggle Clicked - AFTER:', !showTileBorders);
+      //   }}
+      //   className={`${
+      //     showTileBorders 
+      //       ? 'bg-green-600/90 hover:bg-green-700' 
+      //       : 'bg-red-600/90 hover:bg-red-700'
+      //   } text-white p-2 sm:p-2.5 rounded-lg transition-all backdrop-blur-sm shadow-xl border-2 ${
+      //     showTileBorders ? 'border-green-400' : 'border-red-400'
+      //   } hover:scale-110 active:scale-95`}
+      //   title={showTileBorders ? 'Hide Tile Borders' : 'Show Tile Borders'}
+      // >
+      //   {showTileBorders ? (
+      //     <Eye className="w-4 h-4" />
+      //   ) : (
+      //     <X className="w-4 h-4" />
+      //   )}
+      // </button>
+      <>
+      </>
     );
   })()}
 
-  {/* Info Button */}
-  <button
-    onClick={() => setShowControls(!showControls)}
-    className="bg-black/80 text-white p-2 sm:p-2.5 rounded-lg hover:bg-black/95 transition-all backdrop-blur-sm shadow-xl border border-white/10 hover:scale-110 active:scale-95"
-    title="Toggle Info"
-  >
-    <Info className="w-4 h-4" />
-  </button>
-
+6
   {/* Fullscreen Button */}
   <button
     onClick={toggleFullscreen}
