@@ -1,8 +1,419 @@
 
+// // // import React, { useState, useEffect } from 'react';
+// // // import { X, User, Shield, AlertCircle, CheckCircle, Eye, EyeOff, Loader } from 'lucide-react';
+// // // import {isFirebaseConfigured } from '../../lib/firebaseutils';
+// // // import { useAuth } from '../../hooks/useAuth';interface AuthModalProps {
+// // //   isOpen: boolean;
+// // //   onClose: () => void;
+// // //   onSuccess?: (user: any) => void;
+// // // }
+
+// // // export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+// // //   const [loading, setLoading] = useState(false);
+// // //   const [error, setError] = useState('');
+// // //   const [success, setSuccess] = useState('');
+// // //   const [showPassword, setShowPassword] = useState(false);
+// // //   const [envStatus, setEnvStatus] = useState<'checking' | 'configured' | 'missing'>('checking');
+// // //   const [isMobile, setIsMobile] = useState(false);
+// // //   const { login: authLogin } = useAuth();
+
+// // //   const [formData, setFormData] = useState({
+// // //     email: '',
+// // //     password: ''
+// // //   });
+
+// // //   // Detect mobile device
+// // //   useEffect(() => {
+// // //     const checkMobile = () => {
+// // //       setIsMobile(window.innerWidth < 768);
+// // //     };
+    
+// // //     checkMobile();
+// // //     window.addEventListener('resize', checkMobile);
+    
+// // //     return () => window.removeEventListener('resize', checkMobile);
+// // //   }, []);
+
+// // //   // Check environment on component mount
+// // //   useEffect(() => {
+// // //     if (isOpen) {
+// // //       checkEnvironment();
+// // //       setFormData({ email: '', password: '' });
+// // //       setError('');
+// // //       setSuccess('');
+// // //       setShowPassword(false);
+      
+// // //       // Prevent body scroll when modal is open
+// // //       document.body.style.overflow = 'hidden';
+// // //     } else {
+// // //       document.body.style.overflow = 'unset';
+// // //     }
+    
+// // //     return () => {
+// // //       document.body.style.overflow = 'unset';
+// // //     };
+// // //   }, [isOpen]);
+
+// // //   // Auto-clear messages
+// // //   useEffect(() => {
+// // //     if (error || success) {
+// // //       const timer = setTimeout(() => {
+// // //         if (!loading) {
+// // //           setError('');
+// // //           setSuccess('');
+// // //         }
+// // //       }, 5000);
+// // //       return () => clearTimeout(timer);
+// // //     }
+// // //   }, [error, success, loading]);
+
+// // //   const checkEnvironment = () => {
+// // //     setEnvStatus('checking');
+    
+// // //     setTimeout(() => {
+// // //       const configured = isFirebaseConfigured();
+// // //       console.log('🔧 Firebase Configuration Check:', {
+// // //         configured,
+// // //         hasApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
+// // //         hasAuthDomain: !!import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
+// // //       });
+      
+// // //       setEnvStatus(configured ? 'configured' : 'missing');
+// // //     }, 500);
+// // //   };
+
+// // //   const handleSubmit = async (e: React.FormEvent) => {
+// // //     e.preventDefault();
+// // //     setLoading(true);
+// // //     setError('');
+// // //     setSuccess('');
+
+// // //     try {
+// // //       console.log('🔄 Authentication attempt for:', formData.email);
+
+// // //       // Check if Firebase is configured
+// // //       if (envStatus !== 'configured') {
+// // //         throw new Error('System not properly configured. Please contact administrator.');
+// // //       }
+
+// // //       // Validate input
+// // //       if (!formData.email.trim() || !formData.password.trim()) {
+// // //         throw new Error('Please enter both email and password.');
+// // //       }
+
+// // //       // Email format validation
+// // //       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// // //       if (!emailRegex.test(formData.email.trim())) {
+// // //         throw new Error('Please enter a valid email address.');
+// // //       }
+
+// // //       console.log('📡 Calling enhanced authentication...');
+      
+// // //       // ✅ Login with JWT
+// // //       const user = await authLogin(formData.email.trim(), formData.password);
+      
+// // //       console.log('✅ Authentication successful:', {
+// // //         id: user.id,
+// // //         email: user.email,
+// // //         role: user.role,
+// // //         name: user.full_name
+// // //       });
+      
+// // //       setSuccess(`✅ Welcome back, ${user.full_name || user.email}! Redirecting...`);
+      
+// // //       // Haptic feedback on mobile
+// // //       if (navigator.vibrate) {
+// // //         navigator.vibrate(200);
+// // //       }
+      
+// // //       // ✅✅✅ FIXED: Proper state sync before redirect ✅✅✅
+      
+// // //       // Step 1: Close modal
+// // //       onClose();
+      
+// // //       // Step 2: Call success callback
+// // //       if (onSuccess) {
+// // //         onSuccess(user);
+// // //       }
+      
+// // //       // Step 3: Wait for state to fully update
+// // //       await new Promise(resolve => setTimeout(resolve, 800));
+      
+// // //       // Step 4: Redirect based on role using replace (forces reload)
+// // //       const redirectUrl = user.role === 'admin' 
+// // //         ? '/admin' 
+// // //         : user.role === 'seller' 
+// // //         ? '/seller' 
+// // //         : '/';
+      
+// // //       console.log('🔄 Redirecting to:', redirectUrl);
+// // //       window.location.replace(redirectUrl);
+
+// // //     } catch (err: any) {
+// // //       console.error('❌ Authentication error:', err);
+      
+// // //       let errorMessage = '';
+      
+// // //       if (err.message.includes('auth/invalid-credential') || err.message.includes('Invalid login credentials')) {
+// // //         errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+// // //       } else if (err.message.includes('auth/user-not-found')) {
+// // //         errorMessage = 'No account found with this email address.';
+// // //       } else if (err.message.includes('auth/wrong-password')) {
+// // //         errorMessage = 'Incorrect password. Please try again.';
+// // //       } else if (err.message.includes('auth/invalid-email')) {
+// // //         errorMessage = 'Invalid email format. Please enter a valid email address.';
+// // //       } else if (err.message.includes('auth/user-disabled')) {
+// // //         errorMessage = 'This account has been disabled. Please contact administrator.';
+// // //       } else if (err.message.includes('auth/too-many-requests')) {
+// // //         errorMessage = 'Too many failed login attempts. Please wait a few minutes and try again.';
+// // //       } else if (err.message.includes('profile not found')) {
+// // //         errorMessage = 'User profile not found in database. Please contact administrator.';
+// // //       } else if (err.message.includes('Invalid user role')) {
+// // //         errorMessage = 'Your account does not have proper permissions. Please contact administrator.';
+// // //       } else if (err.message.includes('System not properly configured')) {
+// // //         errorMessage = 'System configuration error. Please contact technical support.';
+// // //       } else {
+// // //         errorMessage = err.message || 'Login failed. Please try again.';
+// // //       }
+      
+// // //       setError(errorMessage);
+      
+// // //       // Haptic feedback on error
+// // //       if (navigator.vibrate) {
+// // //         navigator.vibrate([100, 50, 100]);
+// // //       }
+// // //     } finally {
+// // //       setLoading(false);
+// // //     }
+// // //   };
+
+// // //   const handleInputChange = (field: 'email' | 'password', value: string) => {
+// // //     setFormData(prev => ({ ...prev, [field]: value }));
+// // //     if (error) setError('');
+// // //     if (success) setSuccess('');
+// // //   };
+
+// // //   const handleClose = () => {
+// // //     if (!loading) {
+// // //       onClose();
+// // //     }
+// // //   };
+
+// // //   const handleBackdropClick = (e: React.MouseEvent) => {
+// // //     if (e.target === e.currentTarget && !loading) {
+// // //       onClose();
+// // //     }
+// // //   };
+
+// // //   if (!isOpen) return null;
+
+// // //   return (
+// // //     <div 
+// // //       className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 animate-fade-in"
+// // //       onClick={handleBackdropClick}
+// // //       role="dialog"
+// // //       aria-modal="true"
+// // //       aria-labelledby="auth-modal-title"
+// // //     >
+// // //       <div className="bg-white rounded-none sm:rounded-xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] mx-auto flex flex-col overflow-hidden animate-slide-up">
+// // //         {/* Header */}
+// // //         <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
+// // //           <div className="flex items-center gap-2 sm:gap-3">
+// // //             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+// // //               <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+// // //             </div>
+// // //             <h2 id="auth-modal-title" className="text-lg sm:text-xl font-bold text-gray-800">Sign In</h2>
+// // //           </div>
+// // //           <button
+// // //             onClick={handleClose}
+// // //             disabled={loading}
+// // //             className="text-gray-400 hover:text-gray-600 active:text-gray-800 transition-colors p-2 -mr-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+// // //             aria-label="Close sign in modal"
+// // //           >
+// // //             <X className="w-5 h-5 sm:w-6 sm:h-6" />
+// // //           </button>
+// // //         </div>
+
+// // //         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
+// // //           {/* System Status */}
+// // //           <div className={`p-3 sm:p-4 rounded-lg border text-xs sm:text-sm transition-all duration-300 ${
+// // //             envStatus === 'configured' 
+// // //               ? 'bg-green-50 border-green-200 text-green-700'
+// // //               : envStatus === 'missing'
+// // //               ? 'bg-red-50 border-red-200 text-red-700'
+// // //               : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+// // //           }`}>
+// // //             <div className="flex items-center gap-2">
+// // //               {envStatus === 'configured' && <CheckCircle className="w-4 h-4 flex-shrink-0" />}
+// // //               {envStatus === 'missing' && <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+// // //               {envStatus === 'checking' && <Loader className="w-4 h-4 flex-shrink-0 animate-spin" />}
+// // //               <span className="font-medium">
+// // //                 {envStatus === 'configured' && '✅ System Ready'}
+// // //                 {envStatus === 'missing' && '❌ System Configuration Error'}
+// // //                 {envStatus === 'checking' && '🔄 Checking System...'}
+// // //               </span>
+// // //             </div>
+// // //           </div>
+
+// // //           {/* Email Input */}
+// // //           <div>
+// // //             <label htmlFor="email-input" className="block text-sm font-medium text-gray-700 mb-2">
+// // //               Email Address <span className="text-red-500">*</span>
+// // //             </label>
+// // //             <input
+// // //               id="email-input"
+// // //               type="email"
+// // //               placeholder="Enter your email address"
+// // //               value={formData.email}
+// // //               onChange={(e) => handleInputChange('email', e.target.value)}
+// // //               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base touch-manipulation disabled:bg-gray-100 disabled:cursor-not-allowed"
+// // //               required
+// // //               disabled={loading || envStatus !== 'configured'}
+// // //               autoComplete="email"
+// // //               autoFocus={!isMobile}
+// // //             />
+// // //           </div>
+
+// // //           {/* Password Input */}
+// // //           <div>
+// // //             <label htmlFor="password-input" className="block text-sm font-medium text-gray-700 mb-2">
+// // //               Password <span className="text-red-500">*</span>
+// // //             </label>
+// // //             <div className="relative">
+// // //               <input
+// // //                 id="password-input"
+// // //                 type={showPassword ? 'text' : 'password'}
+// // //                 placeholder="Enter your password"
+// // //                 value={formData.password}
+// // //                 onChange={(e) => handleInputChange('password', e.target.value)}
+// // //                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base touch-manipulation disabled:bg-gray-100 disabled:cursor-not-allowed"
+// // //                 required
+// // //                 disabled={loading || envStatus !== 'configured'}
+// // //                 autoComplete="current-password"
+// // //               />
+// // //               <button
+// // //                 type="button"
+// // //                 onClick={() => setShowPassword(!showPassword)}
+// // //                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-gray-800 transition-colors p-2 touch-manipulation disabled:opacity-50"
+// // //                 disabled={loading}
+// // //                 aria-label={showPassword ? 'Hide password' : 'Show password'}
+// // //               >
+// // //                 {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+// // //               </button>
+// // //             </div>
+// // //             <p className="mt-1 text-xs text-gray-500">
+// // //               Password is case-sensitive
+// // //             </p>
+// // //           </div>
+
+// // //           {/* Error Message */}
+// // //           {error && (
+// // //             <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg animate-shake">
+// // //               <div className="flex items-start gap-2 sm:gap-3">
+// // //                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-0.5 flex-shrink-0" />
+// // //                 <div className="flex-1 min-w-0">
+// // //                   <p className="text-red-800 font-medium text-xs sm:text-sm mb-1">Authentication Error</p>
+// // //                   <p className="text-red-700 text-xs sm:text-sm break-words">{error}</p>
+// // //                 </div>
+// // //                 <button
+// // //                   onClick={() => setError('')}
+// // //                   className="text-red-400 hover:text-red-600 transition-colors p-1 -mr-1 touch-manipulation"
+// // //                   aria-label="Dismiss error"
+// // //                 >
+// // //                   <X className="w-4 h-4" />
+// // //                 </button>
+// // //               </div>
+// // //             </div>
+// // //           )}
+
+// // //           {/* Success Message */}
+// // //           {success && (
+// // //             <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg animate-pulse">
+// // //               <div className="flex items-start gap-2 sm:gap-3">
+// // //                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mt-0.5 flex-shrink-0" />
+// // //                 <div className="flex-1 min-w-0">
+// // //                   <p className="text-green-800 font-medium text-xs sm:text-sm mb-1">Success!</p>
+// // //                   <p className="text-green-700 text-xs sm:text-sm break-words">{success}</p>
+// // //                 </div>
+// // //               </div>
+// // //             </div>
+// // //           )}
+
+// // //           {/* Submit Button */}
+// // //           <button
+// // //             type="submit"
+// // //             disabled={loading || envStatus !== 'configured'}
+// // //             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 sm:py-3.5 rounded-lg hover:from-blue-700 hover:to-purple-700 active:from-blue-800 active:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center gap-2 text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
+// // //           >
+// // //             {loading ? (
+// // //               <>
+// // //                 <Loader className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white" />
+// // //                 <span>Signing In...</span>
+// // //               </>
+// // //             ) : (
+// // //               <>
+// // //                 <User className="w-4 h-4 sm:w-5 sm:h-5" />
+// // //                 <span>Sign In</span>
+// // //               </>
+// // //             )}
+// // //           </button>
+
+// // //           {/* Information */}
+// // //           <div className="border-t pt-4">
+// // //             <div className="text-center text-xs sm:text-sm text-gray-600 space-y-2">
+// // //               <div className="flex items-center justify-center gap-2">
+// // //                 <Shield className="w-4 h-4 text-gray-400" />
+// // //                 <p className="font-medium">Secure Account Access</p>
+// // //               </div>
+// // //               <p className="text-xs text-gray-500">
+// // //                 Only registered users can sign in. Contact administrator for account creation.
+// // //               </p>
+// // //             </div>
+// // //           </div>
+
+// // //           {/* System Information */}
+// // //           {envStatus === 'missing' && (
+// // //             <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm">
+// // //               <div className="flex items-start gap-2 sm:gap-3">
+// // //                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mt-0.5 flex-shrink-0" />
+// // //                 <div>
+// // //                   <p className="font-medium text-gray-700 mb-1">System Configuration Required</p>
+// // //                   <p className="text-gray-600">
+// // //                     Please contact technical support to configure the authentication system.
+// // //                   </p>
+// // //                 </div>
+// // //               </div>
+// // //             </div>
+// // //           )}
+
+// // //           {/* Help Text */}
+// // //           <div className="text-center pt-2">
+// // //             <p className="text-xs text-gray-500">
+// // //               Need help? Contact your administrator
+// // //             </p>
+// // //           </div>
+// // //         </form>
+
+// // //         {/* Loading Overlay */}
+// // //         {loading && (
+// // //           <div className="absolute inset-0 bg-white bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-10 rounded-none sm:rounded-xl">
+// // //             <div className="text-center">
+// // //               <Loader className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-blue-600 mx-auto mb-3" />
+// // //               <p className="text-gray-700 font-medium text-sm sm:text-base">Authenticating...</p>
+// // //               <p className="text-gray-500 text-xs sm:text-sm mt-1">Please wait</p>
+// // //             </div>
+// // //           </div>
+// // //         )}
+// // //       </div>
+// // //     </div>
+// // //   );
+// // // };
 // // import React, { useState, useEffect } from 'react';
-// // import { X, User, Shield, AlertCircle, CheckCircle, Eye, EyeOff, Loader } from 'lucide-react';
-// // import {isFirebaseConfigured } from '../../lib/firebaseutils';
-// // import { useAuth } from '../../hooks/useAuth';interface AuthModalProps {
+// // import { X, User, Shield, AlertCircle, CheckCircle, Eye, EyeOff, Loader, ArrowRight, Zap, Cpu } from 'lucide-react';
+// // import { isFirebaseConfigured } from '../../lib/firebaseutils';
+// // import { useAuth } from '../../hooks/useAuth';
+
+// // interface AuthModalProps {
 // //   isOpen: boolean;
 // //   onClose: () => void;
 // //   onSuccess?: (user: any) => void;
@@ -15,6 +426,7 @@
 // //   const [showPassword, setShowPassword] = useState(false);
 // //   const [envStatus, setEnvStatus] = useState<'checking' | 'configured' | 'missing'>('checking');
 // //   const [isMobile, setIsMobile] = useState(false);
+// //   const [rememberMe, setRememberMe] = useState(false);
 // //   const { login: authLogin } = useAuth();
 
 // //   const [formData, setFormData] = useState({
@@ -42,6 +454,7 @@
 // //       setError('');
 // //       setSuccess('');
 // //       setShowPassword(false);
+// //       setRememberMe(false);
       
 // //       // Prevent body scroll when modal is open
 // //       document.body.style.overflow = 'hidden';
@@ -72,12 +485,6 @@
     
 // //     setTimeout(() => {
 // //       const configured = isFirebaseConfigured();
-// //       console.log('🔧 Firebase Configuration Check:', {
-// //         configured,
-// //         hasApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
-// //         hasAuthDomain: !!import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
-// //       });
-      
 // //       setEnvStatus(configured ? 'configured' : 'missing');
 // //     }, 500);
 // //   };
@@ -89,69 +496,39 @@
 // //     setSuccess('');
 
 // //     try {
-// //       console.log('🔄 Authentication attempt for:', formData.email);
-
-// //       // Check if Firebase is configured
 // //       if (envStatus !== 'configured') {
 // //         throw new Error('System not properly configured. Please contact administrator.');
 // //       }
 
-// //       // Validate input
 // //       if (!formData.email.trim() || !formData.password.trim()) {
 // //         throw new Error('Please enter both email and password.');
 // //       }
 
-// //       // Email format validation
 // //       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // //       if (!emailRegex.test(formData.email.trim())) {
 // //         throw new Error('Please enter a valid email address.');
 // //       }
 
-// //       console.log('📡 Calling enhanced authentication...');
-      
-// //       // ✅ Login with JWT
 // //       const user = await authLogin(formData.email.trim(), formData.password);
-      
-// //       console.log('✅ Authentication successful:', {
-// //         id: user.id,
-// //         email: user.email,
-// //         role: user.role,
-// //         name: user.full_name
-// //       });
       
 // //       setSuccess(`✅ Welcome back, ${user.full_name || user.email}! Redirecting...`);
       
-// //       // Haptic feedback on mobile
-// //       if (navigator.vibrate) {
-// //         navigator.vibrate(200);
-// //       }
+// //       if (navigator.vibrate) navigator.vibrate(200);
       
-// //       // ✅✅✅ FIXED: Proper state sync before redirect ✅✅✅
-      
-// //       // Step 1: Close modal
 // //       onClose();
+// //       if (onSuccess) onSuccess(user);
       
-// //       // Step 2: Call success callback
-// //       if (onSuccess) {
-// //         onSuccess(user);
-// //       }
-      
-// //       // Step 3: Wait for state to fully update
 // //       await new Promise(resolve => setTimeout(resolve, 800));
       
-// //       // Step 4: Redirect based on role using replace (forces reload)
 // //       const redirectUrl = user.role === 'admin' 
 // //         ? '/admin' 
 // //         : user.role === 'seller' 
 // //         ? '/seller' 
 // //         : '/';
       
-// //       console.log('🔄 Redirecting to:', redirectUrl);
 // //       window.location.replace(redirectUrl);
 
 // //     } catch (err: any) {
-// //       console.error('❌ Authentication error:', err);
-      
 // //       let errorMessage = '';
       
 // //       if (err.message.includes('auth/invalid-credential') || err.message.includes('Invalid login credentials')) {
@@ -177,14 +554,15 @@
 // //       }
       
 // //       setError(errorMessage);
-      
-// //       // Haptic feedback on error
-// //       if (navigator.vibrate) {
-// //         navigator.vibrate([100, 50, 100]);
-// //       }
+// //       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 // //     } finally {
 // //       setLoading(false);
 // //     }
+// //   };
+
+// //   const handleGoogleLogin = () => {
+// //     // TODO: Implement your Google Auth logic here
+// //     console.log("Google login clicked");
 // //   };
 
 // //   const handleInputChange = (field: 'email' | 'password', value: string) => {
@@ -194,9 +572,7 @@
 // //   };
 
 // //   const handleClose = () => {
-// //     if (!loading) {
-// //       onClose();
-// //     }
+// //     if (!loading) onClose();
 // //   };
 
 // //   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -209,207 +585,211 @@
 
 // //   return (
 // //     <div 
-// //       className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 animate-fade-in"
+// //       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 animate-fade-in"
 // //       onClick={handleBackdropClick}
 // //       role="dialog"
 // //       aria-modal="true"
 // //       aria-labelledby="auth-modal-title"
 // //     >
-// //       <div className="bg-white rounded-none sm:rounded-xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] mx-auto flex flex-col overflow-hidden animate-slide-up">
-// //         {/* Header */}
-// //         <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
-// //           <div className="flex items-center gap-2 sm:gap-3">
-// //             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-// //               <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-// //             </div>
-// //             <h2 id="auth-modal-title" className="text-lg sm:text-xl font-bold text-gray-800">Sign In</h2>
+// //       <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-lg mx-auto flex flex-col overflow-hidden animate-slide-up relative">
+        
+// //         {/* Premium Header Bar */}
+// //        {/* Exact Match Header Bar */}
+// //         <div className="bg-[#2D60E3] px-6 py-6 sm:px-8 flex flex-col justify-center relative flex-shrink-0 shadow-none border-none z-10">
+          
+// //           {/* Platform Label */}
+// //           <div className="flex items-center gap-2 mb-1.5">
+           
 // //           </div>
+          
+// //           {/* Main Title - whitespace-nowrap prevents 360 from dropping */}
+// //         <h2 
+// //             className="text-white text-2xl sm:text-3xl font-medium whitespace-nowrap lining-nums"
+// //             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+// //           >
+// //             Tiles View 360
+// //           </h2>
+          
+// //           {/* Close Button */}
 // //           <button
 // //             onClick={handleClose}
 // //             disabled={loading}
-// //             className="text-gray-400 hover:text-gray-600 active:text-gray-800 transition-colors p-2 -mr-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-// //             aria-label="Close sign in modal"
+// //             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-200 hover:text-white transition-colors p-2 rounded-full hover:bg-black/10 disabled:opacity-50 touch-manipulation"
+// //             aria-label="Close modal"
 // //           >
 // //             <X className="w-5 h-5 sm:w-6 sm:h-6" />
 // //           </button>
 // //         </div>
 
-// //         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
-// //           {/* System Status */}
-// //           <div className={`p-3 sm:p-4 rounded-lg border text-xs sm:text-sm transition-all duration-300 ${
-// //             envStatus === 'configured' 
-// //               ? 'bg-green-50 border-green-200 text-green-700'
-// //               : envStatus === 'missing'
-// //               ? 'bg-red-50 border-red-200 text-red-700'
-// //               : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-// //           }`}>
-// //             <div className="flex items-center gap-2">
-// //               {envStatus === 'configured' && <CheckCircle className="w-4 h-4 flex-shrink-0" />}
-// //               {envStatus === 'missing' && <AlertCircle className="w-4 h-4 flex-shrink-0" />}
-// //               {envStatus === 'checking' && <Loader className="w-4 h-4 flex-shrink-0 animate-spin" />}
-// //               <span className="font-medium">
-// //                 {envStatus === 'configured' && '✅ System Ready'}
-// //                 {envStatus === 'missing' && '❌ System Configuration Error'}
-// //                 {envStatus === 'checking' && '🔄 Checking System...'}
-// //               </span>
+// //         <div className="flex-1 overflow-y-auto">
+// //           <div className="px-6 py-8 sm:px-10">
+// //             {/* Titles */}
+// //             <div className="mb-8">
+// //               <h1 id="auth-modal-title" className="text-3xl sm:text-4xl font-serif text-slate-900 font-medium mb-2">
+// //                 Welcome Back
+// //               </h1>
+// //               <p className="text-slate-500 text-sm sm:text-base">
+// //                 Continue creating beautiful spaces
+// //               </p>
 // //             </div>
-// //           </div>
 
-// //           {/* Email Input */}
-// //           <div>
-// //             <label htmlFor="email-input" className="block text-sm font-medium text-gray-700 mb-2">
-// //               Email Address <span className="text-red-500">*</span>
-// //             </label>
-// //             <input
-// //               id="email-input"
-// //               type="email"
-// //               placeholder="Enter your email address"
-// //               value={formData.email}
-// //               onChange={(e) => handleInputChange('email', e.target.value)}
-// //               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base touch-manipulation disabled:bg-gray-100 disabled:cursor-not-allowed"
-// //               required
-// //               disabled={loading || envStatus !== 'configured'}
-// //               autoComplete="email"
-// //               autoFocus={!isMobile}
-// //             />
-// //           </div>
+// //             {/* System Status / Error / Success States */}
+// //             <div className="mb-6 space-y-3">
+// //               {envStatus === 'missing' && (
+// //                 <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-700 text-sm">
+// //                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
+// //                   <span>System Configuration Error</span>
+// //                 </div>
+// //               )}
+// //               {error && (
+// //                 <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-shake text-red-700 text-sm">
+// //                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+// //                   <p className="flex-1">{error}</p>
+// //                 </div>
+// //               )}
+// //               {success && (
+// //                 <div className="p-3 bg-green-50 border border-green-100 rounded-lg flex items-start gap-2 animate-pulse text-green-700 text-sm">
+// //                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+// //                   <p className="flex-1">{success}</p>
+// //                 </div>
+// //               )}
+// //             </div>
 
-// //           {/* Password Input */}
-// //           <div>
-// //             <label htmlFor="password-input" className="block text-sm font-medium text-gray-700 mb-2">
-// //               Password <span className="text-red-500">*</span>
-// //             </label>
-// //             <div className="relative">
-// //               <input
-// //                 id="password-input"
-// //                 type={showPassword ? 'text' : 'password'}
-// //                 placeholder="Enter your password"
-// //                 value={formData.password}
-// //                 onChange={(e) => handleInputChange('password', e.target.value)}
-// //                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base touch-manipulation disabled:bg-gray-100 disabled:cursor-not-allowed"
-// //                 required
+// //             <form onSubmit={handleSubmit} className="space-y-5">
+// //               {/* Email Input */}
+// //               <div>
+// //                 <label htmlFor="email-input" className="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+// //                   Work Email
+// //                 </label>
+// //                 <input
+// //                   id="email-input"
+// //                   type="email"
+// //                   placeholder="name@company.com"
+// //                   value={formData.email}
+// //                   onChange={(e) => handleInputChange('email', e.target.value)}
+// //                   className="w-full px-4 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
+// //                   required
+// //                   disabled={loading || envStatus !== 'configured'}
+// //                   autoComplete="email"
+// //                   autoFocus={!isMobile}
+// //                 />
+// //               </div>
+
+// //               {/* Password Input */}
+// //               <div>
+// //                 <div className="flex justify-between items-center mb-2">
+// //                   <label htmlFor="password-input" className="block text-xs font-semibold text-slate-400 tracking-wider uppercase">
+// //                     Password
+// //                   </label>
+// //                   <button type="button" className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50">
+// //                     Forgot Password?
+// //                   </button>
+// //                 </div>
+// //                 <div className="relative">
+// //                   <input
+// //                     id="password-input"
+// //                     type={showPassword ? 'text' : 'password'}
+// //                     placeholder="Enter your password"
+// //                     value={formData.password}
+// //                     onChange={(e) => handleInputChange('password', e.target.value)}
+// //                     className="w-full px-4 py-3.5 pr-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
+// //                     required
+// //                     disabled={loading || envStatus !== 'configured'}
+// //                     autoComplete="current-password"
+// //                   />
+// //                   <button
+// //                     type="button"
+// //                     onClick={() => setShowPassword(!showPassword)}
+// //                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-2"
+// //                     disabled={loading}
+// //                   >
+// //                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+// //                   </button>
+// //                 </div>
+// //               </div>
+
+// //               {/* Remember Me */}
+// //               <div className="flex items-center">
+// //                 <input
+// //                   id="remember-me"
+// //                   type="checkbox"
+// //                   checked={rememberMe}
+// //                   onChange={(e) => setRememberMe(e.target.checked)}
+// //                   className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+// //                   disabled={loading}
+// //                 />
+// //                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600">
+// //                   Remember Me
+// //                 </label>
+// //               </div>
+
+// //               {/* Start Visualizing Button */}
+// //               <button
+// //                 type="submit"
 // //                 disabled={loading || envStatus !== 'configured'}
-// //                 autoComplete="current-password"
-// //               />
+// //                 className="w-full bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center shadow-md hover:shadow-lg mt-2"
+// //               >
+// //                 {loading ? (
+// //                   <>
+// //                     <Loader className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
+// //                     Signing In...
+// //                   </>
+// //                 ) : (
+// //                   <>
+// //                     START VISUALIZING
+// //                     <ArrowRight className="ml-2 w-5 h-5" />
+// //                   </>
+// //                 )}
+// //               </button>
+
+// //               {/* Google Button */}
 // //               <button
 // //                 type="button"
-// //                 onClick={() => setShowPassword(!showPassword)}
-// //                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-gray-800 transition-colors p-2 touch-manipulation disabled:opacity-50"
+// //                 onClick={handleGoogleLogin}
 // //                 disabled={loading}
-// //                 aria-label={showPassword ? 'Hide password' : 'Show password'}
+// //                 className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 transition-all font-medium flex items-center justify-center gap-3"
 // //               >
-// //                 {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+// //                 <svg className="w-5 h-5" viewBox="0 0 24 24">
+// //                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+// //                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+// //                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+// //                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+// //                   <path d="M1 1h22v22H1z" fill="none" />
+// //                 </svg>
+// //                 Access with Google
 // //               </button>
-// //             </div>
-// //             <p className="mt-1 text-xs text-gray-500">
-// //               Password is case-sensitive
-// //             </p>
-// //           </div>
+// //             </form>
 
-// //           {/* Error Message */}
-// //           {error && (
-// //             <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg animate-shake">
-// //               <div className="flex items-start gap-2 sm:gap-3">
-// //                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-0.5 flex-shrink-0" />
-// //                 <div className="flex-1 min-w-0">
-// //                   <p className="text-red-800 font-medium text-xs sm:text-sm mb-1">Authentication Error</p>
-// //                   <p className="text-red-700 text-xs sm:text-sm break-words">{error}</p>
-// //                 </div>
-// //                 <button
-// //                   onClick={() => setError('')}
-// //                   className="text-red-400 hover:text-red-600 transition-colors p-1 -mr-1 touch-manipulation"
-// //                   aria-label="Dismiss error"
-// //                 >
-// //                   <X className="w-4 h-4" />
-// //                 </button>
+// //             {/* Footer Features & Terms */}
+// //             <div className="mt-8 pt-6 border-t border-slate-100">
+// //               <div className="flex justify-center gap-4 sm:gap-8 text-slate-500 text-xs sm:text-sm font-medium mb-4">
+// //                 <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-blue-500" /> Secure Cloud</span>
+// //                 <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-blue-500" /> Fast</span>
+// //                 <span className="flex items-center gap-1.5"><Cpu className="w-4 h-4 text-blue-500" /> AI Powered</span>
 // //               </div>
-// //             </div>
-// //           )}
-
-// //           {/* Success Message */}
-// //           {success && (
-// //             <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg animate-pulse">
-// //               <div className="flex items-start gap-2 sm:gap-3">
-// //                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mt-0.5 flex-shrink-0" />
-// //                 <div className="flex-1 min-w-0">
-// //                   <p className="text-green-800 font-medium text-xs sm:text-sm mb-1">Success!</p>
-// //                   <p className="text-green-700 text-xs sm:text-sm break-words">{success}</p>
-// //                 </div>
-// //               </div>
-// //             </div>
-// //           )}
-
-// //           {/* Submit Button */}
-// //           <button
-// //             type="submit"
-// //             disabled={loading || envStatus !== 'configured'}
-// //             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 sm:py-3.5 rounded-lg hover:from-blue-700 hover:to-purple-700 active:from-blue-800 active:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center gap-2 text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
-// //           >
-// //             {loading ? (
-// //               <>
-// //                 <Loader className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white" />
-// //                 <span>Signing In...</span>
-// //               </>
-// //             ) : (
-// //               <>
-// //                 <User className="w-4 h-4 sm:w-5 sm:h-5" />
-// //                 <span>Sign In</span>
-// //               </>
-// //             )}
-// //           </button>
-
-// //           {/* Information */}
-// //           <div className="border-t pt-4">
-// //             <div className="text-center text-xs sm:text-sm text-gray-600 space-y-2">
-// //               <div className="flex items-center justify-center gap-2">
-// //                 <Shield className="w-4 h-4 text-gray-400" />
-// //                 <p className="font-medium">Secure Account Access</p>
-// //               </div>
-// //               <p className="text-xs text-gray-500">
-// //                 Only registered users can sign in. Contact administrator for account creation.
+// //               <p className="text-center text-[11px] sm:text-xs text-slate-400">
+// //                 Tilesview360 v3.1 • By signing in you agree to our Terms & Privacy Policy
 // //               </p>
 // //             </div>
 // //           </div>
+// //         </div>
 
-// //           {/* System Information */}
-// //           {envStatus === 'missing' && (
-// //             <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm">
-// //               <div className="flex items-start gap-2 sm:gap-3">
-// //                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-// //                 <div>
-// //                   <p className="font-medium text-gray-700 mb-1">System Configuration Required</p>
-// //                   <p className="text-gray-600">
-// //                     Please contact technical support to configure the authentication system.
-// //                   </p>
-// //                 </div>
-// //               </div>
-// //             </div>
-// //           )}
-
-// //           {/* Help Text */}
-// //           <div className="text-center pt-2">
-// //             <p className="text-xs text-gray-500">
-// //               Need help? Contact your administrator
-// //             </p>
-// //           </div>
-// //         </form>
-
-// //         {/* Loading Overlay */}
+// //         {/* Global Loading Overlay */}
 // //         {loading && (
-// //           <div className="absolute inset-0 bg-white bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-10 rounded-none sm:rounded-xl">
-// //             <div className="text-center">
-// //               <Loader className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-blue-600 mx-auto mb-3" />
-// //               <p className="text-gray-700 font-medium text-sm sm:text-base">Authenticating...</p>
-// //               <p className="text-gray-500 text-xs sm:text-sm mt-1">Please wait</p>
+// //           <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-none sm:rounded-2xl">
+// //             <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+// //               <Loader className="w-10 h-10 animate-spin text-blue-600 mb-3" />
+// //               <p className="text-slate-800 font-medium">Authenticating</p>
+// //               <p className="text-slate-500 text-sm mt-1">Please wait...</p>
 // //             </div>
 // //           </div>
 // //         )}
 // //       </div>
 // //     </div>
 // //   );
-// // };
+// // }; 
 // import React, { useState, useEffect } from 'react';
-// import { X, User, Shield, AlertCircle, CheckCircle, Eye, EyeOff, Loader, ArrowRight, Zap, Cpu } from 'lucide-react';
+// import { X, Shield, Zap, Cpu, AlertCircle, CheckCircle, Eye, EyeOff, Loader, ArrowRight } from 'lucide-react';
 // import { isFirebaseConfigured } from '../../lib/firebaseutils';
 // import { useAuth } from '../../hooks/useAuth';
 
@@ -434,7 +814,6 @@
 //     password: ''
 //   });
 
-//   // Detect mobile device
 //   useEffect(() => {
 //     const checkMobile = () => {
 //       setIsMobile(window.innerWidth < 768);
@@ -446,7 +825,6 @@
 //     return () => window.removeEventListener('resize', checkMobile);
 //   }, []);
 
-//   // Check environment on component mount
 //   useEffect(() => {
 //     if (isOpen) {
 //       checkEnvironment();
@@ -456,7 +834,6 @@
 //       setShowPassword(false);
 //       setRememberMe(false);
       
-//       // Prevent body scroll when modal is open
 //       document.body.style.overflow = 'hidden';
 //     } else {
 //       document.body.style.overflow = 'unset';
@@ -467,7 +844,6 @@
 //     };
 //   }, [isOpen]);
 
-//   // Auto-clear messages
 //   useEffect(() => {
 //     if (error || success) {
 //       const timer = setTimeout(() => {
@@ -561,7 +937,6 @@
 //   };
 
 //   const handleGoogleLogin = () => {
-//     // TODO: Implement your Google Auth logic here
 //     console.log("Google login clicked");
 //   };
 
@@ -584,81 +959,126 @@
 //   if (!isOpen) return null;
 
 //   return (
-//     <div 
-//       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 animate-fade-in"
-//       onClick={handleBackdropClick}
-//       role="dialog"
-//       aria-modal="true"
-//       aria-labelledby="auth-modal-title"
-//     >
-//       <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-lg mx-auto flex flex-col overflow-hidden animate-slide-up relative">
-        
-//         {/* Premium Header Bar */}
-//        {/* Exact Match Header Bar */}
-//         <div className="bg-[#2D60E3] px-6 py-6 sm:px-8 flex flex-col justify-center relative flex-shrink-0 shadow-none border-none z-10">
+//     <>
+//       <style>
+//         {`
+//           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap');
           
-//           {/* Platform Label */}
-//           <div className="flex items-center gap-2 mb-1.5">
-           
-//           </div>
-          
-//           {/* Main Title - whitespace-nowrap prevents 360 from dropping */}
-//         <h2 
-//             className="text-white text-2xl sm:text-3xl font-medium whitespace-nowrap lining-nums"
-//             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-//           >
-//             Tiles View 360
-//           </h2>
-          
-//           {/* Close Button */}
-//           <button
-//             onClick={handleClose}
-//             disabled={loading}
-//             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-200 hover:text-white transition-colors p-2 rounded-full hover:bg-black/10 disabled:opacity-50 touch-manipulation"
-//             aria-label="Close modal"
-//           >
-//             <X className="w-5 h-5 sm:w-6 sm:h-6" />
-//           </button>
-//         </div>
+//           .font-serif-custom {
+//             font-family: 'Playfair Display', serif;
+//           }
 
-//         <div className="flex-1 overflow-y-auto">
-//           <div className="px-6 py-8 sm:px-10">
-//             {/* Titles */}
-//             <div className="mb-8">
-//               <h1 id="auth-modal-title" className="text-3xl sm:text-4xl font-serif text-slate-900 font-medium mb-2">
+//           @keyframes fadeIn {
+//             from { opacity: 0; }
+//             to { opacity: 1; }
+//           }
+
+//           @keyframes slideUp {
+//             from { 
+//               opacity: 0;
+//               transform: translateY(20px);
+//             }
+//             to { 
+//               opacity: 1;
+//               transform: translateY(0);
+//             }
+//           }
+
+//           @keyframes shake {
+//             0%, 100% { transform: translateX(0); }
+//             25% { transform: translateX(-5px); }
+//             75% { transform: translateX(5px); }
+//           }
+
+//           .animate-fade-in {
+//             animation: fadeIn 0.2s ease-out;
+//           }
+
+//           .animate-slide-up {
+//             animation: slideUp 0.3s ease-out;
+//           }
+
+//           .animate-shake {
+//             animation: shake 0.3s ease-in-out;
+//           }
+//         `}
+//       </style>
+
+//       <div 
+//         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+//         onClick={handleBackdropClick}
+//         role="dialog"
+//         aria-modal="true"
+//         aria-labelledby="auth-modal-title"
+//       >
+//         <div className="w-full max-w-[480px] bg-white rounded-[24px] shadow-[0_20px_40px_rgb(0,0,0,0.06)] relative overflow-hidden flex flex-col animate-slide-up">
+          
+//           {/* Top Platform Header */}
+//           <div className="bg-[#2f61f0] px-10 sm:px-12 py-10 shrink-0 relative">
+//             <div className="flex items-center gap-3 text-blue-100 text-[11px] font-bold tracking-[0.15em] uppercase mb-4">
+            
+              
+//             </div>
+//             <h2 className="font-serif-custom text-[28px] text-white leading-[1.25] font-semibold">
+//               Tiles <br />Visualization
+//             </h2>
+
+//             {/* Close Button */}
+//             <button
+//               onClick={handleClose}
+//               disabled={loading}
+//               className="absolute right-6 top-6 text-blue-100 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+//               aria-label="Close modal"
+//             >
+//               <X className="w-5 h-5" />
+//             </button>
+//           </div>
+
+//           <div className="p-10 sm:p-12">
+//             {/* Form Header */}
+//             <div className="mb-10">
+//               <h1 id="auth-modal-title" className="text-[34px] leading-tight font-serif-custom text-[#0f172a] mb-2 font-semibold">
 //                 Welcome Back
 //               </h1>
-//               <p className="text-slate-500 text-sm sm:text-base">
+//               <p className="text-[16px] text-slate-500 font-medium">
 //                 Continue creating beautiful spaces
 //               </p>
 //             </div>
 
-//             {/* System Status / Error / Success States */}
-//             <div className="mb-6 space-y-3">
-//               {envStatus === 'missing' && (
-//                 <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-//                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-//                   <span>System Configuration Error</span>
+//             {/* System Status / Error / Success Messages */}
+//             {envStatus === 'missing' && (
+//               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700">
+//                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+//                 <div className="flex-1 text-sm">
+//                   <p className="font-semibold mb-1">System Configuration Error</p>
+//                   <p className="text-red-600">Please contact administrator.</p>
 //                 </div>
-//               )}
-//               {error && (
-//                 <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-shake text-red-700 text-sm">
-//                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-//                   <p className="flex-1">{error}</p>
-//                 </div>
-//               )}
-//               {success && (
-//                 <div className="p-3 bg-green-50 border border-green-100 rounded-lg flex items-start gap-2 animate-pulse text-green-700 text-sm">
-//                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-//                   <p className="flex-1">{success}</p>
-//                 </div>
-//               )}
-//             </div>
+//               </div>
+//             )}
 
-//             <form onSubmit={handleSubmit} className="space-y-5">
-//               {/* Email Input */}
-//               <div>
-//                 <label htmlFor="email-input" className="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+//             {error && (
+//               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700 animate-shake">
+//                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+//                 <p className="flex-1 text-sm">{error}</p>
+//               </div>
+//             )}
+
+//             {success && (
+//               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
+//                 <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+//                 <p className="flex-1 text-sm">{success}</p>
+//               </div>
+//             )}
+
+//             {/* Form */}
+//             <form className="space-y-6" onSubmit={handleSubmit}>
+              
+//               {/* Work Email */}
+//               <div className="space-y-2">
+//                 <label 
+//                   htmlFor="email-input"
+//                   className="block text-[11px] font-bold tracking-[0.12em] text-slate-400 uppercase"
+//                 >
 //                   Work Email
 //                 </label>
 //                 <input
@@ -667,7 +1087,7 @@
 //                   placeholder="name@company.com"
 //                   value={formData.email}
 //                   onChange={(e) => handleInputChange('email', e.target.value)}
-//                   className="w-full px-4 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
+//                   className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-white placeholder:text-slate-300 text-[15px] text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#2f61f0]/10 focus:border-[#2f61f0] transition-all disabled:bg-slate-50 disabled:text-slate-400"
 //                   required
 //                   disabled={loading || envStatus !== 'configured'}
 //                   autoComplete="email"
@@ -675,24 +1095,31 @@
 //                 />
 //               </div>
 
-//               {/* Password Input */}
-//               <div>
-//                 <div className="flex justify-between items-center mb-2">
-//                   <label htmlFor="password-input" className="block text-xs font-semibold text-slate-400 tracking-wider uppercase">
+//               {/* Password */}
+//               <div className="space-y-2">
+//                 <div className="flex items-center justify-between">
+//                   <label 
+//                     htmlFor="password-input"
+//                     className="block text-[11px] font-bold tracking-[0.12em] text-slate-400 uppercase"
+//                   >
 //                     Password
 //                   </label>
-//                   <button type="button" className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50">
+//                   <button
+//                     type="button"
+//                     className="text-[13px] font-semibold text-[#2f61f0] hover:text-[#1d44bc] transition-colors disabled:opacity-50"
+//                     disabled={loading}
+//                   >
 //                     Forgot Password?
 //                   </button>
 //                 </div>
 //                 <div className="relative">
 //                   <input
 //                     id="password-input"
-//                     type={showPassword ? 'text' : 'password'}
+//                     type={showPassword ? "text" : "password"}
 //                     placeholder="Enter your password"
 //                     value={formData.password}
 //                     onChange={(e) => handleInputChange('password', e.target.value)}
-//                     className="w-full px-4 py-3.5 pr-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
+//                     className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-white placeholder:text-slate-300 text-[15px] text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#2f61f0]/10 focus:border-[#2f61f0] transition-all pr-12 disabled:bg-slate-50 disabled:text-slate-400"
 //                     required
 //                     disabled={loading || envStatus !== 'configured'}
 //                     autoComplete="current-password"
@@ -700,94 +1127,120 @@
 //                   <button
 //                     type="button"
 //                     onClick={() => setShowPassword(!showPassword)}
-//                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-2"
+//                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
 //                     disabled={loading}
+//                     aria-label={showPassword ? "Hide password" : "Show password"}
 //                   >
-//                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+//                     {showPassword ? <EyeOff size={20} strokeWidth={1.5} /> : <Eye size={20} strokeWidth={1.5} />}
 //                   </button>
 //                 </div>
 //               </div>
 
 //               {/* Remember Me */}
-//               <div className="flex items-center">
-//                 <input
-//                   id="remember-me"
-//                   type="checkbox"
-//                   checked={rememberMe}
-//                   onChange={(e) => setRememberMe(e.target.checked)}
-//                   className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-//                   disabled={loading}
-//                 />
-//                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600">
+//               <div className="flex items-center gap-3 pt-2">
+//                 <div className="relative flex items-center justify-center">
+//                   <input
+//                     type="checkbox"
+//                     id="remember"
+//                     checked={rememberMe}
+//                     onChange={(e) => setRememberMe(e.target.checked)}
+//                     className="peer w-5 h-5 appearance-none border-2 border-slate-200 rounded-[6px] checked:bg-[#2f61f0] checked:border-[#2f61f0] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+//                     disabled={loading}
+//                   />
+//                   <svg className="absolute w-3 h-3 pointer-events-none hidden peer-checked:block text-white" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+//                     <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+//                   </svg>
+//                 </div>
+//                 <label htmlFor="remember" className="text-[15px] font-medium text-slate-500 cursor-pointer select-none">
 //                   Remember Me
 //                 </label>
 //               </div>
 
-//               {/* Start Visualizing Button */}
+//               {/* Submit Button */}
 //               <button
 //                 type="submit"
 //                 disabled={loading || envStatus !== 'configured'}
-//                 className="w-full bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center shadow-md hover:shadow-lg mt-2"
+//                 className="w-full bg-gradient-to-r from-[#2f61f0] to-[#1d44bc] text-white px-6 py-4 rounded-xl font-bold text-[14px] tracking-[0.08em] uppercase hover:shadow-[0_8px_20px_rgba(47,97,240,0.35)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none"
 //               >
 //                 {loading ? (
 //                   <>
-//                     <Loader className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
-//                     Signing In...
+//                     <Loader className="animate-spin w-5 h-5" />
+//                     <span>Signing In...</span>
 //                   </>
 //                 ) : (
 //                   <>
-//                     START VISUALIZING
-//                     <ArrowRight className="ml-2 w-5 h-5" />
+//                     <span>Start Visualizing</span>
+//                     <ArrowRight size={18} strokeWidth={2.5} />
 //                   </>
 //                 )}
 //               </button>
 
-//               {/* Google Button */}
+//               {/* Divider */}
+//               <div className="relative py-4">
+//                 <div className="absolute inset-0 flex items-center">
+//                   <div className="w-full border-t border-slate-200"></div>
+//                 </div>
+//                 <div className="relative flex justify-center text-sm">
+//                   <span className="px-4 bg-white text-slate-400 font-medium">OR ACCESS WITH</span>
+//                 </div>
+//               </div>
+
+//               {/* Google Sign In */}
 //               <button
 //                 type="button"
 //                 onClick={handleGoogleLogin}
-//                 disabled={loading}
-//                 className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 transition-all font-medium flex items-center justify-center gap-3"
+//                 disabled={loading || envStatus !== 'configured'}
+//                 className="w-full bg-white border-2 border-slate-200 text-slate-700 px-6 py-3.5 rounded-xl font-semibold text-[15px] hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
 //               >
 //                 <svg className="w-5 h-5" viewBox="0 0 24 24">
 //                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
 //                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
 //                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
 //                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-//                   <path d="M1 1h22v22H1z" fill="none" />
 //                 </svg>
-//                 Access with Google
+//                 <span> Google</span>
 //               </button>
 //             </form>
 
-//             {/* Footer Features & Terms */}
-//             <div className="mt-8 pt-6 border-t border-slate-100">
-//               <div className="flex justify-center gap-4 sm:gap-8 text-slate-500 text-xs sm:text-sm font-medium mb-4">
-//                 <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-blue-500" /> Secure Cloud</span>
-//                 <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-blue-500" /> Fast</span>
-//                 <span className="flex items-center gap-1.5"><Cpu className="w-4 h-4 text-blue-500" /> AI Powered</span>
+//             {/* Footer */}
+//             <div className="mt-10 pt-8 border-t border-slate-100">
+//               <div className="flex items-center justify-center gap-6 sm:gap-8 mb-5">
+//                 <div className="flex items-center gap-2 text-slate-600">
+//                   <Shield className="w-4 h-4 text-[#2f61f0]" strokeWidth={2} />
+//                   <span className="text-[13px] font-medium">Secure</span>
+//                 </div>
+//                 <div className="flex items-center gap-2 text-slate-600">
+//                   <Zap className="w-4 h-4 text-[#2f61f0]" strokeWidth={2} />
+//                   <span className="text-[13px] font-medium">Fast</span>
+//                 </div>
+//                 <div className="flex items-center gap-2 text-slate-600">
+//                   <Cpu className="w-4 h-4 text-[#2f61f0]" strokeWidth={2} />
+//                   <span className="text-[13px] font-medium">AI Powered</span>
+//                 </div>
 //               </div>
-//               <p className="text-center text-[11px] sm:text-xs text-slate-400">
-//                 Tilesview360 v3.1 • By signing in you agree to our Terms & Privacy Policy
+//               <p className="text-center text-[11px] text-slate-400 leading-relaxed">
+//                 By continuing, you agree to our Terms of Service and Privacy Policy
 //               </p>
 //             </div>
 //           </div>
-//         </div>
 
-//         {/* Global Loading Overlay */}
-//         {loading && (
-//           <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-none sm:rounded-2xl">
-//             <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
-//               <Loader className="w-10 h-10 animate-spin text-blue-600 mb-3" />
-//               <p className="text-slate-800 font-medium">Authenticating</p>
-//               <p className="text-slate-500 text-sm mt-1">Please wait...</p>
+//           {/* Global Loading Overlay */}
+//           {loading && (
+//             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50 rounded-[24px]">
+//               <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center border border-slate-100">
+//                 <Loader className="w-12 h-12 animate-spin text-[#2f61f0] mb-4" />
+//                 <p className="text-slate-800 font-semibold text-lg mb-1">Authenticating</p>
+//                 <p className="text-slate-500 text-sm">Please wait...</p>
+//               </div>
 //             </div>
-//           </div>
-//         )}
+//           )}
+//         </div>
 //       </div>
-//     </div>
+//     </>
 //   );
-// }; 
+// };
+
+// export default AuthModal; 
 import React, { useState, useEffect } from 'react';
 import { X, Shield, Zap, Cpu, AlertCircle, CheckCircle, Eye, EyeOff, Loader, ArrowRight } from 'lucide-react';
 import { isFirebaseConfigured } from '../../lib/firebaseutils';
@@ -1001,53 +1454,73 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           .animate-shake {
             animation: shake 0.3s ease-in-out;
           }
+
+          /* Custom scrollbar for modal */
+          .modal-scroll::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          .modal-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+          }
+
+          .modal-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+          }
+
+          .modal-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+          }
         `}
       </style>
 
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 animate-fade-in overflow-y-auto"
         onClick={handleBackdropClick}
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
       >
-        <div className="w-full max-w-[480px] bg-white rounded-[24px] shadow-[0_20px_40px_rgb(0,0,0,0.06)] relative overflow-hidden flex flex-col animate-slide-up">
+        <div className="w-full sm:max-w-[480px] bg-white sm:rounded-[24px] shadow-[0_20px_40px_rgb(0,0,0,0.06)] relative min-h-screen sm:min-h-0 sm:my-4 flex flex-col animate-slide-up">
           
           {/* Top Platform Header */}
-          <div className="bg-[#2f61f0] px-10 sm:px-12 py-10 shrink-0 relative">
-            <div className="flex items-center gap-3 text-blue-100 text-[11px] font-bold tracking-[0.15em] uppercase mb-4">
+          <div className="bg-[#2f61f0] px-6 sm:px-12 py-6 sm:py-10 shrink-0 relative">
+            <div className="flex items-center gap-3 text-blue-100 text-[11px] font-bold tracking-[0.15em] uppercase mb-3 ">
             
-              
+              <div className="w-6 h-[1.5px] bg-blue-100"></div>
+              Tilesview360
             </div>
-            <h2 className="font-serif-custom text-[28px] text-white leading-[1.25] font-semibold">
-              Tiles <br />Visualization
+            <h2 className="font-serif-custom text-[24px] sm:text-[28px] text-white leading-[1.25] font-semibold">
+             Premium Tiles <br />Virtulization
             </h2>
 
             {/* Close Button */}
             <button
               onClick={handleClose}
               disabled={loading}
-              className="absolute right-6 top-6 text-blue-100 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-4 sm:right-6 top-4 sm:top-6 text-blue-100 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed z-10"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-10 sm:p-12">
+          <div className="p-6 sm:p-12 overflow-y-auto modal-scroll flex-1">
             {/* Form Header */}
-            <div className="mb-10">
-              <h1 id="auth-modal-title" className="text-[34px] leading-tight font-serif-custom text-[#0f172a] mb-2 font-semibold">
+            <div className="mb-6 sm:mb-10">
+              <h1 id="auth-modal-title" className="text-[28px] sm:text-[34px] leading-tight font-serif-custom text-[#0f172a] mb-2 font-semibold">
                 Welcome Back
               </h1>
-              <p className="text-[16px] text-slate-500 font-medium">
+              <p className="text-[14px] sm:text-[16px] text-slate-500 font-medium">
                 Continue creating beautiful spaces
               </p>
             </div>
 
             {/* System Status / Error / Success Messages */}
             {envStatus === 'missing' && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 text-sm">
                   <p className="font-semibold mb-1">System Configuration Error</p>
@@ -1057,27 +1530,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             )}
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700 animate-shake">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-700 animate-shake">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <p className="flex-1 text-sm">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
                 <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <p className="flex-1 text-sm">{success}</p>
               </div>
             )}
 
             {/* Form */}
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
               
               {/* Work Email */}
               <div className="space-y-2">
                 <label 
                   htmlFor="email-input"
-                  className="block text-[11px] font-bold tracking-[0.12em] text-slate-400 uppercase"
+                  className="block text-[14px] sm:text-[15px] font-medium text-slate-500 cursor-pointer select-none"
                 >
                   Work Email
                 </label>
@@ -1087,7 +1560,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   placeholder="name@company.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-white placeholder:text-slate-300 text-[15px] text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#2f61f0]/10 focus:border-[#2f61f0] transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full px-4 py-3 sm:py-3.5 rounded-xl border border-slate-200 bg-white placeholder:text-slate-300 text-[15px] text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#2f61f0]/10 focus:border-[#2f61f0] transition-all disabled:bg-slate-50 disabled:text-slate-400"
                   required
                   disabled={loading || envStatus !== 'configured'}
                   autoComplete="email"
@@ -1100,13 +1573,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 <div className="flex items-center justify-between">
                   <label 
                     htmlFor="password-input"
-                    className="block text-[11px] font-bold tracking-[0.12em] text-slate-400 uppercase"
+                    className="block text-[14px] sm:text-[15px] font-medium text-slate-500 cursor-pointer select-none"
                   >
                     Password
                   </label>
                   <button
                     type="button"
-                    className="text-[13px] font-semibold text-[#2f61f0] hover:text-[#1d44bc] transition-colors disabled:opacity-50"
+                    className="text-[12px] sm:text-[13px] font-semibold text-[#2f61f0] hover:text-[#1d44bc] transition-colors disabled:opacity-50"
                     disabled={loading}
                   >
                     Forgot Password?
@@ -1119,7 +1592,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-white placeholder:text-slate-300 text-[15px] text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#2f61f0]/10 focus:border-[#2f61f0] transition-all pr-12 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full px-4 py-3 sm:py-3.5 rounded-xl border border-slate-200 bg-white placeholder:text-slate-300 text-[15px] text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#2f61f0]/10 focus:border-[#2f61f0] transition-all pr-12 disabled:bg-slate-50 disabled:text-slate-400"
                     required
                     disabled={loading || envStatus !== 'configured'}
                     autoComplete="current-password"
@@ -1137,7 +1610,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-1 sm:pt-2">
                 <div className="relative flex items-center justify-center">
                   <input
                     type="checkbox"
@@ -1151,7 +1624,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                     <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <label htmlFor="remember" className="text-[15px] font-medium text-slate-500 cursor-pointer select-none">
+                <label htmlFor="remember" className="text-[14px] sm:text-[15px] font-medium text-slate-500 cursor-pointer select-none">
                   Remember Me
                 </label>
               </div>
@@ -1160,7 +1633,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               <button
                 type="submit"
                 disabled={loading || envStatus !== 'configured'}
-                className="w-full bg-gradient-to-r from-[#2f61f0] to-[#1d44bc] text-white px-6 py-4 rounded-xl font-bold text-[14px] tracking-[0.08em] uppercase hover:shadow-[0_8px_20px_rgba(47,97,240,0.35)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                className="w-full bg-gradient-to-r from-[#2f61f0] to-[#1d44bc] text-white px-6 py-3.5 sm:py-4 rounded-xl font-bold text-[13px] sm:text-[14px] tracking-[0.08em] uppercase hover:shadow-[0_8px_20px_rgba(47,97,240,0.35)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none"
               >
                 {loading ? (
                   <>
@@ -1176,12 +1649,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </button>
 
               {/* Divider */}
-              <div className="relative py-4">
+              <div className="relative py-3 sm:py-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-slate-400 font-medium">OR ACCESS WITH</span>
+                  <span className="px-4 bg-white text-slate-400 font-medium text-[12px] sm:text-[13px]">OR ACCESS WITH</span>
                 </div>
               </div>
 
@@ -1190,7 +1663,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading || envStatus !== 'configured'}
-                className="w-full bg-white border-2 border-slate-200 text-slate-700 px-6 py-3.5 rounded-xl font-semibold text-[15px] hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-white border-2 border-slate-200 text-slate-700 px-6 py-3 sm:py-3.5 rounded-xl font-semibold text-[14px] sm:text-[15px] hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -1198,27 +1671,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
-                <span> Google</span>
+                <span>Google</span>
               </button>
             </form>
 
             {/* Footer */}
-            <div className="mt-10 pt-8 border-t border-slate-100">
-              <div className="flex items-center justify-center gap-6 sm:gap-8 mb-5">
+            <div className="mt-6 sm:mt-10 pt-6 sm:pt-8 border-t border-slate-100">
+              <div className="flex items-center justify-center gap-4 sm:gap-8 mb-4 sm:mb-5">
                 <div className="flex items-center gap-2 text-slate-600">
                   <Shield className="w-4 h-4 text-[#2f61f0]" strokeWidth={2} />
-                  <span className="text-[13px] font-medium">Secure</span>
+                  <span className="text-[12px] sm:text-[13px] font-medium">Secure</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Zap className="w-4 h-4 text-[#2f61f0]" strokeWidth={2} />
-                  <span className="text-[13px] font-medium">Fast</span>
+                  <span className="text-[12px] sm:text-[13px] font-medium">Fast</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Cpu className="w-4 h-4 text-[#2f61f0]" strokeWidth={2} />
-                  <span className="text-[13px] font-medium">AI Powered</span>
+                  <span className="text-[12px] sm:text-[13px] font-medium">AI Powered</span>
                 </div>
               </div>
-              <p className="text-center text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-center text-[10px] sm:text-[11px] text-slate-400 leading-relaxed px-2">
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
@@ -1226,11 +1699,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
           {/* Global Loading Overlay */}
           {loading && (
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50 rounded-[24px]">
-              <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center border border-slate-100">
-                <Loader className="w-12 h-12 animate-spin text-[#2f61f0] mb-4" />
-                <p className="text-slate-800 font-semibold text-lg mb-1">Authenticating</p>
-                <p className="text-slate-500 text-sm">Please wait...</p>
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50 sm:rounded-[24px]">
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl flex flex-col items-center border border-slate-100">
+                <Loader className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-[#2f61f0] mb-3 sm:mb-4" />
+                <p className="text-slate-800 font-semibold text-base sm:text-lg mb-1">Authenticating</p>
+                <p className="text-slate-500 text-xs sm:text-sm">Please wait...</p>
               </div>
             </div>
           )}
