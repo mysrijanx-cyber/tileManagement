@@ -3451,7 +3451,7 @@ import { getCurrentDomainConfig, applyDomainTheme } from './utils/domainUtils';
 import { WorkerErrorBoundary } from './components/WorkerErrorBoundary';
 import { SellerAutoLogin } from './components/SellerAutoLogin';
 import { Toaster } from 'react-hot-toast';
-import { ArrowRight, PlayCircle, RefreshCw, Menu, X } from 'lucide-react';
+import { ArrowRight, PlayCircle, RefreshCw, Menu, X,Play, Sparkles, RefreshCcw } from 'lucide-react';
 import { PaymentConfirmationModal } from './components/Payment/PaymentConfirmationModal';
 import { PaymentCheckout } from './components/Payment/PaymentCheckout';
 import { initiatePayment } from './lib/paymentService';
@@ -3591,6 +3591,159 @@ class ErrorBoundary extends React.Component<
 // ✅ NAVIGATION COMPONENT - 1920px ALIGNED
 // ═══════════════════════════════════════════════════════════════════════════
 
+// interface NavigationProps {
+//   onLoginClick: () => void;
+//   onBecomeSellerClick: () => void;
+// }
+
+// const Navigation: React.FC<NavigationProps> = ({ onLoginClick, onBecomeSellerClick }) => {
+//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+//   useEffect(() => {
+//     if (mobileMenuOpen) {
+//       document.body.style.overflow = 'hidden';
+//     } else {
+//       document.body.style.overflow = 'unset';
+//     }
+//     return () => { document.body.style.overflow = 'unset'; };
+//   }, [mobileMenuOpen]);
+
+//   return (
+//     // ✅ FIGMA: Max-width 1440px, Padding 64px L/R
+//     <nav className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-16 py-6 lg:py-8 flex items-center justify-between relative z-40">
+      
+//       {/* Logo */}
+//       <div className="flex items-center gap-3 cursor-pointer">
+//         <div className="relative w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center flex-shrink-0">
+//           <div className="absolute top-0 left-0 w-4 h-4 bg-indigo-300 rounded-[3px]"></div>
+//           <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#0040DF] rounded-[3px] mix-blend-multiply"></div>
+//         </div>
+//         <span className="font-bold text-[22px] lg:text-[26px] tracking-tight text-gray-900">
+//           Tilesview360
+//         </span>
+//       </div>
+
+//       {/* Desktop Navigation Links */}
+//       <div className="hidden lg:flex items-center gap-10 xl:gap-12">
+//         <a 
+//           href="#product" 
+//           className="text-gray-900 text-[18px] font-semibold relative after:content-[''] after:absolute after:left-0 after:-bottom-1.5 after:w-full after:h-0.5 after:bg-[#0040DF] hover:text-gray-700 transition-colors"
+//         >
+//           Product
+//         </a>
+//         <a 
+//           href="#features" 
+//           className="text-gray-600 text-[18px] font-medium hover:text-gray-900 transition-colors duration-200"
+//         >
+//           Features
+//         </a>
+//         <a 
+//           href="#pricing" 
+//           className="text-gray-600 text-[18px] font-medium hover:text-gray-900 transition-colors duration-200"
+//         >
+//           Pricing
+//         </a>
+//         <a 
+//           href="#showcase" 
+//           className="text-gray-600 text-[18px] font-medium hover:text-gray-900 transition-colors duration-200"
+//         >
+//           Showcase
+//         </a>
+//       </div>
+
+//       {/* Desktop Right Actions */}
+//       <div className="hidden lg:flex items-center gap-8 xl:gap-10">
+//         <button 
+//           onClick={onLoginClick} 
+//           className="text-gray-700 text-[18px] font-bold hover:text-gray-900 transition-colors duration-200"
+//         >
+//           Login
+//         </button>
+//         <button 
+//           onClick={onBecomeSellerClick} 
+//           className="bg-[#0040DF] text-white text-[18px] px-9 py-4 rounded-full font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+//         >
+//           Become A Seller
+//         </button>
+//       </div>
+
+//       {/* Mobile Menu Button */}
+//       <button
+//         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+//         className="lg:hidden relative z-[70] p-2 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-800 transition-colors shadow-sm"
+//         aria-label="Toggle menu"
+//       >
+//         {mobileMenuOpen ? (
+//           <X className="w-6 h-6 stroke-[2.5px]" />
+//         ) : (
+//           <Menu className="w-6 h-6 stroke-[2.5px]" />
+//         )}
+//       </button>
+
+//       {/* Mobile Menu Overlay */}
+//       {mobileMenuOpen && (
+//         <>
+//           <div 
+//             className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[50] animate-fade-in-up"
+//             style={{ animationDuration: '0.3s' }}
+//             onClick={() => setMobileMenuOpen(false)}
+//           />
+//           <div className="lg:hidden fixed top-0 left-0 right-0 pt-[88px] pb-6 px-6 bg-white border-b border-gray-200 shadow-2xl z-[60] animate-slide-down rounded-b-[2rem]">
+//             <div className="max-w-md mx-auto space-y-6">
+//               {/* Mobile Links */}
+//               <div className="space-y-2">
+//                 <a 
+//                   href="#product" 
+//                   onClick={() => setMobileMenuOpen(false)} 
+//                   className="block text-gray-900 text-[16px] font-semibold p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-[#0040DF] transition-colors"
+//                 >
+//                   Product
+//                 </a>
+//                 <a 
+//                   href="#features" 
+//                   onClick={() => setMobileMenuOpen(false)} 
+//                   className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors"
+//                 >
+//                   Features
+//                 </a>
+//                 <a 
+//                   href="#pricing" 
+//                   onClick={() => setMobileMenuOpen(false)} 
+//                   className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors"
+//                 >
+//                   Pricing
+//                 </a>
+//                 <a 
+//                   href="#showcase" 
+//                   onClick={() => setMobileMenuOpen(false)} 
+//                   className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors"
+//                 >
+//                   Showcase
+//                 </a>
+//               </div>
+              
+//               {/* Mobile Actions */}
+//               <div className="pt-4 border-t border-gray-100 space-y-3">
+//                 <button
+//                   onClick={() => { setMobileMenuOpen(false); onLoginClick(); }}
+//                   className="w-full text-gray-700 text-[16px] font-bold py-3 px-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
+//                 >
+//                   Login
+//                 </button>
+//                 <button
+//                   onClick={() => { setMobileMenuOpen(false); onBecomeSellerClick(); }}
+//                   className="w-full bg-[#0040DF] text-white text-[16px] py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+//                 >
+//                   Become A Seller
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </>
+//       )}
+//     </nav>
+//   );
+// }; 
 interface NavigationProps {
   onLoginClick: () => void;
   onBecomeSellerClick: () => void;
@@ -3609,38 +3762,58 @@ const Navigation: React.FC<NavigationProps> = ({ onLoginClick, onBecomeSellerCli
   }, [mobileMenuOpen]);
 
   return (
-    // ✅ FIXED: Using w-full max-w-[1920px] and px-3 md:px-5 
-    <nav className="w-full max-w-[1920px] mx-auto px-3 md:px-5 py-5 sm:py-6 lg:py-8 flex items-center justify-between relative z-40">
+    <nav className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-6 lg:py-8 flex items-center justify-between relative z-40">
+      
       {/* Logo */}
       <div className="flex items-center gap-3 cursor-pointer">
-        <div className="relative w-6 h-6 lg:w-8 lg:h-8 flex items-center justify-center flex-shrink-0">
-          <div className="absolute top-0 left-0 w-3.5 h-3.5 lg:w-4 lg:h-4 bg-indigo-300 rounded-[3px]"></div>
-          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 lg:w-4 lg:h-4 bg-[#0B40E8] rounded-[3px] mix-blend-multiply"></div>
+        <div className="relative w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center flex-shrink-0">
+          <div className="absolute top-0 left-0 w-4 h-4 bg-indigo-300 rounded-[3px]"></div>
+          <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#0040DF] rounded-[3px] mix-blend-multiply"></div>
         </div>
-        <span className="font-bold text-[20px] sm:text-[22px] lg:text-[26px] tracking-tight text-gray-900">
+        <span className="font-bold text-[20px] lg:text-[26px] tracking-tight text-gray-900">
           Tilesview360
         </span>
       </div>
 
       {/* Desktop Navigation Links */}
-      <div className="hidden lg:flex items-center gap-10 xl:gap-14">
-        <a href="#product" className="text-gray-900 text-[15px] lg:text-[18px] font-semibold relative after:content-[''] after:absolute after:left-0 after:-bottom-1.5 after:w-full after:h-0.5 after:bg-[#0B40E8] hover:text-gray-700 transition-colors">Product</a>
-        <a href="#features" className="text-gray-600 text-[15px] lg:text-[18px] font-medium hover:text-gray-900 transition-colors duration-200">Features</a>
-        <a href="#pricing" className="text-gray-600 text-[15px] lg:text-[18px] font-medium hover:text-gray-900 transition-colors duration-200">Pricing</a>
-        <a href="#showcase" className="text-gray-600 text-[15px] lg:text-[18px] font-medium hover:text-gray-900 transition-colors duration-200">Showcase</a>
+      <div className="hidden lg:flex items-center gap-12">
+        <a 
+          href="#product" 
+          className="text-gray-900 text-[18px] font-semibold relative after:content-[''] after:absolute after:left-0 after:-bottom-1.5 after:w-full after:h-0.5 after:bg-[#0040DF] hover:text-gray-700 transition-colors"
+        >
+          Product
+        </a>
+        <a 
+          href="#features" 
+          className="text-gray-600 text-[18px] font-medium hover:text-gray-900 transition-colors duration-200"
+        >
+          Features
+        </a>
+        <a 
+          href="#pricing" 
+          className="text-gray-600 text-[18px] font-medium hover:text-gray-900 transition-colors duration-200"
+        >
+          Pricing
+        </a>
+        <a 
+          href="#showcase" 
+          className="text-gray-600 text-[18px] font-medium hover:text-gray-900 transition-colors duration-200"
+        >
+          Showcase
+        </a>
       </div>
 
       {/* Desktop Right Actions */}
-      <div className="hidden lg:flex items-center gap-8 xl:gap-10">
+      <div className="hidden lg:flex items-center gap-10">
         <button 
           onClick={onLoginClick} 
-          className="text-gray-700 text-[15px] lg:text-[18px] font-bold hover:text-gray-900 transition-colors duration-200"
+          className="text-gray-700 text-[18px] font-bold hover:text-gray-900 transition-colors duration-200"
         >
           Login
         </button>
         <button 
           onClick={onBecomeSellerClick} 
-          className="bg-[#0B40E8] text-white text-[15px] lg:text-[18px] px-7 py-3 lg:px-9 lg:py-4 rounded-full font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+          className="bg-[#0040DF] text-white text-[18px] px-9 py-4 rounded-full font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
         >
           Become A Seller
         </button>
@@ -3671,10 +3844,34 @@ const Navigation: React.FC<NavigationProps> = ({ onLoginClick, onBecomeSellerCli
             <div className="max-w-md mx-auto space-y-6">
               {/* Mobile Links */}
               <div className="space-y-2">
-                <a href="#product" onClick={() => setMobileMenuOpen(false)} className="block text-gray-900 text-[16px] font-semibold p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-[#0B40E8] transition-colors">Product</a>
-                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors">Features</a>
-                <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors">Pricing</a>
-                <a href="#showcase" onClick={() => setMobileMenuOpen(false)} className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors">Showcase</a>
+                <a 
+                  href="#product" 
+                  onClick={() => setMobileMenuOpen(false)} 
+                  className="block text-gray-900 text-[16px] font-semibold p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-[#0040DF] transition-colors"
+                >
+                  Product
+                </a>
+                <a 
+                  href="#features" 
+                  onClick={() => setMobileMenuOpen(false)} 
+                  className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                >
+                  Features
+                </a>
+                <a 
+                  href="#pricing" 
+                  onClick={() => setMobileMenuOpen(false)} 
+                  className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                >
+                  Pricing
+                </a>
+                <a 
+                  href="#showcase" 
+                  onClick={() => setMobileMenuOpen(false)} 
+                  className="block text-gray-600 text-[16px] font-medium p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                >
+                  Showcase
+                </a>
               </div>
               
               {/* Mobile Actions */}
@@ -3687,7 +3884,7 @@ const Navigation: React.FC<NavigationProps> = ({ onLoginClick, onBecomeSellerCli
                 </button>
                 <button
                   onClick={() => { setMobileMenuOpen(false); onBecomeSellerClick(); }}
-                  className="w-full bg-[#0B40E8] text-white text-[16px] py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+                  className="w-full bg-[#0040DF] text-white text-[16px] py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
                 >
                   Become A Seller
                 </button>
@@ -3704,113 +3901,262 @@ const Navigation: React.FC<NavigationProps> = ({ onLoginClick, onBecomeSellerCli
 // ✅ HERO SECTION - 1920px ALIGNED
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ✅ HERO SECTION - RESPONSIVE & FLUID
+// ═══════════════════════════════════════════════════════════════════════════
+
+// const HeroSection: React.FC = () => {
+//   return (
+//     <section className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-16 pt-12 sm:pt-24 lg:pt-32 pb-16 sm:pb-24 lg:pb-32">
+      
+//       {/* ✅ Layout: Grid use kiya hai taaki screensize ke hisaab se space naturally divide ho */}
+//       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 xl:gap-16 items-center">
+        
+//         {/* ═══════════════════════════════════════════════════════════════
+//             LEFT SIDE: TEXT & BUTTONS (Fluid Width)
+//         ═══════════════════════════════════════════════════════════════ */}
+//         <div className="w-full flex flex-col gap-6 lg:gap-8 order-2 lg:order-1">
+          
+//           <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/10 rounded-full backdrop-blur-sm border border-purple-200/50 w-fit">
+//             <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
+//             <span className="text-purple-700 text-sm lg:text-base font-semibold">
+//               AI-Powered Tile Visualization Platform
+//             </span>
+//           </div>
+
+//           <h1 className="text-[36px] sm:text-[48px] lg:text-[56px] xl:text-[64px] leading-[1.125] font-bold tracking-tight text-gray-900">
+//             See Tiles Before<br />
+//             <span className="text-[#0040DF]">Customers Buy</span>
+//           </h1>
+
+//           <p className="max-w-[512px] text-[16px] lg:text-[18px] leading-[1.55] text-gray-600">
+//             Transform your showroom with AI-powered 3D tile visualization. Let customers preview any material in their actual living spaces with photorealistic precision.
+//           </p>
+
+//           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4">
+//             <button 
+//               className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0040DF] hover:bg-blue-700 text-white px-8 py-[17px] rounded-full font-semibold transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 cursor-default opacity-90"
+//               disabled
+//             >
+//               Request Demo
+//               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+//             </button>
+
+//             <button 
+//               onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+//               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/40 hover:bg-white/60 border border-white/60 backdrop-blur-md text-gray-900 px-8 py-4 rounded-full font-semibold transition-all"
+//             >
+//               <PlayCircle className="w-5 h-5" />
+//               Watch Live Preview
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* ═══════════════════════════════════════════════════════════════
+//             RIGHT SIDE: ASYMMETRIC IMAGE LAYOUT (Fluid Aspect Ratio)
+//         ═══════════════════════════════════════════════════════════════ */}
+//         {/* ✅ Container: ab pixels nahi, aspect ratio maintain karega */}
+//         <div className="relative w-full max-w-[500px] sm:max-w-[600px] mx-auto lg:max-w-none aspect-square sm:aspect-[4/3] lg:aspect-square xl:aspect-[4/3] order-1 lg:order-2 flex items-center justify-center">
+          
+//           {/* ✅ MAIN PREVIEW CARD: Container ka 85% space lega aur center me rahega */}
+//           <div className="absolute w-[90%] sm:w-[85%] lg:w-[80%] xl:w-[85%] aspect-[2.1/1] bg-white rounded-2xl sm:rounded-[24px] p-1 shadow-2xl z-10">
+//             <div className="relative w-full h-full rounded-[20px] overflow-hidden">
+//               <img 
+//                 src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+//                 alt="Modern living room interior" 
+//                 className="w-full h-full object-cover"
+//                 loading="eager"
+//               />
+//               <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/10"></div>
+
+//               {/* AI Center Pill */}
+//               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 sm:gap-3 lg:gap-4 bg-white/30 backdrop-blur-md border border-white/40 pr-4 lg:pr-6 pl-2 py-2 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-10 w-max">
+//                 <div className="w-[36px] h-[36px] sm:w-[42px] sm:h-[42px] lg:w-[48px] lg:h-[48px] bg-[#0040DF] rounded-full flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/30">
+//                   <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 animate-spin-slow" />
+//                 </div>
+//                 <div className="flex flex-col">
+//                   <span className="text-[12px] sm:text-[14px] lg:text-[15px] font-bold text-gray-900 leading-tight">
+//                     AI 3D Scan Active
+//                   </span>
+//                   <span className="hidden sm:block text-[11px] lg:text-[13px] font-medium text-gray-800/80 leading-tight">
+//                     Calibrating textures...
+//                   </span>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* ✅ TOP RIGHT CARD: Percentages use kiye hain placements ke liye */}
+//           <div className="absolute top-[2%] sm:top-[5%] right-[-2%] sm:right-[2%] lg:right-[-5%] xl:right-[5%] w-[140px] sm:w-[180px] xl:w-[192px] bg-white/40 border border-white/60 backdrop-blur-xl rounded-xl sm:rounded-[16px] p-3 sm:p-4 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+//                style={{ animationDelay: '0ms' }}>
+//             <img 
+//               src="https://images.unsplash.com/photo-1588863673322-2621aef42bf8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+//               alt="Venetian Blue Tile" 
+//               className="w-full h-[90px] sm:h-[110px] xl:h-[128px] rounded-lg sm:rounded-[12px] object-cover mb-2 sm:mb-3 shadow-sm"
+//               loading="lazy"
+//             />
+//             <div className="flex flex-col gap-0.5 sm:gap-1">
+//               <span className="font-bold text-[14px] sm:text-[16px] text-gray-900 leading-tight">Venetian Blue</span>
+//               <span className="font-semibold text-[11px] sm:text-[13px] text-[#0040DF]">Living Room</span>
+//             </div>
+//           </div>
+
+//           {/* ✅ BOTTOM LEFT CARD: Percentages use kiye hain placements ke liye */}
+//           <div className="absolute bottom-[2%] sm:bottom-[5%] left-[-2%] sm:left-[2%] lg:left-[-5%] xl:left-[5%] w-[140px] sm:w-[180px] xl:w-[192px] bg-white/40 border border-white/60 backdrop-blur-xl rounded-xl sm:rounded-[16px] p-3 sm:p-4 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+//                style={{ animationDelay: '300ms' }}>
+//             <div className="w-full h-[90px] sm:h-[110px] xl:h-[128px] rounded-lg sm:rounded-[12px] overflow-hidden mb-2 sm:mb-3 relative group">
+//               <img 
+//                 src="https://images.unsplash.com/photo-1620626011761-996317b8d101?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+//                 alt="Noir Slate Bathroom" 
+//                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+//                 loading="lazy"
+//               />
+//               <div className="absolute inset-0 bg-black/10"></div>
+//             </div>
+//             <div className="flex flex-col gap-0.5 sm:gap-1">
+//               <span className="font-bold text-[14px] sm:text-[16px] text-gray-900 leading-tight">Noir Slate</span>
+//               <span className="font-semibold text-[11px] sm:text-[13px] text-[#0040DF]">Master Bath</span>
+//             </div>
+//           </div>
+
+//         </div>
+//       </div>
+//     </section>
+//   );
+// } 
+
 const HeroSection: React.FC = () => {
   return (
-    // ✅ FIXED: Using w-full max-w-[1920px] and px-3 md:px-5 
-    <main className="w-full max-w-[1920px] mx-auto px-3 md:px-5 py-8 sm:py-12 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 xl:gap-24 items-center">
+    <section className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 pt-12 lg:pt-20 pb-16 lg:pb-24">
       
-      {/* LEFT COLUMN */}
-      <div className="space-y-6 sm:space-y-8 lg:space-y-10 order-2 lg:order-1">
+      {/* Main Container - Flexbox Layout */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
         
-        {/* Heading */}
-        <h1 className="text-[40px] sm:text-[48px] lg:text-[64px] xl:text-[72px] leading-[1.1] font-extrabold tracking-tight text-gray-900">
-          See Tiles Before<br />
-          <span className="text-[#0B40E8]">Customers Buy</span>
-        </h1>
-
-        {/* Description */}
-        <p className="text-gray-500 text-[15px] sm:text-[16px] lg:text-[20px] xl:text-[22px] leading-relaxed pr-0 lg:pr-8">
-          Transform your showroom with AI-powered 3D tile visualization. Let customers preview any material in their actual living spaces with photorealistic precision.
-        </p>
-
-        {/* CTA Buttons - Request Demo is DECORATIVE ONLY */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
-          <button 
-            className="w-full sm:w-auto bg-[#0B40E8] text-white text-[15px] lg:text-[18px] px-8 py-4 lg:px-10 lg:py-5 rounded-full font-semibold flex items-center justify-center gap-2 shadow-xl shadow-blue-600/20 cursor-default opacity-90"
-            disabled
-          >
-            Request Demo
-            <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6" />
-          </button>
+        {/* ═══════════════════════════════════════════════════════════════
+            LEFT SIDE: TEXT CONTENT (Max-width 512px)
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className="w-full lg:w-auto lg:max-w-[512px] flex flex-col gap-6 order-2 lg:order-1">
           
-          <button 
-            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
-            className="w-full sm:w-auto bg-white text-gray-900 text-[15px] lg:text-[18px] px-8 py-4 lg:px-10 lg:py-5 rounded-full font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 transition-all duration-200 shadow-sm border border-gray-100 hover:border-gray-200"
-          >
-            <PlayCircle className="w-5 h-5 lg:w-6 lg:h-6 text-gray-700" />
-            Watch Live Preview
-          </button>
-        </div>
-      </div>
+          {/* AI Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/10 rounded-full backdrop-blur-sm border border-purple-200/50 w-fit">
+            <Sparkles className="w-4 h-4 text-purple-600" />
+            <span className="text-purple-700 text-[14px] lg:text-[15px] font-semibold">
+              AI-Powered Tile Visualization Platform
+            </span>
+          </div>
 
-      {/* RIGHT COLUMN - VISUAL GALLERY */}
-      <div className="relative w-full h-[400px] sm:h-[500px] lg:h-[700px] xl:h-[750px] order-1 lg:order-2">
-        
-        {/* Main Background Image */}
-        <div className="absolute inset-y-8 sm:inset-y-12 lg:inset-y-0 inset-x-4 sm:inset-x-8 lg:inset-x-12 rounded-[2rem] lg:rounded-[3rem] overflow-hidden shadow-2xl z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-            alt="Modern living room interior" 
-            className="w-full h-full object-cover object-center scale-105"
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent"></div>
+          {/* Heading */}
+          <h1 className="text-[36px] sm:text-[48px] lg:text-[56px] leading-[1.1] font-bold tracking-tight text-gray-900">
+            See Tiles Before<br />
+            <span className="text-[#0040DF]">Customers Buy</span>
+          </h1>
+
+          {/* Paragraph */}
+          <p className="max-w-[512px] text-[16px] lg:text-[18px] leading-[1.55] text-gray-500">
+            Transform your showroom with AI-powered 3D tile visualization. Let customers preview any material in their actual living spaces with photorealistic precision.
+          </p>
+
+          {/* Buttons Container */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center pt-4 gap-4">
+            
+            {/* Primary Button */}
+            <button 
+              className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0040DF] hover:bg-blue-700 text-white px-8 py-[17px] rounded-full font-medium transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+            >
+              Request Demo
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            {/* Secondary Button */}
+            <button 
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/40 hover:bg-white/60 border border-white/60 backdrop-blur-md text-gray-900 px-8 py-4 rounded-full font-medium transition-all"
+            >
+              <Play className="w-5 h-5" fill="currentColor" />
+              Watch Live Preview
+            </button>
+          </div>
         </div>
 
-        {/* Floating Card 1: Top Right */}
-        <div 
-          className="absolute top-0 right-0 lg:-right-8 xl:-right-12 bg-white/70 backdrop-blur-xl p-3 lg:p-4 pb-4 lg:pb-5 rounded-[1.5rem] lg:rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] z-20 border border-white/50 w-[180px] sm:w-[220px] lg:w-[280px] xl:w-[320px] animate-fade-in-up"
-          style={{ animationDelay: '0ms' }}
-        >
-          <div className="w-full h-[140px] sm:h-[180px] lg:h-[220px] xl:h-[260px] rounded-2xl lg:rounded-3xl overflow-hidden mb-3 lg:mb-4">
+        {/* ═══════════════════════════════════════════════════════════════
+            RIGHT SIDE: IMAGES CONTAINER (624x500px on desktop)
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className="w-full lg:w-[624px] h-auto lg:h-[500px] relative order-1 lg:order-2 flex-shrink-0">
+          
+          {/* Main Preview Card - Centered at left-35px top-116px */}
+          <div className="absolute left-0 top-0 lg:left-[35px] lg:top-[116px] w-full lg:w-[554px] h-[300px] sm:h-[350px] lg:h-[267px] bg-white rounded-[20px] lg:rounded-[24px] p-1 shadow-2xl z-10">
+            <div className="relative w-full h-full rounded-[16px] lg:rounded-[20px] overflow-hidden">
+              
+              {/* Main Background Image */}
+              <img 
+                src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
+                alt="Modern interior" 
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+              
+              {/* Overlay Tint */}
+              <div className="absolute inset-0 bg-[#0A192F]/20 backdrop-brightness-95"></div>
+
+              {/* AI 3D Scan Active (Center Glass Pill) */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 lg:gap-4 bg-white/30 backdrop-blur-md border border-white/40 pr-4 lg:pr-6 pl-2 py-2 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-10 max-w-[90%]">
+                <div className="w-[36px] h-[36px] lg:w-[42px] lg:h-[42px] bg-[#0040DF] rounded-full flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <RefreshCcw className="w-4 h-4 lg:w-5 lg:h-5 animate-spin-slow" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[13px] lg:text-[15px] font-bold text-gray-900 leading-tight">
+                    AI 3D Scan Active
+                  </span>
+                  <span className="hidden sm:block text-[11px] lg:text-[13px] font-medium text-gray-800/80 leading-tight">
+                    Calibrating surface textures...
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top-Right Floating Card ("Venetian Blue") */}
+          <div className="absolute left-[60%] top-[-30px] sm:left-[70%] sm:top-[-40px] lg:left-[416px] lg:top-[-40px] w-[150px] sm:w-[180px] lg:w-[192px] h-auto lg:h-[214px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[14px] lg:rounded-[16px] p-3 lg:p-4 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+               style={{ animationDelay: '0ms' }}>
             <img 
-              src="https://images.unsplash.com/photo-1588863673322-2621aef42bf8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+              src="https://images.unsplash.com/photo-1590273016480-1a73f6ed9d53?auto=format&fit=crop&w=400&q=80" 
               alt="Venetian Blue Tile" 
-              className="w-full h-full object-cover"
+              className="w-full h-[100px] sm:h-[120px] lg:h-[128px] rounded-[10px] lg:rounded-[12px] object-cover mb-3 lg:mb-4 shadow-sm"
               loading="lazy"
             />
+            <div className="flex flex-col">
+              <span className="font-bold text-[14px] lg:text-[16px] text-[#191C1E] leading-tight">
+                Venetian Blue
+              </span>
+              <span className="font-medium text-[12px] lg:text-[13px] text-[#0040DF] mt-1">
+                Living Room
+              </span>
+            </div>
           </div>
-          <div className="px-2 lg:px-3">
-            <h3 className="font-bold text-gray-900 text-[15px] lg:text-[18px] xl:text-[20px] leading-tight">Venetian Blue</h3>
-            <p className="text-[#0B40E8] text-xs lg:text-sm xl:text-base font-semibold mt-1">Living Room</p>
-          </div>
-        </div>
 
-        {/* Floating Card 2: AI Scan */}
-        <div 
-          className="absolute top-[45%] lg:top-[50%] left-0 lg:-left-16 xl:-left-20 -translate-y-1/2 bg-white/80 backdrop-blur-xl p-3 sm:p-4 lg:p-5 pr-6 sm:pr-10 lg:pr-12 rounded-[1.25rem] lg:rounded-[2rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] z-30 border border-white/60 flex items-center gap-3 sm:gap-4 lg:gap-5 animate-fade-in-up max-w-[90%] sm:max-w-none" 
-          style={{ animationDelay: '150ms' }}
-        >
-          <div className="bg-[#0B40E8] w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 xl:w-20 xl:h-20 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-500/30 flex-shrink-0">
-            <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 xl:w-10 xl:h-10 animate-spin-slow" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="font-bold text-gray-900 text-sm lg:text-lg xl:text-xl">AI 3D Scan Active</h3>
-            <p className="text-gray-500 text-xs lg:text-sm xl:text-base mt-1 truncate">Calibrating surface textures...</p>
-          </div>
-        </div>
-
-        {/* Floating Card 3: Bottom Left */}
-        <div 
-          className="absolute bottom-4 lg:bottom-12 left-4 lg:left-0 xl:-left-8 bg-white/90 backdrop-blur-md p-3 lg:p-4 pb-4 lg:pb-5 rounded-[1.5rem] lg:rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] z-20 border border-white w-[160px] sm:w-[200px] lg:w-[260px] xl:w-[300px] animate-fade-in-up" 
-          style={{ animationDelay: '300ms' }}
-        >
-          <div className="w-full h-[120px] sm:h-[160px] lg:h-[200px] xl:h-[240px] rounded-2xl lg:rounded-3xl overflow-hidden mb-3 lg:mb-4 relative group">
+          {/* Bottom-Left Floating Card ("Noir Slate") */}
+          <div className="absolute left-0 top-[260px] sm:top-[300px] lg:left-[-16px] lg:top-[310px] w-[150px] sm:w-[180px] lg:w-[192px] h-auto lg:h-[214px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[14px] lg:rounded-[16px] p-3 lg:p-4 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+               style={{ animationDelay: '300ms' }}>
             <img 
-              src="https://images.unsplash.com/photo-1620626011761-996317b8d101?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
-              alt="Noir Slate Bathroom" 
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              src="https://images.unsplash.com/photo-1620214365969-2b6fb092d6e4?auto=format&fit=crop&q=80&w=400" 
+              alt="Noir Slate Tile" 
+              className="w-full h-[100px] sm:h-[120px] lg:h-[128px] rounded-[10px] lg:rounded-[12px] object-cover mb-3 lg:mb-4 shadow-sm"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="flex flex-col">
+              <span className="font-bold text-[14px] lg:text-[16px] text-[#191C1E] leading-tight">
+                Noir Slate
+              </span>
+              <span className="font-medium text-[12px] lg:text-[13px] text-[#0040DF] mt-1">
+                Master Bath
+              </span>
+            </div>
           </div>
-          <div className="px-2 lg:px-3">
-            <h3 className="font-bold text-gray-900 text-[15px] lg:text-[18px] xl:text-[20px] leading-tight">Noir Slate</h3>
-            <p className="text-[#0B40E8] text-xs lg:text-sm xl:text-base font-semibold mt-1">Master Bath</p>
-          </div>
+
         </div>
       </div>
-    </main>
+    </section>
   );
 };
 
