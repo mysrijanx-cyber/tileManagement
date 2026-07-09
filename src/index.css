@@ -2,91 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Custom Properties for Domain Theming */
+/* ═══════════════════════════════════════════════════════════════
+   CORE VARIABLES
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --primary-color: #2563eb;
+  --primary-color: #0B4BF5;
   --secondary-color: #1e40af;
   --accent-color: #3b82f6;
 }
-/* Slide down animation for messages */
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
 
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out;
-}
-
-/* Pulse animation for active session badge */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE 3D VIEWER UTILITIES
+   ANIMATIONS - Single Definition
    ═══════════════════════════════════════════════════════════════ */
 
-/* ✅ Safe Area Support for Notched Devices */
-.safe-top {
-  padding-top: env(safe-area-inset-top);
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.safe-left {
-  padding-left: env(safe-area-inset-left);
-}
-
-.safe-right {
-  padding-right: env(safe-area-inset-right);
-}
-
-/* ✅ Smooth Animations */
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
+@keyframes slide-down {
   from {
     opacity: 0;
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes slideUp {
+@keyframes slide-up {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -98,130 +44,125 @@
 }
 
 @keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-10px);
-  }
-  75% {
-    transform: translateX(10px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
 }
 
-/* ✅ Touch-Friendly Minimum Sizes */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scaleUp {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1.1); }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL STYLES - Desktop First
+   ═══════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* ✅ NO overflow-x hidden on desktop */
+}
+
+/* ✅ Only for mobile - prevent horizontal scroll */
 @media (max-width: 768px) {
-  button,
-  a,
-  [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
+  body {
+    overflow-x: hidden;
   }
 }
 
-/* ✅ Prevent Text Selection in Canvas Controls */
-.canvas-controls,
-.canvas-controls * {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+/* ═══════════════════════════════════════════════════════════════
+   DOMAIN THEMING
+   ═══════════════════════════════════════════════════════════════ */
+
+.domain-primary {
+  color: var(--primary-color);
 }
 
-/* ✅ Canvas Touch Optimization */
-canvas {
-  touch-action: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
+.domain-bg-primary {
+  background-color: var(--primary-color);
 }
 
-/* ✅ Responsive Text Scaling */
-@media (max-width: 374px) {
-  /* iPhone SE and smaller */
-  .responsive-text {
-    font-size: clamp(0.75rem, 3vw, 0.875rem);
-  }
+.domain-border-primary {
+  border-color: var(--primary-color);
 }
 
-@media (min-width: 375px) and (max-width: 767px) {
-  /* Standard mobile */
-  .responsive-text {
-    font-size: clamp(0.875rem, 2.5vw, 1rem);
-  }
-}
+/* ═══════════════════════════════════════════════════════════════
+   FORM INPUTS
+   ═══════════════════════════════════════════════════════════════ */
 
-@media (min-width: 768px) and (max-width: 1023px) {
-  /* Tablet */
-  .responsive-text {
-    font-size: clamp(0.875rem, 2vw, 1rem);
-  }
-}
-
-@media (min-width: 1024px) {
-  /* Desktop */
-  .responsive-text {
-    font-size: 1rem;
-  }
-}
-
-/* ✅ Landscape Mobile Optimization */
-@media (max-height: 500px) and (orientation: landscape) {
-  /* Compact controls for landscape mobile */
-  .canvas-controls {
-    scale: 0.85;
-  }
-}
-
-/* ✅ High DPI Display Optimization */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  canvas {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-}
-
-/* ✅ Dark Mode Support (Optional) */
-@media (prefers-color-scheme: dark) {
-  .viewer-panel {
-    background: rgba(0, 0, 0, 0.9);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-}
-
-/* ✅ Reduce Motion for Accessibility */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ✅ Focus Visible for Keyboard Navigation */
+/* Better focus states */
 button:focus-visible,
-a:focus-visible {
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
-/* ✅ Prevent Overscroll Bounce on iOS */
-body {
-  overscroll-behavior: none;
+input:focus,
+button:focus {
+  outline: none;
 }
-/* Smooth pattern preview transitions */
-@keyframes scaleUp {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
-  100% {
-    transform: scale(1.1);
+
+/* ✅ Prevent zoom on input focus - ONLY MOBILE */
+@media screen and (max-width: 767px) {
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
 
-/* Range slider custom styling */
+/* Range Slider Styling */
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 20px;
@@ -247,291 +188,86 @@ input[type="range"]::-moz-range-thumb {
   border: none;
   box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
 }
-/* ✅ Smooth Scrolling for Modals */
-.modal-content {
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE-SPECIFIC UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Touch manipulation - ONLY MOBILE */
+@media (max-width: 768px) {
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Safe area support - ONLY MOBILE */
+@media (max-width: 768px) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CANVAS & 3D VIEWER - MOBILE ONLY
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .canvas-controls,
+  .canvas-controls * {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  canvas {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* High DPI Display Optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLING OPTIMIZATION
+   ═══════════════════════════════════════════════════════════════ */
+
+.modal-content,
+.overflow-y-auto {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out;
-}
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-/* Domain-specific styling */
-.domain-primary {
-  color: var(--primary-color);
-}
 
-.domain-bg-primary {
-  background-color: var(--primary-color);
-}
+/* ═══════════════════════════════════════════════════════════════
+   BACKDROP BLUR FALLBACK
+   ═══════════════════════════════════════════════════════════════ */
 
-.domain-border-primary {
-  border-color: var(--primary-color);
-}
-/* Auth Modal Animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-5px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(5px);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-out;
-}
-
-/* Touch manipulation */
-.touch-manipulation {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-/* Better input focus on mobile */
-input:focus,
-button:focus {
-  outline: none;
-}
-
-input:focus-visible,
-button:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Prevent zoom on input focus on iOS */
-@media screen and (max-width: 767px) {
-  input[type="email"],
-  input[type="password"],
-  input[type="text"],
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-}
-
-/* Better scrolling on mobile */
-@supports (-webkit-overflow-scrolling: touch) {
-  .overflow-y-auto {
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .border {
-    border-width: 2px;
-  }
-}
-
-/* Global Styles for Production */
-
-/* Touch manipulation */
-.touch-manipulation {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-/* Shake animation for errors */
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-5px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(5px);
-  }
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-out;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Better scrolling on mobile */
-@supports (-webkit-overflow-scrolling: touch) {
-  .overflow-y-auto,
-  .overflow-x-auto {
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* Prevent text selection on buttons */
-button {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Better focus states */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Prevent zoom on input focus on iOS */
-@media screen and (max-width: 767px) {
-  input[type="email"],
-  input[type="password"],
-  input[type="text"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="search"],
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .border,
-  .border-t,
-  .border-b,
-  .border-l,
-  .border-r {
-    border-width: 2px;
-  }
-  
-  .shadow,
-  .shadow-sm,
-  .shadow-md,
-  .shadow-lg,
-  .shadow-xl,
-  .shadow-2xl {
-    box-shadow: 0 0 0 2px currentColor;
-  }
-}
-
-/* Safe area insets for notched devices */
-@supports (padding: max(0px)) {
-  body {
-    padding-left: max(0px, env(safe-area-inset-left));
-    padding-right: max(0px, env(safe-area-inset-right));
-  }
-}
-
-/* Better tap highlighting */
-* {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-}
-
-/* Improve rendering performance */
-.transform,
-.transition-transform,
-.transition-all {
-  will-change: transform;
-}
-
-/* Prevent horizontal scroll */
-body {
-  overflow-x: hidden;
-}
-
-/* Better font rendering */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Loading spinner optimization */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Pulse animation */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Backdrop blur fallback */
 .backdrop-blur-sm {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -543,7 +279,55 @@ body {
   }
 }
 
-/* Print styles */
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High Contrast */
+@media (prefers-contrast: high) {
+  .border,
+  .border-t,
+  .border-b,
+  .border-l,
+  .border-r {
+    border-width: 2px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TAP HIGHLIGHTING
+   ═══════════════════════════════════════════════════════════════ */
+
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERFORMANCE OPTIMIZATION
+   ═══════════════════════════════════════════════════════════════ */
+
+.transform,
+.transition-transform,
+.transition-all {
+  will-change: transform;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
 @media print {
   .no-print {
     display: none !important;
@@ -554,120 +338,13 @@ body {
   }
 }
 
-/* Dark mode support (if needed) */
-@media (prefers-color-scheme: dark) {
-  /* Add dark mode styles if needed */
-}
-
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-.animate-slide-down {
-  animation: slide-down 0.2s ease-out;
-}
 /* ═══════════════════════════════════════════════════════════════
-   ✅ ADD THESE ANIMATIONS AT END OF FILE
+   DARK MODE (Optional)
    ═══════════════════════════════════════════════════════════════ */
 
-/* Customer Inquiry Form Animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slide-up {
-  from {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-down {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-10px);
-  }
-  75% {
-    transform: translateX(10px);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out;
-}
-
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-/* Safe area support for mobile */
-.safe-top {
-  padding-top: env(safe-area-inset-top);
-}
-
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Touch target optimization */
-.touch-manipulation {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Prevent overscroll on modals */
-.overscroll-contain {
-  overscroll-behavior: contain;
-}
-
-/* Smooth scrolling for anchors */
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
+@media (prefers-color-scheme: dark) {
+  .viewer-panel {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 }

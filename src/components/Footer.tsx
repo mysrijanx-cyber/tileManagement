@@ -1,9 +1,84 @@
 
-
 // import React from 'react';
 
 // // ============================================================================
-// // INTERFACES
+// // 🎨 EXACT DESIGN TOKENS FROM TAILWIND CONFIG
+// // ============================================================================
+
+// const EXACT_COLORS = {
+//   surfaceContainerLow: '#f2f4f6',
+//   inverseSurface: '#2d3133',
+//   onSurface: '#191c1e',
+//   onSurfaceVariant: '#434656',
+//   primary: '#0040df',
+//   outlineVariant: '#c4c5d9',
+// } as const;
+
+// // ============================================================================
+// // 🔤 EXACT TYPOGRAPHY FROM TAILWIND CONFIG
+// // ============================================================================
+
+// const EXACT_TYPOGRAPHY = {
+//   headlineMd: {
+//     fontSize: '24px',
+//     lineHeight: '32px',
+//     fontWeight: '900', // font-black = 900
+//     fontFamily: 'Inter, sans-serif',
+//   },
+//   bodyMd: {
+//     fontSize: '16px',
+//     lineHeight: '24px',
+//     fontWeight: '400',
+//     fontFamily: 'Inter, sans-serif',
+//   },
+//   labelSm: {
+//     fontSize: '12px',
+//     lineHeight: '16px',
+//     fontWeight: '600',
+//     letterSpacing: '0.05em',
+//     fontFamily: 'Inter, sans-serif',
+//   },
+// } as const;
+
+// // ============================================================================
+// // 🎭 EXACT MATERIAL SYMBOLS ICONS (SVG)
+// // ============================================================================
+
+// const BrandAwarenessIcon: React.FC<{ className?: string }> = ({ className }) => (
+//   <svg
+//     xmlns="http://www.w3.org/2000/svg"
+//     viewBox="0 0 24 24"
+//     fill="currentColor"
+//     className={className || 'w-6 h-6'}
+//   >
+//     <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+//   </svg>
+// );
+
+// const PublicIcon: React.FC<{ className?: string }> = ({ className }) => (
+//   <svg
+//     xmlns="http://www.w3.org/2000/svg"
+//     viewBox="0 0 24 24"
+//     fill="currentColor"
+//     className={className || 'w-6 h-6'}
+//   >
+//     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+//   </svg>
+// );
+
+// const ShareIcon: React.FC<{ className?: string }> = ({ className }) => (
+//   <svg
+//     xmlns="http://www.w3.org/2000/svg"
+//     viewBox="0 0 24 24"
+//     fill="currentColor"
+//     className={className || 'w-6 h-6'}
+//   >
+//     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+//   </svg>
+// );
+
+// // ============================================================================
+// // 📦 INTERFACES
 // // ============================================================================
 
 // interface FooterLink {
@@ -12,327 +87,232 @@
 // }
 
 // interface FooterProps {
+//   logoSrc?: string;
 //   logoText?: string;
 //   description?: string;
 //   links?: FooterLink[];
 //   copyrightText?: string;
-//   onVolumeClick?: () => void;
-//   onLanguageClick?: () => void;
-//   onShareClick?: () => void;
+//   darkMode?: boolean;
+//   onIconClick?: (iconName: 'brand_awareness' | 'public' | 'share') => void;
 // }
 
 // // ============================================================================
-// // LOGO COMPONENT - LARGER & MORE VISIBLE
-// // ============================================================================
-
-// const Logo: React.FC<{ text?: string }> = ({ text = 'Tilesview360' }) => (
-//   <div className="flex items-center gap-3 
-//   2xl:gap-3.5
-//   xl:gap-3
-//   lg:gap-3
-//   md:gap-2.5
-//   sm:gap-2.5">
-//     {/* Custom SVG Logo - LARGER */}
-//     <div className="relative w-8 h-8
-//     2xl:w-10 2xl:h-10
-//     xl:w-9 xl:h-9
-//     lg:w-8 lg:h-8
-//     md:w-7 md:h-7
-//     sm:w-7 sm:h-7 flex-shrink-0">
-//       <div className="absolute top-0 left-0 w-5 h-5 bg-indigo-300 rounded-[3px]
-//       2xl:w-6 2xl:h-6
-//       xl:w-5.5 xl:h-5.5
-//       lg:w-5 lg:h-5
-//       md:w-4.5 md:h-4.5
-//       sm:w-4 sm:h-4"></div>
-//       <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#0B40E8] rounded-[3px] mix-blend-multiply
-//       2xl:w-6 2xl:h-6
-//       xl:w-5.5 xl:h-5.5
-//       lg:w-5 lg:h-5
-//       md:w-4.5 md:h-4.5
-//       sm:w-4 sm:h-4"></div>
-//     </div>
-    
-//     <span className="font-[800] text-[#111827] text-[22px] tracking-tight
-//     2xl:text-[26px]
-//     xl:text-[24px]
-//     lg:text-[22px]
-//     md:text-[20px]
-//     sm:text-[19px]">
-//       {text}
-//     </span>
-//   </div>
-// );
-
-// // ============================================================================
-// // ICON COMPONENTS - LARGER & MORE VISIBLE
-// // ============================================================================
-
-// const VolumeIcon: React.FC = () => (
-//   <svg 
-//     xmlns="http://www.w3.org/2000/svg" 
-//     className="w-5 h-5 2xl:w-6 2xl:h-6 xl:w-5.5 xl:h-5.5 lg:w-5 lg:h-5 md:w-5 md:h-5 sm:w-5 sm:h-5"
-//     viewBox="0 0 24 24" 
-//     fill="none" 
-//     stroke="currentColor" 
-//     strokeWidth="2.5" 
-//     strokeLinecap="round" 
-//     strokeLinejoin="round"
-//   >
-//     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-//     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-//     <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-//   </svg>
-// );
-
-// const GlobeIcon: React.FC = () => (
-//   <svg 
-//     xmlns="http://www.w3.org/2000/svg" 
-//     className="w-5 h-5 2xl:w-6 2xl:h-6 xl:w-5.5 xl:h-5.5 lg:w-5 lg:h-5 md:w-5 md:h-5 sm:w-5 sm:h-5"
-//     viewBox="0 0 24 24" 
-//     fill="none" 
-//     stroke="currentColor" 
-//     strokeWidth="2.5" 
-//     strokeLinecap="round" 
-//     strokeLinejoin="round"
-//   >
-//     <circle cx="12" cy="12" r="10"/>
-//     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-//     <path d="M2 12h20"/>
-//   </svg>
-// );
-
-// const ShareIcon: React.FC = () => (
-//   <svg 
-//     xmlns="http://www.w3.org/2000/svg" 
-//     className="w-5 h-5 2xl:w-6 2xl:h-6 xl:w-5.5 xl:h-5.5 lg:w-5 lg:h-5 md:w-5 md:h-5 sm:w-5 sm:h-5"
-//     viewBox="0 0 24 24" 
-//     fill="none" 
-//     stroke="currentColor" 
-//     strokeWidth="2.5" 
-//     strokeLinecap="round" 
-//     strokeLinejoin="round"
-//   >
-//     <circle cx="18" cy="5" r="3"/>
-//     <circle cx="6" cy="12" r="3"/>
-//     <circle cx="18" cy="19" r="3"/>
-//     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-//     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-//   </svg>
-// );
-
-// // ============================================================================
-// // MAIN FOOTER COMPONENT - PRODUCTION READY WITH LARGER ELEMENTS
+// // 🏢 MAIN FOOTER COMPONENT - EXACT HTML REPLICA
 // // ============================================================================
 
 // export const Footer: React.FC<FooterProps> = ({
-//   logoText = 'Tilesview360',
+//   logoSrc = '',
+//   logoText = 'LuxeTile AI',
 //   description = "The world's leading AI engine for architectural material visualization and showroom optimization.",
 //   links = [
 //     { label: 'Privacy Policy', href: '#' },
 //     { label: 'Terms of Service', href: '#' },
 //     { label: 'Contact Support', href: '#' },
-//     { label: 'Documentation', href: '#' }
+//     { label: 'Documentation', href: '#' },
 //   ],
-//   copyrightText = '© 2025 SrijanX Tile. All rights reserved.',
-//   onVolumeClick,
-//   onLanguageClick,
-//   onShareClick
+//   copyrightText = '© 2024 LuxeTile AI Platform. All rights reserved.',
+//   darkMode = false,
+//   onIconClick,
 // }) => {
-
-//   const handleVolumeClick = () => {
-//     if (onVolumeClick) {
-//       onVolumeClick();
-//     } else {
-//       console.log('🔊 Volume settings');
+//   const handleIconClick = (iconName: 'brand_awareness' | 'public' | 'share') => {
+//     if (onIconClick) {
+//       onIconClick(iconName);
 //     }
 //   };
 
-//   const handleLanguageClick = () => {
-//     if (onLanguageClick) {
-//       onLanguageClick();
-//     } else {
-//       console.log('🌐 Language selector');
-//     }
-//   };
-
-//   const handleShareClick = () => {
-//     if (onShareClick) {
-//       onShareClick();
-//     } else {
-//       console.log('🔗 Share platform');
-//     }
-//   };
+//   const bgColor = darkMode ? EXACT_COLORS.inverseSurface : EXACT_COLORS.surfaceContainerLow;
 
 //   return (
-//     // ✅ YAHAN FIX KIYA HAI: bg-white/90 aur backdrop-blur-sm hata kar pure bg-white kar diya
-//     <footer className="w-full bg-white border-t border-gray-200 mt-auto">
-//       <div className="w-full max-w-[1400px] mx-auto px-6 py-12 md:py-16
-//       2xl:max-w-[1400px] 2xl:px-8 2xl:py-20
-//       xl:max-w-[1300px] xl:px-7 xl:py-18
-//       lg:max-w-[1200px] lg:px-6 lg:py-16
-//       md:max-w-[1000px] md:px-6 md:py-14
-//       sm:max-w-full sm:px-5 sm:py-12">
-        
-//         {/* Top Section */}
-//         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 md:gap-6
-//         2xl:gap-8
-//         xl:gap-7
-//         lg:gap-6
-//         md:gap-6
-//         sm:gap-8">
-          
-//           {/* Left Column: Logo & Description */}
-//           <div className="flex flex-col max-w-[550px]
-//           2xl:max-w-[600px]
-//           xl:max-w-[550px]
-//           lg:max-w-[500px]
-//           md:max-w-[450px]
-//           sm:max-w-full">
-            
-//             {/* Logo */}
-//             <Logo text={logoText} />
-            
-//             {/* Description - LARGER FONT */}
-//             <p className="mt-4 text-[15px] text-[#6B7280] leading-[1.7] font-[400]
-//             2xl:mt-5 2xl:text-[17px]
-//             xl:mt-4.5 xl:text-[16px]
-//             lg:mt-4 lg:text-[15px]
-//             md:mt-3.5 md:text-[14px]
-//             sm:mt-3 sm:text-[14px]">
-//               {description}
-//             </p>
+//     <footer
+//       className="w-full border-t"
+//       style={{
+//         backgroundColor: bgColor,
+//         borderColor: EXACT_COLORS.outlineVariant,
+//         paddingTop: '40px', // py-stack-md
+//         paddingBottom: '40px',
+//       }}
+//     >
+//       {/* ============ TOP SECTION ============ */}
+//       <div
+//         className="mx-auto flex flex-col md:flex-row justify-between items-start md:items-center"
+//         style={{
+//           maxWidth: '1440px', // max-w-container-max
+//           paddingLeft: '64px', // px-margin-desktop
+//           paddingRight: '64px',
+//           gap: '2rem', // gap-8
+//         }}
+//       >
+//         {/* LEFT: Logo & Description */}
+//         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+//           {/* Logo */}
+//           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+//             {logoSrc ? (
+//               <img
+//                 alt={`${logoText} Logo`}
+//                 src={logoSrc}
+//                 style={{
+//                   height: '32px',
+//                   width: '32px',
+//                   objectFit: 'contain',
+//                 }}
+//               />
+//             ) : (
+//               // Fallback SVG logo
+//               <div style={{ position: 'relative', width: '32px', height: '32px', flexShrink: 0 }}>
+//                 <div
+//                   style={{
+//                     position: 'absolute',
+//                     top: 0,
+//                     left: 0,
+//                     width: '20px',
+//                     height: '20px',
+//                     backgroundColor: '#A5B4FC',
+//                     borderRadius: '3px',
+//                   }}
+//                 />
+//                 <div
+//                   style={{
+//                     position: 'absolute',
+//                     bottom: 0,
+//                     right: 0,
+//                     width: '20px',
+//                     height: '20px',
+//                     backgroundColor: EXACT_COLORS.primary,
+//                     borderRadius: '3px',
+//                   }}
+//                 />
+//               </div>
+//             )}
+//             <span
+//               style={{
+//                 ...EXACT_TYPOGRAPHY.headlineMd,
+//                 color: EXACT_COLORS.onSurface,
+//                 letterSpacing: '-0.01em',
+//               }}
+//             >
+//               {logoText}
+//             </span>
 //           </div>
 
-//           {/* Right Column: Navigation Links - LARGER FONT */}
-//           <div className="flex flex-wrap items-center gap-7
-//           2xl:gap-8
-//           xl:gap-7
-//           lg:gap-6
-//           md:gap-5
-//           sm:gap-5">
-//             {links.map((link, index) => (
-//               <a 
-//                 key={index}
-//                 href={link.href} 
-//                 className="text-[15px] font-[600] text-[#6B7280] hover:text-[#0B40E8] transition-colors duration-200
-//                 2xl:text-[17px]
-//                 xl:text-[16px]
-//                 lg:text-[15px]
-//                 md:text-[14px]
-//                 sm:text-[14px]"
-//               >
-//                 {link.label}
-//               </a>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* Horizontal Divider */}
-//         <div className="w-full h-[1px] bg-[#E5E7EB] my-8
-//         2xl:my-10
-//         xl:my-9
-//         lg:my-8
-//         md:my-7
-//         sm:my-6"></div>
-
-//         {/* Bottom Section */}
-//         <div className="flex flex-col md:flex-row justify-between items-center gap-6
-//         2xl:gap-6
-//         xl:gap-6
-//         lg:gap-5
-//         md:gap-5
-//         sm:gap-5">
-          
-//           {/* Copyright Text - LARGER FONT */}
-//           <p className="text-[14px] font-[500] text-[#9CA3AF]
-//           2xl:text-[16px]
-//           xl:text-[15px]
-//           lg:text-[14px]
-//           md:text-[13px]
-//           sm:text-[13px]">
-//             {copyrightText}
+//           {/* Description */}
+//           <p
+//             style={{
+//               ...EXACT_TYPOGRAPHY.bodyMd,
+//               color: EXACT_COLORS.onSurfaceVariant,
+//               maxWidth: '384px', // max-w-sm
+//             }}
+//           >
+//             {description}
 //           </p>
-
-//           {/* Utility Icons - LARGER BUTTONS */}
-//           <div className="flex items-center gap-5
-//           2xl:gap-6
-//           xl:gap-5
-//           lg:gap-5
-//           md:gap-4
-//           sm:gap-4">
-            
-//             {/* Volume/Sound Icon Button */}
-//             <button 
-//               onClick={handleVolumeClick}
-//               className="p-2.5 rounded-full bg-gray-100 text-[#6B7280] hover:bg-[#0B40E8] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md
-//               2xl:p-3
-//               xl:p-2.5
-//               lg:p-2.5
-//               md:p-2
-//               sm:p-2" 
-//               aria-label="Volume settings"
-//             >
-//               <VolumeIcon />
-//             </button>
-            
-//             {/* Globe/Language Icon Button */}
-//             <button 
-//               onClick={handleLanguageClick}
-//               className="p-2.5 rounded-full bg-gray-100 text-[#6B7280] hover:bg-[#0B40E8] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md
-//               2xl:p-3
-//               xl:p-2.5
-//               lg:p-2.5
-//               md:p-2
-//               sm:p-2" 
-//               aria-label="Change language"
-//             >
-//               <GlobeIcon />
-//             </button>
-            
-//             {/* Share Icon Button */}
-//             <button 
-//               onClick={handleShareClick}
-//               className="p-2.5 rounded-full bg-gray-100 text-[#6B7280] hover:bg-[#0B40E8] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md
-//               2xl:p-3
-//               xl:p-2.5
-//               lg:p-2.5
-//               md:p-2
-//               sm:p-2" 
-//               aria-label="Share platform"
-//             >
-//               <ShareIcon />
-//             </button>
-//           </div>
 //         </div>
 
-//         {/* Status Indicators - LARGER */}
-//         <div className="mt-6 flex items-center justify-center gap-6 text-[13px] text-gray-500
-//         2xl:mt-8 2xl:gap-7 2xl:text-[15px]
-//         xl:mt-7 xl:gap-6 xl:text-[14px]
-//         lg:mt-6 lg:gap-6 lg:text-[13px]
-//         md:mt-5 md:gap-5 md:text-[12px]
-//         sm:mt-5 sm:gap-4 sm:text-[12px]">
-//           <span className="flex items-center gap-2">
-//             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse
-//             2xl:w-2.5 2xl:h-2.5
-//             xl:w-2 xl:h-2"></span>
-//             Secure Platform
-//           </span>
-//           <span className="flex items-center gap-2">
-//             <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse
-//             2xl:w-2.5 2xl:h-2.5
-//             xl:w-2 xl:h-2"></span>
-//             Cloud Powered
-//           </span>
-//           <span className="flex items-center gap-2">
-//             <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse
-//             2xl:w-2.5 2xl:h-2.5
-//             xl:w-2 xl:h-2"></span>
-//             Real-time Updates
-//           </span>
+//         {/* RIGHT: Navigation Links */}
+//         <div
+//           style={{
+//             display: 'flex',
+//             flexWrap: 'wrap',
+//             gap: '2rem', // gap-8
+//           }}
+//         >
+//           {links.map((link, index) => (
+//             <a
+//               key={index}
+//               href={link.href}
+//               style={{
+//                 ...EXACT_TYPOGRAPHY.bodyMd,
+//                 color: EXACT_COLORS.onSurfaceVariant,
+//                 textDecoration: 'none',
+//                 transition: 'color 200ms',
+//               }}
+//               onMouseEnter={(e) => (e.currentTarget.style.color = EXACT_COLORS.primary)}
+//               onMouseLeave={(e) => (e.currentTarget.style.color = EXACT_COLORS.onSurfaceVariant)}
+//             >
+//               {link.label}
+//             </a>
+//           ))}
 //         </div>
+//       </div>
 
+//       {/* ============ BOTTOM SECTION ============ */}
+//       <div
+//         className="mx-auto flex flex-col md:flex-row justify-between"
+//         style={{
+//           maxWidth: '1440px',
+//           paddingLeft: '64px',
+//           paddingRight: '64px',
+//           marginTop: '3rem', // mt-12
+//           paddingTop: '2rem', // pt-8
+//           borderTop: `1px solid ${EXACT_COLORS.outlineVariant}4D`, // 30% opacity
+//           gap: '1rem', // gap-4
+//         }}
+//       >
+//         {/* LEFT: Copyright */}
+//         <p
+//           style={{
+//             ...EXACT_TYPOGRAPHY.labelSm,
+//             color: EXACT_COLORS.onSurfaceVariant,
+//             textTransform: 'uppercase',
+//           }}
+//         >
+//           {copyrightText}
+//         </p>
+
+//         {/* RIGHT: Icon Buttons */}
+//         <div style={{ display: 'flex', gap: '1.5rem' }}>
+//           {/* Brand Awareness Icon */}
+//           <button
+//             onClick={() => handleIconClick('brand_awareness')}
+//             style={{
+//               color: EXACT_COLORS.onSurfaceVariant,
+//               background: 'none',
+//               border: 'none',
+//               cursor: 'pointer',
+//               padding: 0,
+//               transition: 'color 200ms',
+//             }}
+//             onMouseEnter={(e) => (e.currentTarget.style.color = EXACT_COLORS.primary)}
+//             onMouseLeave={(e) => (e.currentTarget.style.color = EXACT_COLORS.onSurfaceVariant)}
+//             aria-label="Brand awareness"
+//           >
+//             <BrandAwarenessIcon className="w-6 h-6" />
+//           </button>
+
+//           {/* Globe/Public Icon */}
+//           <button
+//             onClick={() => handleIconClick('public')}
+//             style={{
+//               color: EXACT_COLORS.onSurfaceVariant,
+//               background: 'none',
+//               border: 'none',
+//               cursor: 'pointer',
+//               padding: 0,
+//               transition: 'color 200ms',
+//             }}
+//             onMouseEnter={(e) => (e.currentTarget.style.color = EXACT_COLORS.primary)}
+//             onMouseLeave={(e) => (e.currentTarget.style.color = EXACT_COLORS.onSurfaceVariant)}
+//             aria-label="Global presence"
+//           >
+//             <PublicIcon className="w-6 h-6" />
+//           </button>
+
+//           {/* Share Icon */}
+//           <button
+//             onClick={() => handleIconClick('share')}
+//             style={{
+//               color: EXACT_COLORS.onSurfaceVariant,
+//               background: 'none',
+//               border: 'none',
+//               cursor: 'pointer',
+//               padding: 0,
+//               transition: 'color 200ms',
+//             }}
+//             onMouseEnter={(e) => (e.currentTarget.style.color = EXACT_COLORS.primary)}
+//             onMouseLeave={(e) => (e.currentTarget.style.color = EXACT_COLORS.onSurfaceVariant)}
+//             aria-label="Share"
+//           >
+//             <ShareIcon className="w-6 h-6" />
+//           </button>
+//         </div>
 //       </div>
 //     </footer>
 //   );
@@ -342,7 +322,57 @@
 import React from 'react';
 
 // ============================================================================
-// INTERFACES
+// 🎨 DESIGN TOKENS
+// ============================================================================
+
+const COLORS = {
+  surfaceContainerLow: '#f2f4f6',
+  inverseSurface: '#2d3133',
+  onSurface: '#191c1e',
+  onSurfaceVariant: '#434656',
+  primary: '#0040df',
+  outlineVariant: '#c4c5d9',
+} as const;
+
+// ============================================================================
+// 🎭 MATERIAL ICONS (SVG)
+// ============================================================================
+
+const BrandAwarenessIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className || 'w-6 h-6'}
+  >
+    <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+  </svg>
+);
+
+const PublicIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className || 'w-6 h-6'}
+  >
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+  </svg>
+);
+
+const ShareIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className || 'w-6 h-6'}
+  >
+    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+  </svg>
+);
+
+// ============================================================================
+// 📦 INTERFACES
 // ============================================================================
 
 interface FooterLink {
@@ -351,324 +381,177 @@ interface FooterLink {
 }
 
 interface FooterProps {
+  logoSrc?: string;
   logoText?: string;
   description?: string;
   links?: FooterLink[];
   copyrightText?: string;
-  onVolumeClick?: () => void;
-  onLanguageClick?: () => void;
-  onShareClick?: () => void;
+  darkMode?: boolean;
+  onIconClick?: (iconName: 'brand_awareness' | 'public' | 'share') => void;
 }
 
 // ============================================================================
-// LOGO COMPONENT - LARGER & MORE VISIBLE
-// ============================================================================
-
-const Logo: React.FC<{ text?: string }> = ({ text = 'Tilesview360' }) => (
-  <div className="flex items-center gap-3 
-  2xl:gap-3.5
-  xl:gap-3
-  lg:gap-3
-  md:gap-2.5
-  sm:gap-2.5">
-    {/* Custom SVG Logo - LARGER */}
-    <div className="relative w-8 h-8
-    2xl:w-10 2xl:h-10
-    xl:w-9 xl:h-9
-    lg:w-8 lg:h-8
-    md:w-7 md:h-7
-    sm:w-7 sm:h-7 flex-shrink-0">
-      <div className="absolute top-0 left-0 w-5 h-5 bg-indigo-300 rounded-[3px]
-      2xl:w-6 2xl:h-6
-      xl:w-5.5 xl:h-5.5
-      lg:w-5 lg:h-5
-      md:w-4.5 md:h-4.5
-      sm:w-4 sm:h-4"></div>
-      <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#0B40E8] rounded-[3px] mix-blend-multiply
-      2xl:w-6 2xl:h-6
-      xl:w-5.5 xl:h-5.5
-      lg:w-5 lg:h-5
-      md:w-4.5 md:h-4.5
-      sm:w-4 sm:h-4"></div>
-    </div>
-    
-    <span className="font-[800] text-[#111827] text-[22px] tracking-tight
-    2xl:text-[26px]
-    xl:text-[24px]
-    lg:text-[22px]
-    md:text-[20px]
-    sm:text-[19px]">
-      {text}
-    </span>
-  </div>
-);
-
-// ============================================================================
-// ICON COMPONENTS - LARGER & MORE VISIBLE
-// ============================================================================
-
-const VolumeIcon: React.FC = () => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    className="w-5 h-5 2xl:w-6 2xl:h-6 xl:w-5.5 xl:h-5.5 lg:w-5 lg:h-5 md:w-5 md:h-5 sm:w-5 sm:h-5"
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-  </svg>
-);
-
-const GlobeIcon: React.FC = () => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    className="w-5 h-5 2xl:w-6 2xl:h-6 xl:w-5.5 xl:h-5.5 lg:w-5 lg:h-5 md:w-5 md:h-5 sm:w-5 sm:h-5"
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-    <path d="M2 12h20"/>
-  </svg>
-);
-
-const ShareIcon: React.FC = () => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    className="w-5 h-5 2xl:w-6 2xl:h-6 xl:w-5.5 xl:h-5.5 lg:w-5 lg:h-5 md:w-5 md:h-5 sm:w-5 sm:h-5"
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <circle cx="18" cy="5" r="3"/>
-    <circle cx="6" cy="12" r="3"/>
-    <circle cx="18" cy="19" r="3"/>
-    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-  </svg>
-);
-
-// ============================================================================
-// MAIN FOOTER COMPONENT - PRODUCTION READY
+// 🏢 MAIN FOOTER COMPONENT - PRODUCTION READY
+// ✅ Aligned with App.tsx: max-w-[1800px] + px-3 md:px-5
 // ============================================================================
 
 export const Footer: React.FC<FooterProps> = ({
+  logoSrc = '',
   logoText = 'Tilesview360',
   description = "The world's leading AI engine for architectural material visualization and showroom optimization.",
   links = [
-    { label: 'Privacy Policy', href: '#' },
-    { label: 'Terms of Service', href: '#' },
-    { label: 'Contact Support', href: '#' },
-    { label: 'Documentation', href: '#' }
+    { label: 'Privacy Policy', href: '#privacy' },
+    { label: 'Terms of Service', href: '#terms' },
+    { label: 'Contact Support', href: '#contact' },
+    { label: 'Documentation', href: '#docs' },
   ],
-  copyrightText = '© 2025 SrijanX Tile. All rights reserved.',
-  onVolumeClick,
-  onLanguageClick,
-  onShareClick
+  copyrightText = '© 2024 Tilesview360 Platform. All rights reserved.',
+  darkMode = false,
+  onIconClick,
 }) => {
-
-  const handleVolumeClick = () => {
-    if (onVolumeClick) {
-      onVolumeClick();
+  const handleIconClick = (iconName: 'brand_awareness' | 'public' | 'share') => {
+    if (onIconClick) {
+      onIconClick(iconName);
     } else {
-      console.log('🔊 Volume settings');
+      console.log(`${iconName} icon clicked`);
     }
   };
 
-  const handleLanguageClick = () => {
-    if (onLanguageClick) {
-      onLanguageClick();
-    } else {
-      console.log('🌐 Language selector');
-    }
-  };
-
-  const handleShareClick = () => {
-    if (onShareClick) {
-      onShareClick();
-    } else {
-      console.log('🔗 Share platform');
-    }
-  };
+  const bgColor = darkMode ? COLORS.inverseSurface : COLORS.surfaceContainerLow;
 
   return (
-    // ✅ YAHAN FIX KIYA HAI: Outer footer ab exactly baaki sections ki tarah px-3 md:px-5 aur flex-center par hai
-    <footer className="w-full bg-white border-t border-gray-200 mt-auto px-3 md:px-5 flex justify-center">
-      
-      {/* ✅ YAHAN FIX KIYA HAI: Inner container strictly max-w-[1920px] hai bina kisi unnecessary responsive width limits ke */}
-      <div className="w-full max-w-[1920px] py-12 md:py-16 2xl:py-20">
+    <footer
+      className="w-full border-t font-['Inter',_sans-serif] antialiased"
+      style={{ backgroundColor: bgColor, borderColor: COLORS.outlineVariant }}
+      role="contentinfo"
+    >
+      {/* ✅ MAIN CONTAINER - ALIGNED WITH APP.TSX */}
+      {/* Previous: max-w-[1440px] px-[64px] */}
+      {/* New: max-w-[1800px] px-3 md:px-5 */}
+      <div className="w-full max-w-[1800px] mx-auto px-3 md:px-5 py-12 md:py-16 lg:py-20">
         
-        {/* Top Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 md:gap-6
-        2xl:gap-8
-        xl:gap-7
-        lg:gap-6
-        md:gap-6
-        sm:gap-8">
+        {/* ═══════════════════════════════════════════════════════════
+            TOP SECTION - LOGO, DESCRIPTION & LINKS
+        ═══════════════════════════════════════════════════════════ */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 md:gap-10 lg:gap-12">
           
-          {/* Left Column: Logo & Description */}
-          <div className="flex flex-col max-w-[550px]
-          2xl:max-w-[600px]
-          xl:max-w-[550px]
-          lg:max-w-[500px]
-          md:max-w-[450px]
-          sm:max-w-full">
+          {/* LEFT: Logo & Description */}
+          <div className="flex flex-col gap-4 md:gap-5 max-w-full lg:max-w-[45%]">
             
             {/* Logo */}
-            <Logo text={logoText} />
-            
-            {/* Description - LARGER FONT */}
-            <p className="mt-4 text-[15px] text-[#6B7280] leading-[1.7] font-[400]
-            2xl:mt-5 2xl:text-[17px]
-            xl:mt-4.5 xl:text-[16px]
-            lg:mt-4 lg:text-[15px]
-            md:mt-3.5 md:text-[14px]
-            sm:mt-3 sm:text-[14px]">
+            <div className="flex items-center gap-3">
+              {logoSrc ? (
+                <img
+                  alt={`${logoText} Logo`}
+                  src={logoSrc}
+                  className="h-8 w-8 object-contain"
+                />
+              ) : (
+                // Fallback SVG logo (same as Navigation)
+                <div className="relative w-8 h-8 flex items-center justify-center flex-shrink-0">
+                  <div className="absolute top-0 left-0 w-4 h-4 bg-indigo-300 rounded-[3px]" />
+                  <div 
+                    className="absolute bottom-0 right-0 w-4 h-4 rounded-[3px] mix-blend-multiply"
+                    style={{ backgroundColor: COLORS.primary }}
+                  />
+                </div>
+              )}
+              <span 
+                className="text-2xl md:text-[26px] font-bold tracking-tight"
+                style={{ color: COLORS.onSurface }}
+              >
+                {logoText}
+              </span>
+            </div>
+
+            {/* Description */}
+            <p 
+              className="text-sm md:text-base leading-relaxed max-w-[384px]"
+              style={{ color: COLORS.onSurfaceVariant }}
+            >
               {description}
             </p>
           </div>
 
-          {/* Right Column: Navigation Links - LARGER FONT */}
-          <div className="flex flex-wrap items-center gap-7
-          2xl:gap-8
-          xl:gap-7
-          lg:gap-6
-          md:gap-5
-          sm:gap-5">
+          {/* RIGHT: Navigation Links */}
+          <nav 
+            className="flex flex-wrap gap-4 md:gap-6 lg:gap-8"
+            aria-label="Footer navigation"
+          >
             {links.map((link, index) => (
-              <a 
+              <a
                 key={index}
-                href={link.href} 
-                className="text-[15px] font-[600] text-[#6B7280] hover:text-[#0B40E8] transition-colors duration-200
-                2xl:text-[17px]
-                xl:text-[16px]
-                lg:text-[15px]
-                md:text-[14px]
-                sm:text-[14px]"
+                href={link.href}
+                className="text-sm md:text-base font-medium transition-colors duration-200 hover:underline"
+                style={{ color: COLORS.onSurfaceVariant }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.primary)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.onSurfaceVariant)}
               >
                 {link.label}
               </a>
             ))}
-          </div>
+          </nav>
         </div>
 
-        {/* Horizontal Divider */}
-        <div className="w-full h-[1px] bg-[#E5E7EB] my-8
-        2xl:my-10
-        xl:my-9
-        lg:my-8
-        md:my-7
-        sm:my-6"></div>
-
-        {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6
-        2xl:gap-6
-        xl:gap-6
-        lg:gap-5
-        md:gap-5
-        sm:gap-5">
+        {/* ═══════════════════════════════════════════════════════════
+            BOTTOM SECTION - COPYRIGHT & SOCIAL ICONS
+        ═══════════════════════════════════════════════════════════ */}
+        <div 
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mt-10 md:mt-12 lg:mt-16 pt-6 md:pt-8 border-t"
+          style={{ borderColor: `${COLORS.outlineVariant}4D` }}
+        >
           
-          {/* Copyright Text - LARGER FONT */}
-          <p className="text-[14px] font-[500] text-[#9CA3AF]
-          2xl:text-[16px]
-          xl:text-[15px]
-          lg:text-[14px]
-          md:text-[13px]
-          sm:text-[13px]">
+          {/* LEFT: Copyright */}
+          <p 
+            className="text-xs md:text-sm font-semibold tracking-wide uppercase"
+            style={{ color: COLORS.onSurfaceVariant }}
+          >
             {copyrightText}
           </p>
 
-          {/* Utility Icons - LARGER BUTTONS */}
-          <div className="flex items-center gap-5
-          2xl:gap-6
-          xl:gap-5
-          lg:gap-5
-          md:gap-4
-          sm:gap-4">
+          {/* RIGHT: Social Icons */}
+          <div className="flex gap-4 md:gap-6" role="group" aria-label="Social media links">
             
-            {/* Volume/Sound Icon Button */}
-            <button 
-              onClick={handleVolumeClick}
-              className="p-2.5 rounded-full bg-gray-100 text-[#6B7280] hover:bg-[#0B40E8] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md
-              2xl:p-3
-              xl:p-2.5
-              lg:p-2.5
-              md:p-2
-              sm:p-2" 
-              aria-label="Volume settings"
+            {/* Brand Awareness Icon */}
+            <button
+              onClick={() => handleIconClick('brand_awareness')}
+              className="p-2 rounded-full transition-all duration-200 hover:bg-black/5 active:scale-95"
+              style={{ color: COLORS.onSurfaceVariant }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.onSurfaceVariant)}
+              aria-label="Brand awareness"
+              type="button"
             >
-              <VolumeIcon />
+              <BrandAwarenessIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
-            
-            {/* Globe/Language Icon Button */}
-            <button 
-              onClick={handleLanguageClick}
-              className="p-2.5 rounded-full bg-gray-100 text-[#6B7280] hover:bg-[#0B40E8] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md
-              2xl:p-3
-              xl:p-2.5
-              lg:p-2.5
-              md:p-2
-              sm:p-2" 
-              aria-label="Change language"
+
+            {/* Globe/Public Icon */}
+            <button
+              onClick={() => handleIconClick('public')}
+              className="p-2 rounded-full transition-all duration-200 hover:bg-black/5 active:scale-95"
+              style={{ color: COLORS.onSurfaceVariant }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.onSurfaceVariant)}
+              aria-label="Global presence"
+              type="button"
             >
-              <GlobeIcon />
+              <PublicIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
-            
-            {/* Share Icon Button */}
-            <button 
-              onClick={handleShareClick}
-              className="p-2.5 rounded-full bg-gray-100 text-[#6B7280] hover:bg-[#0B40E8] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md
-              2xl:p-3
-              xl:p-2.5
-              lg:p-2.5
-              md:p-2
-              sm:p-2" 
-              aria-label="Share platform"
+
+            {/* Share Icon */}
+            <button
+              onClick={() => handleIconClick('share')}
+              className="p-2 rounded-full transition-all duration-200 hover:bg-black/5 active:scale-95"
+              style={{ color: COLORS.onSurfaceVariant }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.onSurfaceVariant)}
+              aria-label="Share"
+              type="button"
             >
-              <ShareIcon />
+              <ShareIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           </div>
         </div>
-
-        {/* Status Indicators - LARGER */}
-        <div className="mt-6 flex items-center justify-center gap-6 text-[13px] text-gray-500
-        2xl:mt-8 2xl:gap-7 2xl:text-[15px]
-        xl:mt-7 xl:gap-6 xl:text-[14px]
-        lg:mt-6 lg:gap-6 lg:text-[13px]
-        md:mt-5 md:gap-5 md:text-[12px]
-        sm:mt-5 sm:gap-4 sm:text-[12px]">
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse
-            2xl:w-2.5 2xl:h-2.5
-            xl:w-2 xl:h-2"></span>
-            Secure Platform
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse
-            2xl:w-2.5 2xl:h-2.5
-            xl:w-2 xl:h-2"></span>
-            Cloud Powered
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse
-            2xl:w-2.5 2xl:h-2.5
-            xl:w-2 xl:h-2"></span>
-            Real-time Updates
-          </span>
-        </div>
-
       </div>
     </footer>
   );
