@@ -8040,7 +8040,7 @@ import { initiatePayment } from './lib/paymentService';
 import { getPlanById } from './lib/planService';
 import type { Plan } from './types/plan.types';
 import type { RazorpayCheckoutOptions } from './types/payment.types';
-import { FeatureGuide } from './components/Feature';
+import FeatureGuide  from './components/Feature';
 import { Guide } from './components/Guide';
 import Banner from './components/Banner';
 import { Footer } from './components/Footer';
@@ -8050,6 +8050,70 @@ import {PricingSolution} from './components/BenefitCard';
 // ═══════════════════════════════════════════════════════════════════════════
 // ✅ GLOBAL STYLES
 // ═══════════════════════════════════════════════════════════════════════════
+
+// const GlobalStyles = () => (
+//   <style dangerouslySetInnerHTML={{__html: `
+//     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+//     * {
+//       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+//     }
+    
+//     html {
+//       scroll-behavior: smooth;
+//       scroll-padding-top: 100px;
+//       zoom: 67%;
+//     }
+    
+//     @keyframes fadeInUp {
+//       from { opacity: 0; transform: translateY(20px); }
+//       to { opacity: 1; transform: translateY(0); }
+//     }
+//     .animate-fade-in-up {
+//       animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+//       opacity: 0;
+//     }
+    
+//     @keyframes spin-slow {
+//       from { transform: rotate(0deg); }
+//       to { transform: rotate(360deg); }
+//     }
+//     .animate-spin-slow {
+//       animation: spin-slow 4s linear infinite;
+//     }
+    
+//     @keyframes slideDownMenu {
+//       from { opacity: 0; transform: translateY(-15px); }
+//       to { opacity: 1; transform: translateY(0); }
+//     }
+//     .animate-slide-down {
+//       animation: slideDownMenu 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+//     }
+
+//     @keyframes modalFadeIn {
+//       from { opacity: 0; transform: scale(0.95); }
+//       to { opacity: 1; transform: scale(1); }
+//     }
+//     .animate-modal-in {
+//       animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+//     }
+
+//     ::-webkit-scrollbar {
+//       width: 10px;
+//       height: 10px;
+//     }
+//     ::-webkit-scrollbar-track {
+//       background: #f1f1f1;
+//     }
+//     ::-webkit-scrollbar-thumb {
+//       background: #888;
+//       border-radius: 5px;
+//     }
+//     ::-webkit-scrollbar-thumb:hover {
+//       background: #555;
+//     }
+//   `}} />
+// );
 
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
@@ -8062,6 +8126,17 @@ const GlobalStyles = () => (
     html {
       scroll-behavior: smooth;
       scroll-padding-top: 100px;
+      zoom: 67%;
+      -moz-transform: scale(0.67);
+      -moz-transform-origin: 0 0;
+    }
+    
+    /* Mobile devices par normal size */
+    @media screen and (max-width: 768px) {
+      html {
+        zoom: 100%;
+        -moz-transform: scale(1);
+      }
     }
     
     @keyframes fadeInUp {
@@ -8113,7 +8188,6 @@ const GlobalStyles = () => (
     }
   `}} />
 );
-
 // ═══════════════════════════════════════════════════════════════════════════
 // ✅ ERROR BOUNDARY
 // ═══════════════════════════════════════════════════════════════════════════
@@ -8329,20 +8403,164 @@ const Navigation: React.FC<NavigationProps> = ({ onLoginClick, onBecomeSellerCli
 // ✅ HERO SECTION - ULTRA COMPACT + BIGGER SECTIONS + IMAGES NICHE (1800px)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// const HeroSection: React.FC = () => {
+//   return (
+//     // ✅ NAVBAR KE PAAS: pt-6 lg:pt-12 (Previous: pt-12 lg:pt-20)
+//     <section className="w-full max-w-[1800px] mx-auto px-3 md:px-5 pt-6 lg:pt-12 pb-16 lg:pb-24">
+      
+//       {/* ✅ ULTRA MINIMAL GAP: gap-4 lg:gap-6 (Previous: gap-6 lg:gap-8) */}
+//       <div className="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-6">
+        
+//         {/* ═══════════════════════════════════════════════════════════════
+//             LEFT SIDE: TEXT CONTENT (BIGGER: 680px -> 700px)
+//         ═══════════════════════════════════════════════════════════════ */}
+//         <div className="w-full lg:w-auto lg:max-w-[700px] flex flex-col gap-6 order-2 lg:order-1">
+          
+//           {/* AI Badge */}
+//           <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/10 rounded-full backdrop-blur-sm border border-purple-200/50 w-fit">
+//             <Sparkles className="w-4 h-4 text-purple-600" />
+//             <span className="text-purple-700 text-[14px] lg:text-[15px] font-semibold">
+//               AI-Powered Tile Visualization Platform
+//             </span>
+//           </div>
+
+//           {/* Heading - BIGGER */}
+//           <h1 className="text-[42px] sm:text-[54px] lg:text-[66px] xl:text-[76px] leading-[1.1] font-bold tracking-tight text-gray-900">
+//             See Tiles Before<br />
+//             <span className="text-[#0040DF]">Customers Buy</span>
+//           </h1>
+
+//           {/* Paragraph - BIGGER */}
+//           <p className="max-w-[640px] text-[18px] lg:text-[20px] xl:text-[22px] leading-[1.6] text-gray-500">
+//             Transform your showroom with AI-powered 3D tile visualization. Let customers preview any material in their actual living spaces with photorealistic precision.
+//           </p>
+
+//           {/* Buttons Container */}
+//           <div className="flex flex-col sm:flex-row items-start sm:items-center pt-4 gap-4">
+            
+//             {/* Primary Button - BIGGER */}
+//             <button 
+//               className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0040DF] hover:bg-blue-700 text-white px-11 xl:px-12 py-[19px] xl:py-5 rounded-full font-medium text-[18px] xl:text-[19px] transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+//               onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+//             >
+//               Request Demo
+//               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+//             </button>
+
+//             {/* Secondary Button - BIGGER */}
+//             <button 
+//               onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+//               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/40 hover:bg-white/60 border border-white/60 backdrop-blur-md text-gray-900 px-11 xl:px-12 py-[19px] xl:py-5 rounded-full font-medium text-[18px] xl:text-[19px] transition-all"
+//             >
+//               <Play className="w-5 h-5" fill="currentColor" />
+//               Watch Live Preview
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* ═══════════════════════════════════════════════════════════════
+//             RIGHT SIDE: IMAGES CONTAINER (BIGGER: 750px -> 800px)
+//         ═══════════════════════════════════════════════════════════════ */}
+//         <div className="w-full lg:w-[800px] h-auto lg:h-[600px] relative order-1 lg:order-2 flex-shrink-0">
+          
+//           {/* ✅ MAIN PREVIEW CARD - BIGGER + NICHE */}
+//           {/* Previous: left-[45px] top-[130px], w-[660px] h-[320px] */}
+//           {/* New: left-[50px] top-[140px], w-[700px] h-[340px] */}
+//           <div className="absolute left-0 top-0 lg:left-[50px] lg:top-[140px] w-full lg:w-[700px] h-[330px] sm:h-[370px] lg:h-[340px] bg-white rounded-[20px] lg:rounded-[24px] p-1 shadow-2xl z-10">
+//             <div className="relative w-full h-full rounded-[16px] lg:rounded-[20px] overflow-hidden">
+              
+//               <img 
+//                 src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
+//                 alt="Modern interior" 
+//                 className="w-full h-full object-cover"
+//                 loading="eager"
+//               />
+              
+//               <div className="absolute inset-0 bg-[#0A192F]/20 backdrop-brightness-95"></div>
+
+//               {/* AI 3D Scan Active - BIGGER */}
+//               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 lg:gap-4 bg-white/30 backdrop-blur-md border border-white/40 pr-5 lg:pr-7 pl-2 py-2.5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-10 max-w-[90%]">
+//                 <div className="w-[42px] h-[42px] lg:w-[46px] lg:h-[46px] bg-[#0040DF] rounded-full flex items-center justify-center text-white shrink-0 shadow-inner">
+//                   <RefreshCcw className="w-5 h-5 lg:w-6 lg:h-6 animate-spin-slow" />
+//                 </div>
+//                 <div className="flex flex-col">
+//                   <span className="text-[14px] lg:text-[17px] font-bold text-gray-900 leading-tight">
+//                     AI 3D Scan Active
+//                   </span>
+//                   <span className="hidden sm:block text-[12px] lg:text-[14px] font-medium text-gray-800/80 leading-tight">
+//                     Calibrating surface textures...
+//                   </span>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* ✅ TOP-RIGHT FLOATING CARD - BIGGER + NICHE */}
+//           {/* Previous: left-[495px] top-[-45px], w-[230px] h-[255px] */}
+//           {/* New: left-[520px] top-[-30px], w-[250px] h-[275px] */}
+//           <div className="absolute left-[63%] top-[-30px] sm:left-[73%] sm:top-[-40px] lg:left-[520px] lg:top-[-30px] w-[170px] sm:w-[210px] lg:w-[250px] h-auto lg:h-[275px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[16px] lg:rounded-[20px] p-4 lg:p-5 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+//                style={{ animationDelay: '0ms' }}>
+//             <img 
+//               src="https://images.unsplash.com/photo-1590273016480-1a73f6ed9d53?auto=format&fit=crop&w=400&q=80" 
+//               alt="Venetian Blue Tile" 
+//               className="w-full h-[120px] sm:h-[145px] lg:h-[170px] rounded-[12px] lg:rounded-[15px] object-cover mb-4 lg:mb-5 shadow-sm"
+//               loading="lazy"
+//             />
+//             <div className="flex flex-col">
+//               <span className="font-bold text-[16px] lg:text-[19px] text-[#191C1E] leading-tight">
+//                 Venetian Blue
+//               </span>
+//               <span className="font-medium text-[14px] lg:text-[16px] text-[#0040DF] mt-1">
+//                 Living Room
+//               </span>
+//             </div>
+//           </div>
+
+//           {/* ✅ BOTTOM-LEFT FLOATING CARD - BIGGER + NICHE */}
+//           {/* Previous: left-[-25px] top-[350px], w-[230px] h-[255px] */}
+//           {/* New: left-[-30px] top-[370px], w-[250px] h-[275px] */}
+//           <div className="absolute left-0 top-[280px] sm:top-[320px] lg:left-[-30px] lg:top-[370px] w-[170px] sm:w-[210px] lg:w-[250px] h-auto lg:h-[275px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[16px] lg:rounded-[20px] p-4 lg:p-5 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+//                style={{ animationDelay: '300ms' }}>
+//             <img 
+//               src="https://images.unsplash.com/photo-1620214365969-2b6fb092d6e4?auto=format&fit=crop&q=80&w=400" 
+//               alt="Noir Slate Tile" 
+//               className="w-full h-[120px] sm:h-[145px] lg:h-[170px] rounded-[12px] lg:rounded-[15px] object-cover mb-4 lg:mb-5 shadow-sm"
+//               loading="lazy"
+//             />
+//             <div className="flex flex-col">
+//               <span className="font-bold text-[16px] lg:text-[19px] text-[#191C1E] leading-tight">
+//                 Noir Slate
+//               </span>
+//               <span className="font-medium text-[14px] lg:text-[16px] text-[#0040DF] mt-1">
+//                 Master Bath
+//               </span>
+//             </div>
+//           </div>
+
+//         </div>
+//       </div>
+//     </section>
+//   );
+// }; 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ✅ HERO SECTION - PERFECTLY BALANCED
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// ✅ HERO SECTION - PERFECTLY BALANCED (MOVED UP)
+// ═══════════════════════════════════════════════════════════════════════════
+
 const HeroSection: React.FC = () => {
   return (
-    // ✅ NAVBAR KE PAAS: pt-6 lg:pt-12 (Previous: pt-12 lg:pt-20)
-    <section className="w-full max-w-[1800px] mx-auto px-3 md:px-5 pt-6 lg:pt-12 pb-16 lg:pb-24">
+    <section className="w-full max-w-[1800px] mx-auto px-3 md:px-5 pt-20 lg:pt-32 pb-16 lg:pb-24">
       
-      {/* ✅ ULTRA MINIMAL GAP: gap-4 lg:gap-6 (Previous: gap-6 lg:gap-8) */}
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-6">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
         
         {/* ═══════════════════════════════════════════════════════════════
-            LEFT SIDE: TEXT CONTENT (BIGGER: 680px -> 700px)
+            LEFT SIDE: TEXT CONTENT
         ═══════════════════════════════════════════════════════════════ */}
         <div className="w-full lg:w-auto lg:max-w-[700px] flex flex-col gap-6 order-2 lg:order-1">
           
-          {/* AI Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/10 rounded-full backdrop-blur-sm border border-purple-200/50 w-fit">
             <Sparkles className="w-4 h-4 text-purple-600" />
             <span className="text-purple-700 text-[14px] lg:text-[15px] font-semibold">
@@ -8350,21 +8568,16 @@ const HeroSection: React.FC = () => {
             </span>
           </div>
 
-          {/* Heading - BIGGER */}
           <h1 className="text-[42px] sm:text-[54px] lg:text-[66px] xl:text-[76px] leading-[1.1] font-bold tracking-tight text-gray-900">
             See Tiles Before<br />
             <span className="text-[#0040DF]">Customers Buy</span>
           </h1>
 
-          {/* Paragraph - BIGGER */}
           <p className="max-w-[640px] text-[18px] lg:text-[20px] xl:text-[22px] leading-[1.6] text-gray-500">
             Transform your showroom with AI-powered 3D tile visualization. Let customers preview any material in their actual living spaces with photorealistic precision.
           </p>
 
-          {/* Buttons Container */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center pt-4 gap-4">
-            
-            {/* Primary Button - BIGGER */}
             <button 
               className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0040DF] hover:bg-blue-700 text-white px-11 xl:px-12 py-[19px] xl:py-5 rounded-full font-medium text-[18px] xl:text-[19px] transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
               onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
@@ -8373,7 +8586,6 @@ const HeroSection: React.FC = () => {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
 
-            {/* Secondary Button - BIGGER */}
             <button 
               onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/40 hover:bg-white/60 border border-white/60 backdrop-blur-md text-gray-900 px-11 xl:px-12 py-[19px] xl:py-5 rounded-full font-medium text-[18px] xl:text-[19px] transition-all"
@@ -8385,26 +8597,21 @@ const HeroSection: React.FC = () => {
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════
-            RIGHT SIDE: IMAGES CONTAINER (BIGGER: 750px -> 800px)
+            RIGHT SIDE: IMAGES CONTAINER (MOVED UP)
         ═══════════════════════════════════════════════════════════════ */}
-        <div className="w-full lg:w-[800px] h-auto lg:h-[600px] relative order-1 lg:order-2 flex-shrink-0">
+        {/* mt wagera sab hata diya taaki upar ki taraf alignment rahe */}
+        <div className="w-full lg:w-[800px] h-auto min-h-[500px] lg:h-[600px] relative order-1 lg:order-2 flex-shrink-0">
           
-          {/* ✅ MAIN PREVIEW CARD - BIGGER + NICHE */}
-          {/* Previous: left-[45px] top-[130px], w-[660px] h-[320px] */}
-          {/* New: left-[50px] top-[140px], w-[700px] h-[340px] */}
-          <div className="absolute left-0 top-0 lg:left-[50px] lg:top-[140px] w-full lg:w-[700px] h-[330px] sm:h-[370px] lg:h-[340px] bg-white rounded-[20px] lg:rounded-[24px] p-1 shadow-2xl z-10">
+          {/* MAIN PREVIEW CARD - Wapas upar kar diya (top-[120px]) */}
+          <div className="absolute left-0 top-[20px] lg:left-[50px] lg:top-[120px] w-full lg:w-[700px] h-[330px] sm:h-[370px] lg:h-[340px] bg-white rounded-[20px] lg:rounded-[24px] p-1 shadow-2xl z-10">
             <div className="relative w-full h-full rounded-[16px] lg:rounded-[20px] overflow-hidden">
-              
               <img 
                 src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
                 alt="Modern interior" 
                 className="w-full h-full object-cover"
                 loading="eager"
               />
-              
               <div className="absolute inset-0 bg-[#0A192F]/20 backdrop-brightness-95"></div>
-
-              {/* AI 3D Scan Active - BIGGER */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 lg:gap-4 bg-white/30 backdrop-blur-md border border-white/40 pr-5 lg:pr-7 pl-2 py-2.5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.1)] z-10 max-w-[90%]">
                 <div className="w-[42px] h-[42px] lg:w-[46px] lg:h-[46px] bg-[#0040DF] rounded-full flex items-center justify-center text-white shrink-0 shadow-inner">
                   <RefreshCcw className="w-5 h-5 lg:w-6 lg:h-6 animate-spin-slow" />
@@ -8421,10 +8628,8 @@ const HeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* ✅ TOP-RIGHT FLOATING CARD - BIGGER + NICHE */}
-          {/* Previous: left-[495px] top-[-45px], w-[230px] h-[255px] */}
-          {/* New: left-[520px] top-[-30px], w-[250px] h-[275px] */}
-          <div className="absolute left-[63%] top-[-30px] sm:left-[73%] sm:top-[-40px] lg:left-[520px] lg:top-[-30px] w-[170px] sm:w-[210px] lg:w-[250px] h-auto lg:h-[275px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[16px] lg:rounded-[20px] p-4 lg:p-5 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+          {/* TOP-RIGHT FLOATING CARD - 'Become a Seller' button ke thik niche perfectly positioned (top-[-10px]) */}
+          <div className="absolute left-[63%] top-[-10px] sm:left-[73%] sm:top-[-10px] lg:left-[520px] lg:top-[-10px] w-[170px] sm:w-[210px] lg:w-[250px] h-auto lg:h-[275px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[16px] lg:rounded-[20px] p-4 lg:p-5 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
                style={{ animationDelay: '0ms' }}>
             <img 
               src="https://images.unsplash.com/photo-1590273016480-1a73f6ed9d53?auto=format&fit=crop&w=400&q=80" 
@@ -8442,10 +8647,8 @@ const HeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* ✅ BOTTOM-LEFT FLOATING CARD - BIGGER + NICHE */}
-          {/* Previous: left-[-25px] top-[350px], w-[230px] h-[255px] */}
-          {/* New: left-[-30px] top-[370px], w-[250px] h-[275px] */}
-          <div className="absolute left-0 top-[280px] sm:top-[320px] lg:left-[-30px] lg:top-[370px] w-[170px] sm:w-[210px] lg:w-[250px] h-auto lg:h-[275px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[16px] lg:rounded-[20px] p-4 lg:p-5 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
+          {/* BOTTOM-LEFT FLOATING CARD - Balance banaye rakhne ke liye */}
+          <div className="absolute left-0 top-[260px] sm:top-[300px] lg:left-[-30px] lg:top-[350px] w-[170px] sm:w-[210px] lg:w-[250px] h-auto lg:h-[275px] bg-white/40 border border-white/60 backdrop-blur-md rounded-[16px] lg:rounded-[20px] p-4 lg:p-5 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 animate-fade-in-up"
                style={{ animationDelay: '300ms' }}>
             <img 
               src="https://images.unsplash.com/photo-1620214365969-2b6fb092d6e4?auto=format&fit=crop&q=80&w=400" 
