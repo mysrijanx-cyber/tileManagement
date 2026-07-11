@@ -847,7 +847,7 @@ export const SellerRequestForm: React.FC = () => {
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 lg:p-10 text-left max-w-2xl mx-auto border-2 border-gray-200 animate-slide-up animation-delay-200">
           <h4 className="font-bold text-gray-900 mb-4 sm:mb-5 text-[clamp(1rem,2.5vw,1.25rem)] sm:text-[clamp(1.125rem,2.5vw,1.375rem)] flex items-center gap-2 sm:gap-3">
             <span className="text-[clamp(1.25rem,3vw,1.5rem)] sm:text-[clamp(1.5rem,3vw,1.75rem)]">📋</span> 
-            <span>What's Next?</span>
+            <span>What's Next ?</span>
           </h4>
           
           <ul className="text-[clamp(0.813rem,2vw,0.938rem)] sm:text-[clamp(0.938rem,2vw,1.063rem)] text-gray-700 space-y-3 sm:space-y-4">
