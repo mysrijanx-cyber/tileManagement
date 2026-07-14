@@ -920,83 +920,6 @@ const validateTileForm = (): string | null => {
       setError(`Failed to add tile: ${error.message}`);
     }
   };
-  // const handleAddTile = async () => {
-  //   try {
-  //     setError(null);
-
-  //     const validationError = validateTileForm();
-  //     if (validationError) {
-  //       setError(validationError);
-  //       window.scrollTo({ top: 0, behavior: "smooth" });
-  //       setTimeout(() => {
-  //         setError((prev) => (prev === validationError ? null : prev));
-  //       }, 8000);
-  //       return;
-  //     }
-
-  //     if (!currentUser) {
-  //       setError("User not authenticated");
-  //       window.scrollTo({ top: 0, behavior: "smooth" });
-  //       return;
-  //     }
-
-  //     console.log("🔄 Step 1/4: Preparing tile data...");
-
-  //     const tileCode = newTile.tileCode || generateTileCode();
-
-  //     const baseTileData = {
-  //       ...newTile,
-  //       size: newTile.size?.trim(),
-  // tileSurface: newTile.tileSurface?.trim() || "",
-  // tileMaterial: newTile.tileMaterial?.trim() || "",
-  //       sellerId: currentUser.user_id,
-  //       showroomId: currentUser.user_id,
-  //       tileCode: tileCode,
-  //       inStock: (newTile.stock || 0) > 0,
-  //       createdAt: new Date().toISOString(),
-  //       updatedAt: new Date().toISOString(),
-  //     };
-
-  //     console.log("💾 Step 2/4: Saving tile to database...");
-
-  //     const savedTile = await uploadTile(baseTileData);
-
-  //     if (!savedTile || !savedTile.id) {
-  //       throw new Error("Tile saved but ID not returned");
-  //     }
-
-  //     console.log("✅ Tile saved with ID:", savedTile.id);
-  //     console.log("📱 Step 3/4: Generating QR code...");
-
-  //     let qrCodeGenerated = false;
-  //     try {
-  //       const qrCodeDataUrl = await generateTileQRCode(savedTile);
-  //       console.log("✅ QR code generated successfully");
-  //       console.log("🔄 Step 4/4: Updating tile with QR code...");
-  //       await updateTileQRCode(savedTile.id, qrCodeDataUrl);
-  //       console.log("✅ Tile updated with QR code");
-  //       qrCodeGenerated = true;
-  //     } catch (qrError: any) {
-  //       console.warn("⚠️ QR code generation failed:", qrError.message);
-  //     }
-
-  //     await loadData();
-
-  //     setIsAddingTile(false);
-  //     resetNewTile();
-
-  //     if (qrCodeGenerated) {
-  //       setSuccess("✅ Tile added successfully with QR code!");
-  //     } else {
-  //       setSuccess("✅ Tile added! QR code can be generated from QR Codes tab.");
-  //     }
-
-  //     console.log("🎉 Tile creation completed!");
-  //   } catch (error: any) {
-  //     console.error("❌ Tile creation failed:", error);
-  //     setError(`Failed to add tile: ${error.message}`);
-  //   }
-  // };
 
 
   const handleEditTile = async (tile: Tile) => {
@@ -1011,7 +934,7 @@ const validateTileForm = (): string | null => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // const handleUpdateTile = async () => {
+
   //   try {
   //     setError(null);
 
@@ -1945,70 +1868,7 @@ const validateTileForm = (): string | null => {
                   </select>
                 </div>
 
-                {/* Size */}
-                {/* <div className="space-y-2">
-                  <label
-                    htmlFor="tile-size-select"
-                    className="block text-xs sm:text-sm font-medium text-gray-700"
-                  >
-                    Size *
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="tile-size-select"
-                      name="size"
-                      value={newTile.size}
-                      onChange={(e) => {
-                        console.log("Size selected:", e.target.value);
-                        setNewTile({ ...newTile, size: e.target.value });
-                      }}
-                      onFocus={(e) => {
-                        e.target.click();
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
-                      style={{
-                        WebkitAppearance: "none",
-                        MozAppearance: "none",
-                        touchAction: "manipulation",
-                      }}
-                    >
-                      <option value="">Select Tile Size</option>
-                      <option value="30x30 cm">30x30 cm</option>
-                      <option value="30x60 cm">30x60 cm</option>
-                      <option value="60x60 cm">60x60 cm</option>
-                      <option value="60x120 cm">60x120 cm</option>
-                      <option value="80x80 cm">80x80 cm</option>
-                      <option value="40x40 cm">40x40 cm</option>
-                      <option value="40x60 cm">40x60 cm</option>
-                      <option value="50x50 cm">50x50 cm</option>
-                      <option value="20x120 cm">20x120 cm</option>
-                      <option value="15x90 cm">15x90 cm</option>
-                      <option value="10x30 cm">10x30 cm</option>
-                      <option value="20x20 cm">20x20 cm</option>
-                      <option value="25x40 cm">25x40 cm</option>
-                      <option value="61x122 cm">61x122 cm</option>
-                      <option value="122x122 cm">122x122 cm</option>
-                      <option value="75x75 cm">75x75 cm</option>
-                      <option value="100x100 cm">100x100 cm</option>
-                      <option value="45x45 cm">45x45 cm</option>
-                      <option value="7.5x15 cm">7.5x15 cm</option>
-                      <option value="6x25 cm">6x25 cm</option>
-                    </select>
-
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  {newTile.size && (
-                    <div className="flex items-center gap-2 text-xs text-green-600">
-                      <CheckCircle className="w-3 h-3" />
-                      <span>Selected: {newTile.size}</span>
-                    </div>
-                  )}
-                </div> */} 
-{/* Size */}
-{/* Size */}
+                
 <div className="space-y-2">
   <label
     htmlFor="tile-size-select"
@@ -2225,61 +2085,7 @@ const validateTileForm = (): string | null => {
   )}
 </div>
 
-                {/* Tile Material */}
-                {/* <div className="space-y-2">
-                  <label
-                    htmlFor="tile-material-select"
-                    className="block text-xs sm:text-sm font-medium text-gray-700"
-                  >
-                    Tile Material
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="tile-material-select"
-                      name="tileMaterial"
-                      value={newTile.tileMaterial || ""}
-                      onChange={(e) => {
-                        console.log("Material selected:", e.target.value);
-                        setNewTile({
-                          ...newTile,
-                          tileMaterial: e.target.value || undefined,
-                        });
-                      }}
-                      onFocus={(e) => {
-                        e.target.click();
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm appearance-none cursor-pointer active:border-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] pr-10"
-                      style={{
-                        WebkitAppearance: "none",
-                        MozAppearance: "none",
-                        touchAction: "manipulation",
-                      }}
-                    >
-                      <option value="">Select Material Type</option>
-                      <option value="Slabs">Slabs</option>
-                      <option value="GVT & PGVT">GVT & PGVT</option>
-                      <option value="Double Charge">Double Charge</option>
-                      <option value="Counter Tops">Counter Tops</option>
-                      <option value="Full Body">Full Body</option>
-                      <option value="Ceramic">Ceramic</option>
-                      <option value="Mosaic">Mosaic</option>
-                      <option value="Subway">Subway</option>
-                    </select>
-
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  {newTile.tileMaterial && (
-                    <div className="flex items-center gap-2 text-xs text-green-600">
-                      <CheckCircle className="w-3 h-3" />
-                      <span>Selected: {newTile.tileMaterial}</span>
-                    </div>
-                  )}
-                </div> */} 
-
-             {/* Tile Material */}
+       
 <div className="space-y-2">
   <label
     htmlFor="tile-material-select"
