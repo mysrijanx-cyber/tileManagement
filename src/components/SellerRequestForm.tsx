@@ -7312,7 +7312,8 @@ export const SellerRequestForm: React.FC = () => {
             word-wrap: normal;
             direction: ltr;
           }
-        `}</style>
+        `}
+        </style>
       </div>
     </div>
   );
