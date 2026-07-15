@@ -237,6 +237,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         aria-modal="true"
         aria-labelledby="auth-modal-title"
       >
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-modal-in modal-zoom-content">
         {/* FIXED: Smooth Scale & Slide Form Transition */}
         <div 
           className={`w-full sm:max-w-[480px] bg-white sm:rounded-[24px] shadow-[0_20px_40px_rgb(0,0,0,0.06)] relative min-h-screen sm:min-h-0 sm:my-4 flex flex-col transform transition-all duration-300 ease-out ${
@@ -453,6 +454,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
+          </div>
           </div>
 
           {/* Global Loading Overlay */}

@@ -9162,6 +9162,78 @@ import { PricingSolution } from './components/BenefitCard';
 // ✅ GLOBAL STYLES
 // ═══════════════════════════════════════════════════════════════════════════
 
+// const GlobalStyles = () => (
+//   <style dangerouslySetInnerHTML={{__html: `
+//     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+//     * {
+//       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+//     }
+    
+//     html {
+//       scroll-behavior: smooth;
+//       scroll-padding-top: 100px;
+//       zoom: 67%;
+//       -moz-transform: scale(0.67);
+//       -moz-transform-origin: 0 0;
+//     }
+    
+//     @media screen and (max-width: 768px) {
+//       html {
+//         zoom: 100%;
+//         -moz-transform: scale(1);
+//       }
+//     }
+    
+//     @keyframes fadeInUp {
+//       from { opacity: 0; transform: translateY(20px); }
+//       to { opacity: 1; transform: translateY(0); }
+//     }
+//     .animate-fade-in-up {
+//       animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+//       opacity: 0;
+//     }
+    
+//     @keyframes spin-slow {
+//       from { transform: rotate(0deg); }
+//       to { transform: rotate(360deg); }
+//     }
+//     .animate-spin-slow {
+//       animation: spin-slow 4s linear infinite;
+//     }
+    
+//     @keyframes slideDownMenu {
+//       from { opacity: 0; transform: translateY(-15px); }
+//       to { opacity: 1; transform: translateY(0); }
+//     }
+//     .animate-slide-down {
+//       animation: slideDownMenu 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+//     }
+
+//     @keyframes modalFadeIn {
+//       from { opacity: 0; transform: scale(0.95); }
+//       to { opacity: 1; transform: scale(1); }
+//     }
+//     .animate-modal-in {
+//       animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+//     }
+
+//     ::-webkit-scrollbar {
+//       width: 10px;
+//       height: 10px;
+//     }
+//     ::-webkit-scrollbar-track {
+//       background: #f1f1f1;
+//     }
+//     ::-webkit-scrollbar-thumb {
+//       background: #888;
+//       border-radius: 5px;
+//     }
+//     ::-webkit-scrollbar-thumb:hover {
+//       background: #555;
+//     }
+//   `}} />
+// );
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -9173,13 +9245,31 @@ const GlobalStyles = () => (
     html {
       scroll-behavior: smooth;
       scroll-padding-top: 100px;
+    }
+
+    /* ✅ ZOOM SCOPED ONLY TO LANDING PAGE WRAPPER - NOT GLOBAL */
+    .landing-zoom-wrapper {
       zoom: 67%;
       -moz-transform: scale(0.67);
       -moz-transform-origin: 0 0;
+      width: 100%;
     }
-    
+      modal-zoom-content {
+      zoom: 67%;
+      -moz-transform: scale(0.67);
+      -moz-transform-origin: center center; 
+    }
+
+    /* Mobile ke liye dono ko 100% update kar dein */
     @media screen and (max-width: 768px) {
-      html {
+      .landing-zoom-wrapper,
+      .modal-zoom-content {
+        zoom: 100%;
+        -moz-transform: scale(1);
+      }
+
+    @media screen and (max-width: 768px) {
+      .landing-zoom-wrapper {
         zoom: 100%;
         -moz-transform: scale(1);
       }
@@ -9571,12 +9661,45 @@ const HeroSection: React.FC = () => {
 // ✅ HOME PAGE COMPONENT (with Navigation + Hero)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// const HomePage: React.FC<{ onLoginClick: () => void; onBecomeSellerClick: () => void }> = ({ 
+//   onLoginClick, 
+//   onBecomeSellerClick 
+// }) => {
+//   return (
+//     <>
+//       <div className="relative w-full bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 overflow-hidden">
+//         <Navigation 
+//           onLoginClick={onLoginClick}
+//           onBecomeSellerClick={onBecomeSellerClick}
+//         />
+//         <HeroSection />
+//       </div>
+
+//       <main className="w-full">
+//         <div className="w-full max-w-[1800px] mx-auto px-3 md:px-5 py-8 lg:py-16">
+//           <div className="space-y-8">
+//             <PublicShowroom />
+//           </div>
+//         </div>
+//       </main>
+
+//       <FeatureGuide />
+//       <Guide />
+//       <Statistics />
+//       <PricingSolution />
+//       <Banner />
+//       <Footer />
+
+//       <FloatingQRButton />
+//     </>
+//   );
+// };
 const HomePage: React.FC<{ onLoginClick: () => void; onBecomeSellerClick: () => void }> = ({ 
   onLoginClick, 
   onBecomeSellerClick 
 }) => {
   return (
-    <>
+    <div className="landing-zoom-wrapper">
       <div className="relative w-full bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 overflow-hidden">
         <Navigation 
           onLoginClick={onLoginClick}
@@ -9601,7 +9724,7 @@ const HomePage: React.FC<{ onLoginClick: () => void; onBecomeSellerClick: () => 
       <Footer />
 
       <FloatingQRButton />
-    </>
+    </div>
   );
 };
 
@@ -9908,11 +10031,11 @@ function AppContent() {
             path="/seller/*"
             element={
               <SellerProtectedRoute>
-                <DomainHeader />
-                <main className="w-full max-w-[1800px] mx-auto px-3 md:px-5 py-6 lg:py-8">
+                {/* <DomainHeader /> */}
+              
                   {renderError()}
                   <SellerDashboard />
-                </main>
+               
               </SellerProtectedRoute>
             }
           />
